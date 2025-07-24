@@ -4,6 +4,9 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'FlowithMusic - Music that connects hearts',
   description: 'Pick a song and write a message — send it to an old friend or find someone new who feels the same tune.',
+  icons: {
+    icon: '/favicon.ico',
+  }
 }
 
 export default function RootLayout({

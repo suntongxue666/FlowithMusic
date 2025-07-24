@@ -8,6 +8,12 @@ export default function Header({ currentPage }: HeaderProps) {
   return (
     <header>
       <div className="logo">
+        <img 
+          src="https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon//FlowtithMusic-100.png" 
+          alt="FlowithMusic" 
+          width={32} 
+          height={32}
+        />
         FlowithMusic
       </div>
       <nav>
