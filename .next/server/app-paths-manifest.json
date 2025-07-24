@@ -1,0 +1,7 @@
+{
+  "/api/spotify/recommendations/route": "app/api/spotify/recommendations/route.js",
+  "/api/spotify/search/route": "app/api/spotify/search/route.js",
+  "/page": "app/page.js",
+  "/send/page": "app/send/page.js",
+  "/history/page": "app/history/page.js"
+}
