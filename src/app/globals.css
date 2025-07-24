@@ -30,22 +30,87 @@ header {
   font-size: 1.5rem;
 }
 
+/* Desktop Navigation */
+.desktop-nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+/* Mobile Menu Button */
+.mobile-menu-btn {
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  gap: 0.3rem;
+}
+
+.mobile-menu-btn span {
+  width: 24px;
+  height: 3px;
+  background: #333;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* Mobile Navigation */
+.mobile-nav {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 2rem;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  min-width: 150px;
+}
+
+.mobile-nav-open {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-nav a {
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s;
+}
+
+.mobile-nav a:last-child {
+  border-bottom: none;
+}
+
+.mobile-nav a:hover {
+  background: #f8f9fa;
+}
+
+.mobile-nav a.active {
+  background: #007bff;
+  color: white;
+}
+
 nav {
   display: flex;
   gap: 1.5rem;
 }
 
-nav a {
+.desktop-nav a {
   text-decoration: none;
   color: #333;
   font-size: 0.95rem;
 }
 
-nav a.active {
+.desktop-nav a.active {
   font-weight: 600;
 }
 
-nav a:hover {
+.desktop-nav a:hover {
   color: #666;
 }
 
@@ -417,8 +482,8 @@ nav a:hover {
 .song-dropdown {
   position: absolute;
   top: 100%;
-  left: 0;
-  right: 0;
+  left: 1rem;  
+  right: 1rem;
   background: white;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -519,18 +584,18 @@ nav a:hover {
 }
 
 .play-btn {
-  background: rgba(0, 0, 0, 0.8);
   border: none;
   cursor: pointer;
   padding: 0.5rem;
   font-size: 1rem;
   border-radius: 50%;
-  color: white;
-  transition: background-color 0.2s;
+  background: transparent;
+  transition: opacity 0.2s;
+}
 }
 
 .play-btn:hover {
-  background: rgba(0, 0, 0, 0.9);
+  opacity: 0.7;
 }
 
 .spotify-link {
@@ -975,11 +1040,227 @@ nav a:hover {
     padding: 1rem;
   }
   
+  /* Mobile Header Styles */
+  .desktop-nav {
+    display: none;
+  }
+  
+  .mobile-menu-btn {
+    display: flex;
+  }
+  
+  header {
+    position: relative;
+  }
+  
+  .send-container {
+    padding: 0 1rem;
+  }
+  
+  .send-form {
+    padding: 1.5rem;
+  }
+  
+  .form-section {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-input, .form-textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  .song-dropdown {
+    left: 0.5rem;
+    right: 0.5rem;
+  }
+  
+  .track-item {
+    padding: 0.5rem;
+  }
+  
+  .album-cover {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .track-name {
+    font-size: 0.9rem;
+  }
+  
+  .track-artist {
+    font-size: 0.8rem;
+  }
+  
+  .history-container {
+    padding: 0 1rem;
+  }
+  
+  .letters-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .letter-container {
+    padding: 0 1rem;
+  }
+  
+  .letter-content {
+    padding: 1.5rem;
+  }
+  
+  .letter-header h2 {
+    font-size: 1.5rem;
+  }
+  
   nav {
     gap: 1rem;
   }
   
   nav a {
     font-size: 0.9rem;
+  }
+}
+
+/* Letter Page Styles */
+.letter-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+}
+
+.letter-content {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.letter-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.letter-header h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.letter-subtitle {
+  color: #666;
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.letter-player {
+  margin: 2rem 0;
+  display: flex;
+  justify-content: center;
+}
+
+.letter-message {
+  margin: 2rem 0;
+}
+
+.letter-message h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.message-content {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+  margin-bottom: 1rem;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.letter-date {
+  text-align: right;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.letter-footer {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #eee;
+}
+
+.letter-footer p {
+  margin-bottom: 1rem;
+  color: #666;
+}
+
+.send-button {
+  display: inline-block;
+  background: #007bff;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.send-button:hover {
+  background: #0056b3;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+/* Additional Mobile Responsive Styles */
+@media (max-width: 480px) {
+  header {
+    padding: 1rem;
+  }
+  
+  .logo {
+    font-size: 1.3rem;
+  }
+  
+  .logo img {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .hero {
+    padding: 2rem 1rem;
+  }
+  
+  .hero h1 {
+    font-size: 2rem;
+  }
+  
+  .hero p {
+    font-size: 1rem;
+  }
+  
+  .cards {
+    padding: 0.5rem;
+  }
+  
+  .card {
+    padding: 1rem;
+  }
+  
+  .features {
+    padding: 2rem 1rem;
+  }
+  
+  .send-form, .letter-content {
+    padding: 1rem;
+  }
+  
+  .mobile-nav {
+    right: 1rem;
   }
 }
