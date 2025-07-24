@@ -55,7 +55,7 @@ class SpotifyService {
     this.accessToken = data.access_token
     this.tokenExpires = Date.now() + (data.expires_in * 1000) - 60000 // 1 minute buffer
 
-    return this.accessToken
+    return this.accessToken!
   }
 
   async searchTracks(query: string, limit: number = 10): Promise<SpotifyTrack[]> {
