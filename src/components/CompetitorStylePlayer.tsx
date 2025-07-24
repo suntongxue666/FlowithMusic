@@ -52,7 +52,7 @@ export default function CompetitorStylePlayer({ track }: CompetitorStylePlayerPr
           width="100%"
           height="380"
           frameBorder="0"
-          allowtransparency="true"
+          allowTransparency={true}
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           loading="lazy"
           title={`${track.name} by ${track.artists[0]?.name}`}
@@ -67,7 +67,7 @@ export default function CompetitorStylePlayer({ track }: CompetitorStylePlayerPr
           width="100%"
           height="352"
           frameBorder="0"
-          allowtransparency="true"
+          allowTransparency={true}
           allow="encrypted-media; fullscreen"
           loading="lazy"
           title={`${track.name} by ${track.artists[0]?.name} (Fallback)`}

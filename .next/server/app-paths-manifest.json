@@ -1,7 +1,8 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
   "/api/spotify/recommendations/route": "app/api/spotify/recommendations/route.js",
   "/api/spotify/search/route": "app/api/spotify/search/route.js",
-  "/page": "app/page.js",
+  "/history/page": "app/history/page.js",
   "/send/page": "app/send/page.js",
-  "/history/page": "app/history/page.js"
+  "/page": "app/page.js"
 }
