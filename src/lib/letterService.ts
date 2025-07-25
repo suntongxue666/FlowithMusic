@@ -336,6 +336,11 @@ export class LetterService {
 
   // 更新Letter隐私设置
   async updateLetterPrivacy(letterId: string, isPublic: boolean): Promise<boolean> {
+    if (!supabase) {
+      console.warn('数据库连接不可用')
+      return false
+    }
+
     const user = userService.getCurrentUser()
     
     if (!user) {

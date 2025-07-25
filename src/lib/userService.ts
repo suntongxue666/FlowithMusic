@@ -156,7 +156,9 @@ export class UserService {
 
   // 登出
   async signOut(): Promise<void> {
-    await supabase.auth.signOut()
+    if (supabase) {
+      await supabase.auth.signOut()
+    }
     this.currentUser = null
     // 保留匿名ID以便下次使用
   }
@@ -178,6 +180,10 @@ export class UserService {
 
   // 更新用户资料
   async updateProfile(updates: Partial<User>): Promise<User> {
+    if (!supabase) {
+      throw new Error('数据库连接不可用')
+    }
+
     if (!this.currentUser) {
       throw new Error('用户未登录')
     }
@@ -201,6 +207,15 @@ export class UserService {
     totalViews: number
     joinDate: string
   }> {
+    if (!supabase) {
+      console.warn('数据库连接不可用')
+      return {
+        letterCount: 0,
+        totalViews: 0,
+        joinDate: this.currentUser?.created_at || ''
+      }
+    }
+
     const { data: letters } = await supabase
       .from('letters')
       .select('view_count, created_at')
