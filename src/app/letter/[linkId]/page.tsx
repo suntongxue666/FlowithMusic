@@ -68,7 +68,7 @@ export default function LetterPage() {
                   name: letter.song.title,
                   images: [{ url: letter.song.albumCover }]
                 },
-                preview_url: letter.song.previewUrl,
+                preview_url: letter.song.previewUrl || null,
                 external_urls: {
                   spotify: letter.song.spotifyUrl
                 }
