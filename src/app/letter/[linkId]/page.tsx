@@ -4,19 +4,23 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Header from '@/components/Header'
 import EnhancedSpotifyPlayer from '@/components/EnhancedSpotifyPlayer'
-import { letterStorage } from '@/lib/letterStorage'
-import type { MusicLetter } from '@/lib/letterStorage'
+import { letterService } from '@/lib/letterService'
+import type { Letter } from '@/lib/supabase'
 
 export default function LetterPage() {
   const { linkId } = useParams()
-  const [letter, setLetter] = useState<MusicLetter | null>(null)
+  const [letter, setLetter] = useState<Letter | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadLetter = async () => {
       if (typeof linkId === 'string') {
-        const foundLetter = letterStorage.getLetterByLinkId(linkId)
-        setLetter(foundLetter)
+        try {
+          const foundLetter = await letterService.getLetterByLinkId(linkId)
+          setLetter(foundLetter)
+        } catch (error) {
+          console.error('Failed to load letter:', error)
+        }
       }
       setLoading(false)
     }
@@ -52,7 +56,7 @@ export default function LetterPage() {
       <div className="letter-container">
         <div className="letter-content">
           <div className="letter-header">
-            <h2 className="handwritten-greeting">Hello, {letter.to}</h2>
+            <h2 className="handwritten-greeting">Hello, {letter.recipient_name}</h2>
             <p className="letter-subtitle">
               Someone picked this song just for you :)
             </p>
@@ -61,16 +65,16 @@ export default function LetterPage() {
           <div className="letter-player">
             <EnhancedSpotifyPlayer 
               track={{
-                id: letter.song.id,
-                name: letter.song.title,
-                artists: [{ name: letter.song.artist }],
+                id: letter.song_id,
+                name: letter.song_title,
+                artists: [{ name: letter.song_artist }],
                 album: {
-                  name: letter.song.title,
-                  images: [{ url: letter.song.albumCover }]
+                  name: letter.song_title,
+                  images: [{ url: letter.song_album_cover }]
                 },
-                preview_url: letter.song.previewUrl || null,
+                preview_url: letter.song_preview_url || null,
                 external_urls: {
-                  spotify: letter.song.spotifyUrl
+                  spotify: letter.song_spotify_url
                 }
               }}
             />
@@ -82,7 +86,7 @@ export default function LetterPage() {
               {letter.message}
             </div>
             <div className="letter-date centered-date">
-              Sent on {letter.createdAt.toLocaleDateString('en-US', {
+              Sent on {new Date(letter.created_at).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long', 
                 day: 'numeric',

@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import MusicCard from './MusicCard'
-import { letterStorage, MusicLetter } from '@/lib/letterStorage'
+import { letterService } from '@/lib/letterService'
+import { Letter } from '@/lib/supabase'
 
 export default function MusicCards() {
-  const [letters, setLetters] = useState<MusicLetter[]>([])
+  const [letters, setLetters] = useState<Letter[]>([])
+  const [loading, setLoading] = useState(true)
   
   // Sample cards for fallback when no user data exists
   const sampleCards = [
@@ -66,21 +68,40 @@ export default function MusicCards() {
   ]
 
   useEffect(() => {
-    // Load user letters from localStorage
-    const userLetters = letterStorage.getRecentLetters(6)
-    setLetters(userLetters)
+    const loadPublicLetters = async () => {
+      try {
+        setLoading(true)
+        // 获取公开的Letters，按时间排序，只显示消息超过12个单词的
+        const publicLetters = await letterService.getPublicLetters(20, 0, 'created_at')
+        
+        // 过滤出消息超过12个单词的Letters
+        const filteredLetters = publicLetters.filter(letter => {
+          const wordCount = letter.message.trim().split(/\s+/).length
+          return wordCount >= 12
+        })
+        
+        setLetters(filteredLetters.slice(0, 6)) // 只取前6个
+      } catch (error) {
+        console.error('Failed to load public letters:', error)
+        setLetters([]) // 出错时显示样例卡片
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadPublicLetters()
   }, [])
 
-  // Convert MusicLetter to the format expected by MusicCard
-  const convertLetterToCard = (letter: MusicLetter) => ({
-    to: letter.to,
+  // Convert Letter to the format expected by MusicCard
+  const convertLetterToCard = (letter: Letter) => ({
+    to: letter.recipient_name,
     message: letter.message,
     song: {
-      title: letter.song.title,
-      artist: letter.song.artist,
-      albumCover: letter.song.albumCover
+      title: letter.song_title,
+      artist: letter.song_artist,
+      albumCover: letter.song_album_cover
     },
-    linkId: letter.linkId
+    linkId: letter.link_id
   })
 
   // Use user letters if available, otherwise fall back to sample cards
@@ -98,11 +119,19 @@ export default function MusicCards() {
     cardsToShow.push(...samplesToAdd)
   }
 
+  if (loading) {
+    return (
+      <section className="cards">
+        <div className="loading-cards">Loading recent letters...</div>
+      </section>
+    )
+  }
+
   return (
     <section className="cards">
       {cardsToShow.map((card, index) => (
         <MusicCard 
-          key={index}
+          key={(card as any).linkId || index}
           to={card.to}
           message={card.message}
           song={card.song}

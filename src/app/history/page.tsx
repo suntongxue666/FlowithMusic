@@ -4,36 +4,49 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Toast from '@/components/Toast'
-import { letterStorage, MusicLetter } from '@/lib/letterStorage'
+import { letterService } from '@/lib/letterService'
+import { useUser } from '@/contexts/UserContext'
+import { Letter } from '@/lib/supabase'
 
 export default function HistoryPage() {
   const router = useRouter()
-  const [letters, setLetters] = useState<MusicLetter[]>([])
-  const [isSignedIn, setIsSignedIn] = useState(false)
+  const { user, isAuthenticated, signInWithGoogle } = useUser()
+  const [letters, setLetters] = useState<Letter[]>([])
+  const [loading, setLoading] = useState(true)
   const [showToast, setShowToast] = useState(false)
 
   useEffect(() => {
-    // Load user letters from localStorage
-    const userLetters = letterStorage.getLetters()
-    setLetters(userLetters)
-    
-    // Check if user is signed in (for now, just check if there are letters)
-    setIsSignedIn(userLetters.length > 0)
-  }, [])
+    const loadUserLetters = async () => {
+      try {
+        setLoading(true)
+        const userLetters = await letterService.getUserLetters(50, 0)
+        setLetters(userLetters)
+      } catch (error) {
+        console.error('Failed to load letters:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const handleSignIn = () => {
-    // TODO: Implement Google Sign-in
-    console.log('Sign in with Google')
+    loadUserLetters()
+  }, [isAuthenticated])
+
+  const handleSignIn = async () => {
+    try {
+      await signInWithGoogle()
+    } catch (error) {
+      console.error('Sign in failed:', error)
+    }
   }
 
-  const handleCopyLink = (letter: MusicLetter) => {
-    const link = `${window.location.origin}/letter/${letter.linkId}`
+  const handleCopyLink = (letter: Letter) => {
+    const link = `${window.location.origin}/letter/${letter.link_id}`
     navigator.clipboard.writeText(link)
     setShowToast(true)
   }
 
-  const handleViewLetter = (letter: MusicLetter) => {
-    router.push(`/letter/${letter.linkId}`)
+  const handleViewLetter = (letter: Letter) => {
+    router.push(`/letter/${letter.link_id}`)
   }
 
   const handleToastClose = () => {
@@ -51,7 +64,18 @@ export default function HistoryPage() {
     })
   }
 
-  if (!isSignedIn || letters.length === 0) {
+  if (loading) {
+    return (
+      <main>
+        <Header currentPage="history" />
+        <div className="history-container">
+          <div className="loading">Loading your letters...</div>
+        </div>
+      </main>
+    )
+  }
+
+  if (!isAuthenticated || letters.length === 0) {
     return (
       <main>
         <Header currentPage="history" />
@@ -93,19 +117,19 @@ export default function HistoryPage() {
             <div key={letter.id} className="message-item">
               <div className="message-main">
                 <img 
-                  src={letter.song.albumCover || '/default-album.png'}
-                  alt={letter.song.title}
+                  src={letter.song_album_cover || '/default-album.png'}
+                  alt={letter.song_title}
                   className="message-album-cover"
                 />
                 <div className="message-details">
                   <div className="message-header">
-                    <span className="message-to">To: {letter.to}</span>
+                    <span className="message-to">To: {letter.recipient_name}</span>
                   </div>
                   <div className="message-song">
-                    {letter.song.title} - {letter.song.artist}
+                    {letter.song_title} - {letter.song_artist}
                   </div>
                   <div className="message-date">
-                    {formatDate(letter.createdAt)}
+                    {formatDate(new Date(letter.created_at))}
                   </div>
                 </div>
               </div>

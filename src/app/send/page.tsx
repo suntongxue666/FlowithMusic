@@ -7,7 +7,7 @@ import SongSelector from '@/components/SongSelector'
 import SpotifyEmbedPlayer from '@/components/SpotifyEmbedPlayer'
 import Toast from '@/components/Toast'
 import { SpotifyTrack } from '@/lib/spotify'
-import { letterStorage } from '@/lib/letterStorage'
+import { letterService } from '@/lib/letterService'
 
 export default function SendPage() {
   const router = useRouter()
@@ -25,11 +25,18 @@ export default function SendPage() {
   const handleSubmit = async () => {
     if (!selectedTrack || !recipient.trim() || !message.trim()) return
 
+    // 检查消息是否超过12个单词
+    const wordCount = message.trim().split(/\s+/).length
+    if (wordCount < 12) {
+      alert('Message must be at least 12 words long to be shared publicly.')
+      return
+    }
+
     setIsSubmitting(true)
     
     try {
-      // Save to local storage as test data
-      const newLetter = letterStorage.addLetter({
+      // Save to Supabase using letterService
+      const newLetter = await letterService.createLetter({
         to: recipient.trim(),
         message: message.trim(),
         song: {
@@ -54,6 +61,7 @@ export default function SendPage() {
 
     } catch (error) {
       console.error('Failed to submit:', error)
+      alert('Failed to create letter. Please try again.')
     } finally {
       setIsSubmitting(false)
     }

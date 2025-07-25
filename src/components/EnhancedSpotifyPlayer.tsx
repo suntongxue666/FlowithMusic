@@ -232,20 +232,7 @@ export default function EnhancedSpotifyPlayer({ track }: EnhancedSpotifyPlayerPr
         />
       </div>
       
-      <div className="player-info-bar">
-        <div className="track-info-enhanced">
-          <span className="track-title-enhanced">{track.name}</span>
-          <span className="track-artist-enhanced">by {track.artists[0]?.name}</span>
-        </div>
-        
-        <div className="player-status">
-          {isAuthenticated ? (
-            <span className="status-badge authenticated">Full Track Available</span>
-          ) : (
-            <span className="status-badge preview">Preview Mode</span>
-          )}
-        </div>
-      </div>
+
       
       {!isAuthenticated && track.preview_url && (
         <audio ref={audioRef} />
