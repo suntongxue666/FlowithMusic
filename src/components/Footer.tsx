@@ -59,8 +59,15 @@ export default function Footer() {
       <div className="footer-container">
         <div className="footer-main">
           <div className="footer-brand">
-            <h2>FlowithMusic</h2>
-            <p className="footer-tagline">Songs carry your unsaid words — that connects hearts.</p>
+            <div className="footer-brand-header">
+              <img 
+                src="https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon//FlowtithMusic-100.png" 
+                alt="FlowithMusic" 
+                className="footer-logo"
+              />
+              <h2 className="footer-brand-name">FlowithMusic</h2>
+            </div>
+            <p className="footer-tagline handwritten">Songs carry your unsaid words — that connects hearts.</p>
           </div>
           
           <div className="footer-sections">
@@ -71,13 +78,7 @@ export default function Footer() {
                 <li><Link href="/send">Send</Link></li>
                 <li><Link href="/history">History</Link></li>
                 <li><Link href="/explore">Explore</Link></li>
-              </ul>
-            </div>
-            
-            <div className="footer-section">
-              <h3>Sitemap</h3>
-              <ul>
-                <li><Link href="/sitemap.xml">XML Sitemap</Link></li>
+                <li><Link href="/sitemap.xml">Sitemap</Link></li>
               </ul>
             </div>
             

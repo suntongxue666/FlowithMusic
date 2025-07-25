@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'FlowithMusic - Music that connects hearts',
-  description: 'Pick a song and write a message — send it to an old friend or find someone new who feels the same tune.',
+  title: 'FlowithMagic - Send the song, Connect with Hearts Through Music',
+  description: 'Pick a song, write a message, send the song to a friend or who shares the same tune. A unique way to connect through music and create meaningful, heartfelt messages.',
+  keywords: 'Send a song, Send the song, Send the prayer, Hello I\'m sorry, Musical messages, Send a musical message, Heartfelt song dedications, Send songs to friends, Music that connects hearts, Express feelings through music, Personalized song messages, Song-based message sharing, Create musical memories, Send love through songs, Emotional music sharing, Music message platform',
   icons: {
     icon: '/favicon.ico',
   }

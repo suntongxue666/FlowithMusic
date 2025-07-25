@@ -4,11 +4,11 @@
   "/api/spotify/recommendations/route": "app/api/spotify/recommendations/route.js",
   "/sitemap.xml/route": "app/sitemap.xml/route.js",
   "/auth/callback/page": "app/auth/callback/page.js",
-  "/explore/page": "app/explore/page.js",
   "/letter/[linkId]/page": "app/letter/[linkId]/page.js",
-  "/history/page": "app/history/page.js",
   "/page": "app/page.js",
+  "/explore/page": "app/explore/page.js",
+  "/terms/page": "app/terms/page.js",
   "/privacy/page": "app/privacy/page.js",
   "/send/page": "app/send/page.js",
-  "/terms/page": "app/terms/page.js"
+  "/history/page": "app/history/page.js"
 }

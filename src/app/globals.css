@@ -1946,18 +1946,37 @@ nav {
   margin-bottom: 2rem;
 }
 
-.footer-brand h2 {
+.footer-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.footer-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+}
+
+.footer-brand-name {
   font-size: 1.8rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
   color: #333;
+  margin: 0;
 }
 
 .footer-tagline {
   color: #666;
-  font-size: 1rem;
+  font-size: 1.1rem;
   line-height: 1.5;
   margin-bottom: 0;
+}
+
+.footer-tagline.handwritten {
+  font-family: 'Nanum Pen Script', cursive;
+  font-size: 1.3rem;
+  color: #555;
 }
 
 .footer-sections {

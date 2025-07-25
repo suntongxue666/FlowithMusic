@@ -17,10 +17,18 @@ export default function HorizontalPlayer({ track }: HorizontalPlayerProps) {
   useEffect(() => {
     if (track.preview_url && audioRef.current) {
       const audio = audioRef.current
+      
+      // 重置状态
+      setIsPlaying(false)
+      setCurrentTime(0)
+      setDuration(0)
+      setIsLoading(true)
+      
       audio.src = track.preview_url
       
       const handleLoadedMetadata = () => {
-        setDuration(audio.duration)
+        setDuration(audio.duration || 30) // 默认30秒
+        setIsLoading(false)
       }
       
       const handleTimeUpdate = () => {
@@ -40,11 +48,20 @@ export default function HorizontalPlayer({ track }: HorizontalPlayerProps) {
         setIsLoading(false)
       }
       
+      const handleError = (e: Event) => {
+        console.error('Audio loading error:', e)
+        setIsLoading(false)
+      }
+      
       audio.addEventListener('loadedmetadata', handleLoadedMetadata)
       audio.addEventListener('timeupdate', handleTimeUpdate)
       audio.addEventListener('ended', handleEnded)
       audio.addEventListener('loadstart', handleLoadStart)
       audio.addEventListener('canplay', handleCanPlay)
+      audio.addEventListener('error', handleError)
+      
+      // 预加载音频
+      audio.load()
       
       return () => {
         audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
@@ -52,24 +69,47 @@ export default function HorizontalPlayer({ track }: HorizontalPlayerProps) {
         audio.removeEventListener('ended', handleEnded)
         audio.removeEventListener('loadstart', handleLoadStart)
         audio.removeEventListener('canplay', handleCanPlay)
+        audio.removeEventListener('error', handleError)
       }
     }
   }, [track.preview_url])
 
   const togglePlay = async () => {
-    if (!audioRef.current || !track.preview_url) return
+    if (!audioRef.current || !track.preview_url) {
+      console.log('No audio ref or preview URL')
+      return
+    }
     
     try {
       if (isPlaying) {
         audioRef.current.pause()
         setIsPlaying(false)
       } else {
+        // 确保音频已加载
+        if (audioRef.current.readyState < 2) {
+          setIsLoading(true)
+          await new Promise((resolve) => {
+            const handleCanPlay = () => {
+              audioRef.current?.removeEventListener('canplay', handleCanPlay)
+              resolve(void 0)
+            }
+            audioRef.current?.addEventListener('canplay', handleCanPlay)
+          })
+          setIsLoading(false)
+        }
+        
         await audioRef.current.play()
         setIsPlaying(true)
       }
     } catch (error) {
       console.error('播放失败:', error)
       setIsPlaying(false)
+      setIsLoading(false)
+      
+      // 如果播放失败，尝试重新加载
+      if (audioRef.current) {
+        audioRef.current.load()
+      }
     }
   }
 
