@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Header from '@/components/Header'
 import CompetitorStylePlayer from '@/components/CompetitorStylePlayer'
-import { getLetterByLinkId } from '@/lib/letterStorage'
+import { letterStorage } from '@/lib/letterStorage'
 import type { MusicLetter } from '@/lib/letterStorage'
 
 export default function LetterPage() {
@@ -15,7 +15,7 @@ export default function LetterPage() {
   useEffect(() => {
     const loadLetter = async () => {
       if (typeof linkId === 'string') {
-        const foundLetter = await getLetterByLinkId(linkId)
+        const foundLetter = letterStorage.getLetterByLinkId(linkId)
         setLetter(foundLetter)
       }
       setLoading(false)
