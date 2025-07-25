@@ -44,13 +44,13 @@ export default function CompetitorStylePlayer({ track }: CompetitorStylePlayerPr
 
   return (
     <div className="competitor-player-container">
-      {/* 横向大播放器 */}
+      {/* 更宽的横向大播放器 */}
       <div className="main-player">
         <iframe
           style={{ borderRadius: '12px' }}
-          src={embedUrls.compact}
+          src={embedUrls.full}
           width="100%"
-          height="152"
+          height="352"
           frameBorder="0"
           allowTransparency={true}
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"

@@ -238,6 +238,16 @@ nav {
 .card-link {
   text-decoration: none;
   color: inherit;
+  display: block;
+}
+
+.card-link:hover {
+  text-decoration: none;
+  color: inherit;
+}
+
+.card-link .card {
+  cursor: pointer;
 }
 
 .card-link .card:hover {
@@ -308,7 +318,7 @@ nav {
 
 .card .song .play-btn {
   position: absolute;
-  right: 1rem;
+  right: 0.75rem;
   font-size: 1.2rem;
 }
 
@@ -898,6 +908,13 @@ nav {
   border: 1px solid #e5e5e5;
 }
 
+.message-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
 .message-content {
   display: flex;
   align-items: center;
@@ -1116,7 +1133,7 @@ nav {
     padding: 0.75rem;
   }
   
-  .message-content {
+  .message-main {
     margin-bottom: 1rem;
   }
   
@@ -1186,6 +1203,22 @@ nav {
   .spotify-embed-container {
     margin: 1rem 0;
     padding: 0.5rem;
+    background: #f9f9f9;
+    border-radius: 12px;
+  }
+  
+  .spotify-embed-container iframe {
+    min-height: 80px;
+    width: 100%;
+  }
+  
+  .competitor-player-container {
+    margin: 1rem 0;
+  }
+  
+  .competitor-player-container iframe {
+    min-height: 200px;
+    width: 100%;
   }
   
   .send-form .form-section {
@@ -1328,7 +1361,7 @@ nav {
 }
 
 .letter-date {
-  text-align: right;
+  text-align: center;
   color: #666;
   font-size: 0.9rem;
 }
@@ -1354,6 +1387,17 @@ nav {
   text-decoration: none;
   font-weight: 500;
   transition: background-color 0.2s;
+}
+
+.send-button.black-button {
+  background: #333;
+  border-radius: 25px;
+}
+
+.send-button.black-button:hover {
+  background: #555;
+  text-decoration: none;
+  color: white;
 }
 
 .send-button:hover {

@@ -91,7 +91,7 @@ export default function HistoryPage() {
         <div className="message-list">
           {letters.map((letter) => (
             <div key={letter.id} className="message-item">
-              <div className="message-content">
+              <div className="message-main">
                 <img 
                   src={letter.song.albumCover || '/default-album.png'}
                   alt={letter.song.title}
