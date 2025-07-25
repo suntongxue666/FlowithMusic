@@ -21,28 +21,29 @@ export default function Footer() {
     return (
       <footer className="footer mobile-footer">
         <div className="footer-container">
-          <div className="footer-section">
-            <h3>功能导航</h3>
-            <ul>
-              <li><Link href="/">首页</Link></li>
-              <li><Link href="/send">发送音乐信</Link></li>
-              <li><Link href="/history">历史记录</Link></li>
-            </ul>
+          <div className="footer-section mobile-horizontal">
+            <h3>Features</h3>
+            <div className="mobile-links">
+              <Link href="/">Home</Link>
+              <Link href="/send">Send</Link>
+              <Link href="/history">History</Link>
+              <Link href="/explore">Explore</Link>
+            </div>
           </div>
           
-          <div className="footer-section">
-            <h3>联系我们</h3>
-            <p>
+          <div className="footer-section mobile-horizontal">
+            <h3>Contact us</h3>
+            <div className="mobile-links">
               <a href="mailto:tiktreeapp@gmail.com">tiktreeapp@gmail.com</a>
-            </p>
+            </div>
           </div>
           
-          <div className="footer-section">
-            <h3>法律条款</h3>
-            <ul>
-              <li><Link href="/terms">用户协议</Link></li>
-              <li><Link href="/privacy">隐私协议</Link></li>
-            </ul>
+          <div className="footer-section mobile-horizontal">
+            <h3>Legal</h3>
+            <div className="mobile-links">
+              <Link href="/terms">Terms of Service</Link>
+              <Link href="/privacy">Privacy Policy</Link>
+            </div>
           </div>
           
           <div className="footer-bottom">
@@ -64,36 +65,34 @@ export default function Footer() {
           
           <div className="footer-sections">
             <div className="footer-section">
-              <h3>功能导航</h3>
+              <h3>Features</h3>
               <ul>
-                <li><Link href="/">首页</Link></li>
-                <li><Link href="/send">发送音乐信</Link></li>
-                <li><Link href="/history">历史记录</Link></li>
+                <li><Link href="/">Home</Link></li>
+                <li><Link href="/send">Send</Link></li>
+                <li><Link href="/history">History</Link></li>
+                <li><Link href="/explore">Explore</Link></li>
               </ul>
             </div>
             
             <div className="footer-section">
-              <h3>网站地图</h3>
+              <h3>Sitemap</h3>
               <ul>
-                <li><Link href="/">主页</Link></li>
-                <li><Link href="/send">创建音乐信</Link></li>
-                <li><Link href="/history">我的音乐信</Link></li>
-                <li><Link href="/about">关于我们</Link></li>
+                <li><Link href="/sitemap.xml">XML Sitemap</Link></li>
               </ul>
             </div>
             
             <div className="footer-section">
-              <h3>联系我们</h3>
+              <h3>Contact us</h3>
               <p>
                 <a href="mailto:tiktreeapp@gmail.com">tiktreeapp@gmail.com</a>
               </p>
             </div>
             
             <div className="footer-section">
-              <h3>法律条款</h3>
+              <h3>Legal</h3>
               <ul>
-                <li><Link href="/terms">用户协议</Link></li>
-                <li><Link href="/privacy">隐私协议</Link></li>
+                <li><Link href="/terms">Terms of Service</Link></li>
+                <li><Link href="/privacy">Privacy Policy</Link></li>
               </ul>
             </div>
           </div>
