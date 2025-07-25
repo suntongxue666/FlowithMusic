@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { userService } from '@/lib/userService'
 
 export default function AuthCallback() {
@@ -13,6 +12,16 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        // 动态导入supabase以避免构建时错误
+        const { supabase } = await import('@/lib/supabase')
+        
+        // 检查Supabase是否可用
+        if (!supabase) {
+          console.warn('Supabase not configured, redirecting to home')
+          router.push('/')
+          return
+        }
+
         // 处理OAuth回调
         const { data, error } = await supabase.auth.getSession()
         

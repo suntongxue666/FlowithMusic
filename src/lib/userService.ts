@@ -30,6 +30,18 @@ export class UserService {
 
   // 初始化用户会话
   async initializeUser(): Promise<string> {
+    // 检查Supabase是否可用
+    if (!supabase) {
+      // 如果Supabase不可用，只使用匿名ID
+      let anonymousId = localStorage.getItem('anonymous_id')
+      if (!anonymousId) {
+        anonymousId = generateAnonymousId()
+        localStorage.setItem('anonymous_id', anonymousId)
+      }
+      this.anonymousId = anonymousId
+      return anonymousId
+    }
+
     // 检查是否有已登录用户
     const { data: { user } } = await supabase.auth.getUser()
     
@@ -67,6 +79,10 @@ export class UserService {
 
   // Google OAuth 登录
   async signInWithGoogle(): Promise<void> {
+    if (!supabase) {
+      throw new Error('登录功能暂时不可用')
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -81,6 +97,10 @@ export class UserService {
 
   // 登录成功后的数据迁移
   async handleAuthCallback(user: any): Promise<User> {
+    if (!supabase) {
+      throw new Error('数据库连接不可用')
+    }
+
     const anonymousId = this.anonymousId || localStorage.getItem('anonymous_id')
     
     // 检查用户是否已存在
