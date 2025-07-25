@@ -1187,6 +1187,16 @@ nav {
   line-height: 1.6;
 }
 
+.message-content.handwritten {
+  font-family: 'Nanum Pen Script', cursive;
+  font-size: 1.2rem;
+  background: transparent;
+  border: none;
+  padding: 1rem 0;
+  font-style: normal;
+  color: #333;
+}
+
 .letter-date {
   text-align: right;
   color: #666;

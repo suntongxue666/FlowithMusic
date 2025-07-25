@@ -78,7 +78,7 @@ export default function LetterPage() {
           
           <div className="letter-message">
             <h3>Also, here's a message from the sender:</h3>
-            <div className="message-content">
+            <div className="message-content handwritten">
               {letter.message}
             </div>
             <div className="letter-date">
