@@ -48,6 +48,12 @@ export class LetterService {
     const anonymousId = userService.getAnonymousId()
     const linkId = this.generateLinkId()
     
+    console.log('Creating letter with user context:', {
+      user: user?.id,
+      anonymousId,
+      isAuthenticated: !!user
+    })
+    
     // 如果Supabase不可用，使用localStorage作为fallback
     if (!supabase) {
       console.warn('Supabase not available, using localStorage fallback')
@@ -79,6 +85,7 @@ export class LetterService {
       return fallbackLetter
     }
 
+    // 构建新letter数据
     const newLetter = {
       user_id: user?.id || null,
       anonymous_id: user ? null : anonymousId,

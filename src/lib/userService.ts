@@ -37,44 +37,65 @@ export class UserService {
       if (!anonymousId) {
         anonymousId = generateAnonymousId()
         localStorage.setItem('anonymous_id', anonymousId)
+        localStorage.setItem('user_agent', getUserAgent())
       }
       this.anonymousId = anonymousId
       return anonymousId
     }
 
-    // 检查是否有已登录用户
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (user) {
-      // 已登录用户
-      const { data: userData } = await supabase
-        .from('users')
-        .select('*')
-        .eq('google_id', user.id)
-        .single()
+    try {
+      // 检查是否有已登录用户
+      const { data: { user } } = await supabase.auth.getUser()
       
-      if (userData) {
-        this.currentUser = userData
-        return userData.anonymous_id
+      if (user) {
+        // 已登录用户
+        const { data: userData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('google_id', user.id)
+          .single()
+        
+        if (userData) {
+          this.currentUser = userData
+          this.anonymousId = userData.anonymous_id
+          return userData.anonymous_id
+        }
       }
-    }
 
-    // 匿名用户处理
-    let anonymousId = localStorage.getItem('anonymous_id')
-    
-    if (!anonymousId) {
-      anonymousId = generateAnonymousId()
-      localStorage.setItem('anonymous_id', anonymousId)
+      // 匿名用户处理
+      let anonymousId = localStorage.getItem('anonymous_id')
       
-      // 记录匿名会话
-      await supabase.from('anonymous_sessions').insert({
-        anonymous_id: anonymousId,
-        user_agent: getUserAgent()
-      })
-    }
+      if (!anonymousId) {
+        anonymousId = generateAnonymousId()
+        localStorage.setItem('anonymous_id', anonymousId)
+        localStorage.setItem('user_agent', getUserAgent())
+        
+        // 记录匿名会话
+        try {
+          await supabase.from('anonymous_sessions').insert({
+            anonymous_id: anonymousId,
+            user_agent: getUserAgent()
+          })
+        } catch (error) {
+          console.warn('Failed to record anonymous session:', error)
+        }
+      }
 
-    this.anonymousId = anonymousId
-    return anonymousId
+      this.anonymousId = anonymousId
+      return anonymousId
+    } catch (error) {
+      console.error('Error initializing user:', error)
+      
+      // Fallback to localStorage only
+      let anonymousId = localStorage.getItem('anonymous_id')
+      if (!anonymousId) {
+        anonymousId = generateAnonymousId()
+        localStorage.setItem('anonymous_id', anonymousId)
+        localStorage.setItem('user_agent', getUserAgent())
+      }
+      this.anonymousId = anonymousId
+      return anonymousId
+    }
   }
 
   // Google OAuth 登录
@@ -83,15 +104,25 @@ export class UserService {
       throw new Error('登录功能暂时不可用')
     }
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      })
+      
+      if (error) {
+        console.error('Google OAuth error:', error)
+        throw new Error(`登录失败: ${error.message}`)
       }
-    })
-    
-    if (error) {
-      throw new Error(`登录失败: ${error.message}`)
+    } catch (error) {
+      console.error('Sign in error:', error)
+      throw error
     }
   }
 

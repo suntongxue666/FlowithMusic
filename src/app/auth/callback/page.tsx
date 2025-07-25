@@ -17,8 +17,8 @@ export default function AuthCallback() {
         
         // 检查Supabase是否可用
         if (!supabase) {
-          console.warn('Supabase not configured, redirecting to home')
-          router.push('/')
+          console.warn('Supabase not configured, redirecting to history')
+          router.push('/history')
           return
         }
 
@@ -26,27 +26,32 @@ export default function AuthCallback() {
         const { data, error } = await supabase.auth.getSession()
         
         if (error) {
-          throw error
+          console.error('Session error:', error)
+          throw new Error(`认证失败: ${error.message}`)
         }
 
         if (data.session?.user) {
+          console.log('User authenticated:', data.session.user.email)
+          
           // 处理用户数据迁移和创建
           await userService.handleAuthCallback(data.session.user)
           
-          // 登录成功，重定向到首页
-          router.push('/')
+          // 登录成功，重定向到历史页面
+          router.push('/history')
         } else {
-          // 没有会话，重定向到首页
-          router.push('/')
+          console.warn('No session found, redirecting to history')
+          // 没有会话，重定向到历史页面
+          router.push('/history')
         }
       } catch (err) {
         console.error('Auth callback error:', err)
-        setError(err instanceof Error ? err.message : '登录失败')
+        const errorMessage = err instanceof Error ? err.message : '登录过程中发生未知错误'
+        setError(errorMessage)
         
-        // 3秒后重定向到首页
+        // 5秒后重定向到历史页面
         setTimeout(() => {
-          router.push('/')
-        }, 3000)
+          router.push('/history')
+        }, 5000)
       } finally {
         setLoading(false)
       }
@@ -71,9 +76,16 @@ export default function AuthCallback() {
     return (
       <div className="auth-callback-container">
         <div className="auth-callback-content error">
+          <div className="error-icon">⚠️</div>
           <h2>登录失败</h2>
           <p>{error}</p>
-          <p>将在3秒后自动返回首页...</p>
+          <p>将在5秒后自动返回历史页面...</p>
+          <button 
+            onClick={() => router.push('/history')}
+            className="retry-btn"
+          >
+            立即返回
+          </button>
         </div>
       </div>
     )
@@ -82,8 +94,10 @@ export default function AuthCallback() {
   return (
     <div className="auth-callback-container">
       <div className="auth-callback-content">
+        <div className="success-icon">✅</div>
         <h2>登录成功！</h2>
-        <p>即将跳转到首页...</p>
+        <p>正在为您准备个人化体验...</p>
+        <p>即将跳转到历史页面</p>
       </div>
     </div>
   )

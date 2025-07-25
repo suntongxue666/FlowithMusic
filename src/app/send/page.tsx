@@ -26,7 +26,8 @@ export default function SendPage() {
   useEffect(() => {
     const initUser = async () => {
       try {
-        await userService.initializeUser()
+        const anonymousId = await userService.initializeUser()
+        console.log('User initialized with ID:', anonymousId)
         setUserInitialized(true)
       } catch (error) {
         console.error('Failed to initialize user:', error)
@@ -48,7 +49,13 @@ export default function SendPage() {
     setIsSubmitting(true)
     
     try {
-      console.log('Creating letter with data:', {
+      // 确保用户已初始化
+      const currentUser = userService.getCurrentUser()
+      const anonymousId = userService.getAnonymousId()
+      
+      console.log('Creating letter with user info:', {
+        currentUser: currentUser?.id,
+        anonymousId,
         to: recipient.trim(),
         message: message.trim(),
         song: {
