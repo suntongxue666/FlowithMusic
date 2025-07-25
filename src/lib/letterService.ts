@@ -44,15 +44,41 @@ export class LetterService {
 
   // 创建Letter
   async createLetter(letterData: CreateLetterData): Promise<Letter> {
-    if (!supabase) {
-      throw new Error('数据库连接不可用')
-    }
-
     const user = userService.getCurrentUser()
     const anonymousId = userService.getAnonymousId()
-    
     const linkId = this.generateLinkId()
     
+    // 如果Supabase不可用，使用localStorage作为fallback
+    if (!supabase) {
+      console.warn('Supabase not available, using localStorage fallback')
+      
+      const fallbackLetter: Letter = {
+        id: linkId,
+        user_id: user?.id,
+        anonymous_id: user ? undefined : (anonymousId || undefined),
+        link_id: linkId,
+        recipient_name: letterData.to.trim(),
+        message: letterData.message.trim(),
+        song_id: letterData.song.id,
+        song_title: letterData.song.title,
+        song_artist: letterData.song.artist,
+        song_album_cover: letterData.song.albumCover,
+        song_preview_url: letterData.song.previewUrl,
+        song_spotify_url: letterData.song.spotifyUrl,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        view_count: 0,
+        is_public: true
+      }
+      
+      // 保存到localStorage
+      const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+      existingLetters.push(fallbackLetter)
+      localStorage.setItem('letters', JSON.stringify(existingLetters))
+      
+      return fallbackLetter
+    }
+
     const newLetter = {
       user_id: user?.id || null,
       anonymous_id: user ? null : anonymousId,
@@ -71,56 +97,124 @@ export class LetterService {
 
     console.log('Inserting letter data:', newLetter)
 
-    const { data, error } = await supabase
-      .from('letters')
-      .insert(newLetter)
-      .select(`
-        *,
-        user:users(
-          id,
-          display_name,
-          avatar_url
-        )
-      `)
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('letters')
+        .insert(newLetter)
+        .select(`
+          *,
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
+        `)
+        .single()
 
-    if (error) {
-      console.error('创建Letter失败:', error)
-      throw new Error(`创建Letter失败: ${error.message}`)
+      if (error) {
+        console.error('Failed to create letter:', error)
+        
+        // 如果Supabase失败，使用localStorage作为fallback
+        console.warn('Supabase failed, falling back to localStorage')
+        
+        const fallbackLetter: Letter = {
+          id: linkId,
+          user_id: newLetter.user_id || undefined,
+          anonymous_id: newLetter.anonymous_id || undefined,
+          link_id: newLetter.link_id,
+          recipient_name: newLetter.recipient_name,
+          message: newLetter.message,
+          song_id: newLetter.song_id,
+          song_title: newLetter.song_title,
+          song_artist: newLetter.song_artist,
+          song_album_cover: newLetter.song_album_cover,
+          song_preview_url: newLetter.song_preview_url,
+          song_spotify_url: newLetter.song_spotify_url,
+          view_count: newLetter.view_count,
+          is_public: newLetter.is_public,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+        
+        // 保存到localStorage
+        const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+        existingLetters.push(fallbackLetter)
+        localStorage.setItem('letters', JSON.stringify(existingLetters))
+        
+        return fallbackLetter
+      }
+
+      return data
+    } catch (networkError) {
+      console.error('Network error, using localStorage fallback:', networkError)
+      
+      const fallbackLetter: Letter = {
+        id: linkId,
+        user_id: newLetter.user_id || undefined,
+        anonymous_id: newLetter.anonymous_id || undefined,
+        link_id: newLetter.link_id,
+        recipient_name: newLetter.recipient_name,
+        message: newLetter.message,
+        song_id: newLetter.song_id,
+        song_title: newLetter.song_title,
+        song_artist: newLetter.song_artist,
+        song_album_cover: newLetter.song_album_cover,
+        song_preview_url: newLetter.song_preview_url,
+        song_spotify_url: newLetter.song_spotify_url,
+        view_count: newLetter.view_count,
+        is_public: newLetter.is_public,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      // 保存到localStorage
+      const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+      existingLetters.push(fallbackLetter)
+      localStorage.setItem('letters', JSON.stringify(existingLetters))
+      
+      return fallbackLetter
     }
-
-    return data
   }
 
   // 根据linkId获取Letter
   async getLetterByLinkId(linkId: string): Promise<Letter | null> {
+    // 如果Supabase不可用，从localStorage获取
     if (!supabase) {
-      console.warn('数据库连接不可用')
-      return null
+      console.warn('Supabase not available, checking localStorage')
+      const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+      return existingLetters.find((letter: Letter) => letter.link_id === linkId) || null
     }
 
-    const { data, error } = await supabase
-      .from('letters')
-      .select(`
-        *,
-        user:users(
-          id,
-          display_name,
-          avatar_url
-        )
-      `)
-      .eq('link_id', linkId)
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('letters')
+        .select(`
+          *,
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
+        `)
+        .eq('link_id', linkId)
+        .single()
 
-    if (error) {
-      console.error('获取Letter失败:', error)
-      return null
+      if (error) {
+        console.error('Failed to get letter:', error)
+        // Fallback to localStorage
+        const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+        return existingLetters.find((letter: Letter) => letter.link_id === linkId) || null
+      }
+
+      // 增加浏览次数
+      await this.incrementViewCount(data.id)
+
+      return data
+    } catch (networkError) {
+      console.error('Network error, checking localStorage:', networkError)
+      const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+      return existingLetters.find((letter: Letter) => letter.link_id === linkId) || null
     }
-
-    // 增加浏览次数
-    await this.incrementViewCount(data.id)
-
-    return data
   }
 
   // 增加浏览次数
@@ -131,45 +225,88 @@ export class LetterService {
 
   // 获取用户的Letters
   async getUserLetters(limit: number = 10, offset: number = 0): Promise<Letter[]> {
-    if (!supabase) {
-      console.warn('数据库连接不可用')
-      return []
-    }
-
     const user = userService.getCurrentUser()
     const anonymousId = userService.getAnonymousId()
     
+    // 如果Supabase不可用，从localStorage获取
+    if (!supabase) {
+      console.warn('Supabase not available, checking localStorage')
+      const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+      
+      // 过滤用户的Letters
+      const userLetters = existingLetters.filter((letter: Letter) => {
+        if (user) {
+          return letter.user_id === user.id
+        } else {
+          return letter.anonymous_id === anonymousId
+        }
+      })
+      
+      // 按时间排序并分页
+      return userLetters
+        .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(offset, offset + limit)
+    }
+
     if (!user && !anonymousId) {
       return []
     }
 
-    let query = supabase
-      .from('letters')
-      .select(`
-        *,
-        user:users(
-          id,
-          display_name,
-          avatar_url
-        )
-      `)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+    try {
+      let query = supabase
+        .from('letters')
+        .select(`
+          *,
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
 
-    if (user) {
-      query = query.eq('user_id', user.id)
-    } else {
-      query = query.eq('anonymous_id', anonymousId)
+      if (user) {
+        query = query.eq('user_id', user.id)
+      } else {
+        query = query.eq('anonymous_id', anonymousId)
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Failed to get user letters:', error)
+        // Fallback to localStorage
+        const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+        const userLetters = existingLetters.filter((letter: Letter) => {
+          if (user) {
+            return letter.user_id === user.id
+          } else {
+            return letter.anonymous_id === anonymousId
+          }
+        })
+        
+        return userLetters
+          .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(offset, offset + limit)
+      }
+
+      return data || []
+    } catch (networkError) {
+      console.error('Network error, checking localStorage:', networkError)
+      const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+      const userLetters = existingLetters.filter((letter: Letter) => {
+        if (user) {
+          return letter.user_id === user.id
+        } else {
+          return letter.anonymous_id === anonymousId
+        }
+      })
+      
+      return userLetters
+        .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(offset, offset + limit)
     }
-
-    const { data, error } = await query
-
-    if (error) {
-      console.error('获取用户Letters失败:', error)
-      return []
-    }
-
-    return data || []
   }
 
   // 获取公开的Letters信息流

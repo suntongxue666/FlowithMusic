@@ -2461,7 +2461,7 @@ nav {
 }
 
 .error-modal-content h3 {
-  color: #dc3545;
+  color: #333;
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 1rem;
@@ -2474,7 +2474,7 @@ nav {
 }
 
 .error-modal-btn {
-  background: #dc3545;
+  background: #333;
   color: white;
   border: none;
   border-radius: 6px;
@@ -2486,7 +2486,7 @@ nav {
 }
 
 .error-modal-btn:hover {
-  background: #c82333;
+  background: #555;
 }
 
 @keyframes fadeIn {
