@@ -69,6 +69,8 @@ export class LetterService {
       is_public: true // 默认公开，后续可以添加隐私设置
     }
 
+    console.log('Inserting letter data:', newLetter)
+
     const { data, error } = await supabase
       .from('letters')
       .insert(newLetter)
@@ -84,7 +86,7 @@ export class LetterService {
 
     if (error) {
       console.error('创建Letter失败:', error)
-      throw new Error('创建Letter失败')
+      throw new Error(`创建Letter失败: ${error.message}`)
     }
 
     return data

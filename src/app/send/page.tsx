@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import SongSelector from '@/components/SongSelector'
@@ -8,6 +8,7 @@ import SpotifyEmbedPlayer from '@/components/SpotifyEmbedPlayer'
 import Toast from '@/components/Toast'
 import { SpotifyTrack } from '@/lib/spotify'
 import { letterService } from '@/lib/letterService'
+import { userService } from '@/lib/userService'
 
 export default function SendPage() {
   const router = useRouter()
@@ -16,25 +17,50 @@ export default function SendPage() {
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showToast, setShowToast] = useState(false)
+  const [showErrorModal, setShowErrorModal] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const [createdLetter, setCreatedLetter] = useState<any>(null)
+  const [userInitialized, setUserInitialized] = useState(false)
+
+  // 初始化用户
+  useEffect(() => {
+    const initUser = async () => {
+      try {
+        await userService.initializeUser()
+        setUserInitialized(true)
+      } catch (error) {
+        console.error('Failed to initialize user:', error)
+        setErrorMessage('Failed to initialize user session. Please refresh the page.')
+        setShowErrorModal(true)
+      }
+    }
+    
+    initUser()
+  }, [])
 
   const handleTrackSelect = (track: SpotifyTrack) => {
     setSelectedTrack(track)
   }
 
   const handleSubmit = async () => {
-    if (!selectedTrack || !recipient.trim() || !message.trim()) return
-
-    // 检查消息是否超过12个单词
-    const wordCount = message.trim().split(/\s+/).length
-    if (wordCount < 12) {
-      alert('Message must be at least 12 words long to be shared publicly.')
-      return
-    }
+    if (!selectedTrack || !recipient.trim() || !message.trim() || !userInitialized) return
 
     setIsSubmitting(true)
     
     try {
+      console.log('Creating letter with data:', {
+        to: recipient.trim(),
+        message: message.trim(),
+        song: {
+          id: selectedTrack.id,
+          title: selectedTrack.name,
+          artist: selectedTrack.artists[0]?.name || 'Unknown Artist',
+          albumCover: selectedTrack.album.images[0]?.url || '',
+          previewUrl: selectedTrack.preview_url || undefined,
+          spotifyUrl: selectedTrack.external_urls.spotify
+        }
+      })
+
       // Save to Supabase using letterService
       const newLetter = await letterService.createLetter({
         to: recipient.trim(),
@@ -49,6 +75,7 @@ export default function SendPage() {
         }
       })
 
+      console.log('Letter created successfully:', newLetter)
       setCreatedLetter(newLetter)
 
       // Show toast
@@ -61,7 +88,9 @@ export default function SendPage() {
 
     } catch (error) {
       console.error('Failed to submit:', error)
-      alert('Failed to create letter. Please try again.')
+      const errorMsg = error instanceof Error ? error.message : 'Failed to create letter. Please try again.'
+      setErrorMessage(`⚠️ ${errorMsg}`)
+      setShowErrorModal(true)
     } finally {
       setIsSubmitting(false)
     }
@@ -71,8 +100,13 @@ export default function SendPage() {
     setShowToast(false)
   }
 
-  // Check if all fields are filled
-  const isFormComplete = recipient.trim() && message.trim() && selectedTrack
+  const handleErrorModalClose = () => {
+    setShowErrorModal(false)
+    setErrorMessage('')
+  }
+
+  // Check if all fields are filled and user is initialized
+  const isFormComplete = recipient.trim() && message.trim() && selectedTrack && userInitialized
 
   return (
     <main>
@@ -133,6 +167,25 @@ export default function SendPage() {
         onClose={handleToastClose}
         duration={2000}
       />
+
+      {/* Error Modal */}
+      {showErrorModal && (
+        <div className="error-modal-overlay" onClick={handleErrorModalClose}>
+          <div className="error-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="error-modal-content">
+              <div className="error-icon">⚠️</div>
+              <h3>Error</h3>
+              <p>{errorMessage}</p>
+              <button 
+                className="error-modal-btn"
+                onClick={handleErrorModalClose}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
