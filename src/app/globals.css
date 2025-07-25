@@ -560,11 +560,11 @@ nav {
   border-bottom: 1px solid #f0f0f0;
   transition: all 0.2s ease;
   background: linear-gradient(135deg, 
-    rgba(255, 45, 85, 0.3) 0%, 
-    rgba(255, 204, 0, 0.3) 25%, 
-    rgba(52, 199, 89, 0.3) 50%, 
-    rgba(0, 122, 255, 0.3) 75%, 
-    rgba(175, 82, 222, 0.3) 100%
+    rgba(99, 102, 241, 0.15) 0%, 
+    rgba(139, 92, 246, 0.15) 25%, 
+    rgba(59, 130, 246, 0.15) 50%, 
+    rgba(16, 185, 129, 0.15) 75%, 
+    rgba(245, 158, 11, 0.15) 100%
   );
   margin-bottom: 0.5rem;
   border-radius: 8px;
@@ -573,11 +573,11 @@ nav {
 
 .track-item:hover {
   background: linear-gradient(135deg, 
-    rgba(255, 45, 85, 0.4) 0%, 
-    rgba(255, 204, 0, 0.4) 25%, 
-    rgba(52, 199, 89, 0.4) 50%, 
-    rgba(0, 122, 255, 0.4) 75%, 
-    rgba(175, 82, 222, 0.4) 100%
+    rgba(99, 102, 241, 0.25) 0%, 
+    rgba(139, 92, 246, 0.25) 25%, 
+    rgba(59, 130, 246, 0.25) 50%, 
+    rgba(16, 185, 129, 0.25) 75%, 
+    rgba(245, 158, 11, 0.25) 100%
   );
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -1924,6 +1924,13 @@ nav {
   margin: 1rem 0;
   display: flex;
   justify-content: center;
+}
+
+/* H5 Letter Player Spacing */
+@media (max-width: 768px) {
+  .letter-player {
+    margin: 0.5rem 0;
+  }
 }
 
 /* Footer Styles */
