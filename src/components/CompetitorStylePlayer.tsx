@@ -44,52 +44,19 @@ export default function CompetitorStylePlayer({ track }: CompetitorStylePlayerPr
 
   return (
     <div className="competitor-player-container">
-      {/* 主播放器 - 使用竞品可能采用的大尺寸播放器 */}
+      {/* 横向大播放器 */}
       <div className="main-player">
         <iframe
           style={{ borderRadius: '12px' }}
-          src={embedUrls.enhanced}
+          src={embedUrls.compact}
           width="100%"
-          height="380"
+          height="152"
           frameBorder="0"
           allowTransparency={true}
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           loading="lazy"
           title={`${track.name} by ${track.artists[0]?.name}`}
         />
-      </div>
-
-      {/* 备用播放器 - 如果主播放器不工作 */}
-      <div className="fallback-player" style={{ display: 'none' }}>
-        <iframe
-          style={{ borderRadius: '12px' }}
-          src={embedUrls.full}
-          width="100%"
-          height="352"
-          frameBorder="0"
-          allowTransparency={true}
-          allow="encrypted-media; fullscreen"
-          loading="lazy"
-          title={`${track.name} by ${track.artists[0]?.name} (Fallback)`}
-        />
-      </div>
-
-      {/* 直接Spotify链接作为最后备用方案 */}
-      <div className="spotify-link-container">
-        <a 
-          href={track.external_urls?.spotify} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="open-spotify-btn"
-        >
-          <img 
-            src="https://open.spotifycdn.com/cdn/images/favicon.0f31d2ea.ico" 
-            alt="Spotify" 
-            width="16" 
-            height="16"
-          />
-          在 Spotify 中打开
-        </a>
       </div>
     </div>
   )

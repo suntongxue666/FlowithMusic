@@ -16,7 +16,7 @@ export default function Header({ currentPage }: HeaderProps) {
 
   return (
     <header>
-      <div className="logo">
+      <Link href="/" className="logo">
         <img 
           src="https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon//FlowtithMusic-100.png" 
           alt="FlowithMusic" 
@@ -24,7 +24,7 @@ export default function Header({ currentPage }: HeaderProps) {
           height={32}
         />
         FlowithMusic
-      </div>
+      </Link>
       
       {/* Desktop Navigation */}
       <nav className="desktop-nav">

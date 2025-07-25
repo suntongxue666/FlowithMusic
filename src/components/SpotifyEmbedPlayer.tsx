@@ -42,11 +42,6 @@ export default function SpotifyEmbedPlayer({ track }: SpotifyEmbedPlayerProps) {
         allow="encrypted-media"
         title={`${track.name} by ${track.artists[0]?.name}`}
       />
-      
-      <div className="embed-info">
-        <div className="embed-track-name">{track.name}</div>
-        <div className="embed-track-artist">{track.artists[0]?.name}</div>
-      </div>
     </div>
   )
 }
