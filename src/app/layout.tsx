@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { UserProvider } from '@/contexts/UserContext'
 
 export const metadata: Metadata = {
   title: 'FlowithMagic - Send the song, Connect with Hearts Through Music',
@@ -32,7 +33,9 @@ export default function RootLayout({
         />
       </head>
       <body>
-        {children}
+        <UserProvider>
+          {children}
+        </UserProvider>
       </body>
     </html>
   )
