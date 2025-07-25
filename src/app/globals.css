@@ -1101,6 +1101,148 @@ nav {
   line-height: 1.5;
 }
 
+/* Spotify播放器fallback样式 */
+.spotify-fallback {
+  background: linear-gradient(135deg, #1DB954, #1ED760);
+  border-radius: 12px;
+  padding: 1.5rem;
+  color: white;
+  text-align: center;
+}
+
+.spotify-fallback.large {
+  padding: 2rem;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fallback-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.fallback-content.large {
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.fallback-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.fallback-cover {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.fallback-cover.large {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+}
+
+.fallback-info {
+  flex: 1;
+  text-align: left;
+}
+
+.fallback-info .track-name {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.fallback-info .track-name.large {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.fallback-info .track-artist {
+  opacity: 0.9;
+  font-size: 0.9rem;
+}
+
+.fallback-info .track-artist.large {
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.fallback-info .track-album {
+  opacity: 0.7;
+  font-size: 0.8rem;
+}
+
+.fallback-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.spotify-open-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.spotify-open-btn.large {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  gap: 0.75rem;
+}
+
+.spotify-open-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.fallback-note {
+  opacity: 0.8;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .fallback-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .fallback-info {
+    text-align: center;
+  }
+  
+  .spotify-fallback.large {
+    padding: 1.5rem;
+    min-height: 180px;
+  }
+  
+  .fallback-content.large {
+    gap: 1rem;
+  }
+}
+
 /* Spotify Embed Player Styles */
 .spotify-embed-container {
   background: #f9f9f9;
