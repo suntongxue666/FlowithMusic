@@ -44,6 +44,10 @@ export class LetterService {
 
   // 创建Letter
   async createLetter(letterData: CreateLetterData): Promise<Letter> {
+    if (!supabase) {
+      throw new Error('数据库连接不可用')
+    }
+
     const user = userService.getCurrentUser()
     const anonymousId = userService.getAnonymousId()
     
@@ -88,6 +92,11 @@ export class LetterService {
 
   // 根据linkId获取Letter
   async getLetterByLinkId(linkId: string): Promise<Letter | null> {
+    if (!supabase) {
+      console.warn('数据库连接不可用')
+      return null
+    }
+
     const { data, error } = await supabase
       .from('letters')
       .select(`
@@ -114,11 +123,17 @@ export class LetterService {
 
   // 增加浏览次数
   private async incrementViewCount(letterId: string): Promise<void> {
+    if (!supabase) return
     await supabase.rpc('increment_view_count', { letter_id: letterId })
   }
 
   // 获取用户的Letters
   async getUserLetters(limit: number = 10, offset: number = 0): Promise<Letter[]> {
+    if (!supabase) {
+      console.warn('数据库连接不可用')
+      return []
+    }
+
     const user = userService.getCurrentUser()
     const anonymousId = userService.getAnonymousId()
     
@@ -165,6 +180,11 @@ export class LetterService {
       timeRange?: 'day' | 'week' | 'month' | 'all'
     }
   ): Promise<Letter[]> {
+    if (!supabase) {
+      console.warn('数据库连接不可用')
+      return []
+    }
+
     let query = supabase
       .from('letters')
       .select(`
@@ -225,6 +245,11 @@ export class LetterService {
     limit: number = 20,
     offset: number = 0
   ): Promise<Letter[]> {
+    if (!supabase) {
+      console.warn('数据库连接不可用')
+      return []
+    }
+
     const { data, error } = await supabase
       .from('letters')
       .select(`
@@ -250,6 +275,11 @@ export class LetterService {
 
   // 获取热门艺术家列表
   async getPopularArtists(limit: number = 10): Promise<{ artist: string; count: number }[]> {
+    if (!supabase) {
+      console.warn('数据库连接不可用')
+      return []
+    }
+
     const { data, error } = await supabase
       .from('letters')
       .select('song_artist')
@@ -276,6 +306,11 @@ export class LetterService {
 
   // 删除Letter（仅限创建者）
   async deleteLetter(letterId: string): Promise<boolean> {
+    if (!supabase) {
+      console.warn('数据库连接不可用')
+      return false
+    }
+
     const user = userService.getCurrentUser()
     const anonymousId = userService.getAnonymousId()
 

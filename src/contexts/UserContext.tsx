@@ -48,6 +48,11 @@ export function UserProvider({ children }: UserProviderProps) {
 
   // 监听认证状态变化
   useEffect(() => {
+    if (!supabase) {
+      console.warn('Supabase not available, skipping auth state listener')
+      return
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
@@ -104,6 +109,11 @@ export function UserProvider({ children }: UserProviderProps) {
 
   const refreshUser = async () => {
     try {
+      if (!supabase) {
+        console.warn('Supabase not available, cannot refresh user')
+        return
+      }
+
       const currentUser = userService.getCurrentUser()
       if (currentUser) {
         // 从数据库重新获取最新用户信息
