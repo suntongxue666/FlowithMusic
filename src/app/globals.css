@@ -553,8 +553,7 @@ nav {
 
 .track-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   padding: 0.75rem;
   cursor: pointer;
   border-bottom: 1px solid #f0f0f0;
@@ -581,6 +580,42 @@ nav {
   );
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.track-item .track-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.track-spotify-link {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.spotify-link-full {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(29, 185, 84, 0.1);
+  border-radius: 20px;
+  text-decoration: none;
+  color: #1DB954;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.spotify-link-full:hover {
+  background: rgba(29, 185, 84, 0.2);
+  text-decoration: none;
+  color: #1DB954;
+  transform: translateY(-1px);
 }
 
 .track-item:last-child {
@@ -1472,6 +1507,34 @@ nav {
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
+/* H5 Letter Page Optimizations */
+@media (max-width: 768px) {
+  .letter-container {
+    margin: 1rem auto;
+    padding: 0 1rem;
+  }
+  
+  .letter-content {
+    padding: 1.5rem;
+    border-radius: 8px;
+  }
+  
+  .letter-header h2 {
+    font-size: 1.8rem;
+    line-height: 1.1;
+  }
+  
+  .letter-subtitle {
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+  
+  .message-title {
+    font-size: 1.1rem;
+    line-height: 1.2;
+  }
+}
+
 .letter-header {
   text-align: center;
   margin-bottom: 2rem;
@@ -1479,14 +1542,15 @@ nav {
 
 .letter-header h2 {
   font-size: 2rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   color: #333;
+  line-height: 1.2;
 }
 
 .letter-subtitle {
   color: #666;
   font-size: 1.1rem;
-  line-height: 1.5;
+  line-height: 1.25;
 }
 
 .letter-player {
@@ -1523,10 +1587,12 @@ nav {
   padding: 1rem 0;
   font-style: normal;
   color: #333;
+  line-height: 1.2;
 }
 
 .message-content.handwritten.large-text {
   font-size: 2.4rem;
+  line-height: 1.2;
 }
 
 .handwritten-greeting {
@@ -1537,7 +1603,8 @@ nav {
 
 .message-title {
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.25;
 }
 
 .centered-date {
@@ -1609,6 +1676,232 @@ nav {
   padding: 2rem;
   font-size: 1.2rem;
   color: #666;
+}
+
+/* Horizontal Player Styles */
+.horizontal-player {
+  width: 100%;
+  max-width: 500px;
+  margin: 1rem auto;
+}
+
+.player-card {
+  background: linear-gradient(135deg, #8B4513, #A0522D);
+  border-radius: 16px;
+  padding: 1.5rem;
+  color: white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.player-album-cover {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.player-track-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-track-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-track-artist {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spotify-icon-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.spotify-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.play-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s;
+}
+
+.play-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.play-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.progress-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.time-display {
+  font-size: 0.8rem;
+  font-weight: 500;
+  min-width: 35px;
+  text-align: center;
+}
+
+.progress-bar-container {
+  flex: 1;
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+.progress-bar-bg {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: white;
+  border-radius: 2px;
+  transition: width 0.1s ease;
+}
+
+.spotify-play-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(29, 185, 84, 0.2);
+  border: 1px solid rgba(29, 185, 84, 0.3);
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  color: #1DB954;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.spotify-play-btn:hover {
+  background: rgba(29, 185, 84, 0.3);
+  border-color: rgba(29, 185, 84, 0.5);
+}
+
+.no-preview-controls {
+  display: flex;
+  justify-content: center;
+}
+
+.spotify-play-btn.full-width {
+  width: 100%;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+}
+
+/* Mobile responsive for horizontal player */
+@media (max-width: 768px) {
+  .player-card {
+    padding: 1rem;
+  }
+  
+  .player-header {
+    gap: 0.75rem;
+  }
+  
+  .player-album-cover {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .player-track-title {
+    font-size: 1rem;
+  }
+  
+  .player-track-artist {
+    font-size: 0.85rem;
+  }
+  
+  .player-controls {
+    gap: 0.75rem;
+  }
+  
+  .progress-section {
+    gap: 0.5rem;
+  }
+  
+  .time-display {
+    font-size: 0.75rem;
+    min-width: 30px;
+  }
+  
+  .spotify-play-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+  
+  .spotify-play-btn span {
+    display: none;
+  }
+  
+  .spotify-play-btn.full-width span {
+    display: inline;
+  }
 }
 
 /* Additional Mobile Responsive Styles */

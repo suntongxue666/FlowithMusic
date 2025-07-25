@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Header from '@/components/Header'
-import CompetitorStylePlayer from '@/components/CompetitorStylePlayer'
+import HorizontalPlayer from '@/components/HorizontalPlayer'
 import { letterStorage } from '@/lib/letterStorage'
 import type { MusicLetter } from '@/lib/letterStorage'
 
@@ -59,7 +59,7 @@ export default function LetterPage() {
           </div>
           
           <div className="letter-player">
-            <CompetitorStylePlayer 
+            <HorizontalPlayer 
               track={{
                 id: letter.song.id,
                 name: letter.song.title,
