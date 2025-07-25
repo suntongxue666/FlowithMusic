@@ -235,10 +235,17 @@ export class LetterService {
     const user = userService.getCurrentUser()
     const anonymousId = userService.getAnonymousId()
     
+    console.log('getUserLetters called with:', {
+      user: user?.id,
+      anonymousId,
+      supabaseAvailable: !!supabase
+    })
+    
     // 如果Supabase不可用，从localStorage获取
     if (!supabase) {
       console.warn('Supabase not available, checking localStorage')
       const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+      console.log('Found letters in localStorage:', existingLetters.length)
       
       // 过滤用户的Letters
       const userLetters = existingLetters.filter((letter: Letter) => {
@@ -249,6 +256,8 @@ export class LetterService {
         }
       })
       
+      console.log('Filtered user letters:', userLetters.length)
+      
       // 按时间排序并分页
       return userLetters
         .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -256,6 +265,7 @@ export class LetterService {
     }
 
     if (!user && !anonymousId) {
+      console.warn('No user or anonymous ID available')
       return []
     }
 
