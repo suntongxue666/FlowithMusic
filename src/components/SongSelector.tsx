@@ -236,6 +236,7 @@ export default function SongSelector({ onSelect, selectedTrack }: SongSelectorPr
                     <span>在Spotify中播放</span>
                   </a>
                 </div>
+              </div>
               ))}
             </div>
           )}
