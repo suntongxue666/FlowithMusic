@@ -29,7 +29,9 @@ export default function Toast({ message, isVisible, onClose, duration = 2000 }: 
           <div className="toast-icon">💌</div>
           <div className="toast-message">
             {message.split('\\n').map((line, index) => (
-              <div key={index}>{line}</div>
+              <div key={index} className={index === 0 ? 'toast-first-line' : 'toast-other-line'}>
+                {line}
+              </div>
             ))}
           </div>
         </div>

@@ -318,7 +318,7 @@ nav {
 
 .card .song .play-btn {
   position: absolute;
-  right: 0.75rem;
+  right: 1rem;
   font-size: 1.2rem;
 }
 
@@ -1034,13 +1034,23 @@ nav {
 
 .toast-icon {
   font-size: 3rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .toast-message {
   color: #333;
   line-height: 1.5;
   font-size: 1rem;
+}
+
+.toast-first-line {
+  font-size: 1.125rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.toast-other-line {
+  line-height: 1.5;
 }
 
 /* Spotify Embed Player Styles */
