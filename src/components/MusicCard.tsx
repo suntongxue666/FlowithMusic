@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 
 interface MusicCardProps {
   to: string
@@ -8,11 +9,12 @@ interface MusicCardProps {
     artist: string
     albumCover: string
   }
+  linkId?: string
 }
 
-export default function MusicCard({ to, message, song }: MusicCardProps) {
-  return (
-    <div className="card">
+export default function MusicCard({ to, message, song, linkId }: MusicCardProps) {
+  const cardContent = (
+    <>
       <div className="to">To: {to}</div>
       <div className="message">{message}</div>
       <div className="song">
@@ -32,6 +34,22 @@ export default function MusicCard({ to, message, song }: MusicCardProps) {
           </svg>
         </div>
       </div>
+    </>
+  )
+
+  if (linkId) {
+    return (
+      <Link href={`/letter/${linkId}`} className="card-link">
+        <div className="card">
+          {cardContent}
+        </div>
+      </Link>
+    )
+  }
+
+  return (
+    <div className="card">
+      {cardContent}
     </div>
   )
 }

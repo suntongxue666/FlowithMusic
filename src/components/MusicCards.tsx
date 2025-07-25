@@ -79,7 +79,8 @@ export default function MusicCards() {
       title: letter.song.title,
       artist: letter.song.artist,
       albumCover: letter.song.albumCover
-    }
+    },
+    linkId: letter.linkId
   })
 
   // Use user letters if available, otherwise fall back to sample cards
@@ -105,6 +106,7 @@ export default function MusicCards() {
           to={card.to}
           message={card.message}
           song={card.song}
+          linkId={(card as any).linkId}
         />
       ))}
     </section>

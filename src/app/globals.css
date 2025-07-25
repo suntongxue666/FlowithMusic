@@ -222,6 +222,17 @@ nav {
   justify-content: space-between;
   width: 360px;
   height: 270px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.card-link .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 
 .card .to {
@@ -603,14 +614,14 @@ nav {
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
-  background: rgba(0, 0, 0, 0.8);
+  background: transparent;
   border-radius: 50%;
   transition: background-color 0.2s;
   text-decoration: none;
 }
 
 .spotify-link:hover {
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(29, 185, 84, 0.1);
 }
 
 .loading, .no-results {
