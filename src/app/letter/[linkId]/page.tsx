@@ -16,7 +16,7 @@ export default function LetterPage() {
     const loadLetter = async () => {
       if (typeof linkId === 'string') {
         try {
-          console.log('Loading letter with linkId:', linkId)
+          console.log('🔍 Loading letter with linkId:', linkId)
           
           // 1. 快速检查localStorage（本地数据） - 立即显示
           const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
@@ -38,15 +38,40 @@ export default function LetterPage() {
             return
           }
 
-          // 3. 如果本地有但数据库没有，仍然显示本地数据
+          // 3. 尝试从API直接获取（包括共享存储）
+          console.log('🔍 Trying direct API fetch for linkId:', linkId)
+          try {
+            const apiResponse = await fetch(`/api/letters/${linkId}`)
+            if (apiResponse.ok) {
+              const apiLetter = await apiResponse.json()
+              console.log('✅ Found letter via direct API')
+              setLetter(apiLetter)
+              setLoading(false)
+              return
+            } else {
+              console.log('❌ API returned:', apiResponse.status, await apiResponse.text())
+            }
+          } catch (apiError) {
+            console.error('API fetch error:', apiError)
+          }
+
+          // 4. 如果本地有但数据库和API都没有，仍然显示本地数据
           if (localLetter) {
-            console.log('✅ Using local letter as fallback')
+            console.log('✅ Using local letter as final fallback')
             setLetter(localLetter)
             setLoading(false)
             return
           }
 
-          // 4. 如果都没找到，显示未找到
+          // 5. 最终检查：尝试从所有用户的localStorage检查（调试用）
+          console.log('🔍 Final check: letter not found anywhere')
+          console.log('Available localStorage letters:', localLetters.map((l: any) => ({
+            linkId: l.link_id,
+            recipient: l.recipient_name,
+            created: l.created_at
+          })))
+
+          // 6. 如果都没找到，显示未找到
           console.log('❌ Letter not found anywhere:', linkId)
           setLetter(null)
         } catch (error) {

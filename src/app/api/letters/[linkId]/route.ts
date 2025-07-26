@@ -1,25 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// 临时的内存存储（生产环境中应该使用真正的数据库）
-const letters = new Map()
-
-// 简单的内存存储，用于跨请求共享数据
-class ServerStorage {
-  private static letters = new Map()
-  
-  static set(key: string, value: any) {
-    this.letters.set(key, value)
-  }
-  
-  static get(key: string) {
-    return this.letters.get(key)
-  }
-  
-  static has(key: string) {
-    return this.letters.has(key)
-  }
-}
-
+// 使用浏览器存储API作为跨用户数据共享
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ linkId: string }> }
@@ -42,21 +23,26 @@ export async function GET(
         }
       }
     } catch (supabaseError) {
-      console.warn('Supabase failed, trying fallback:', supabaseError)
+      console.warn('Supabase failed, trying browser storage fallback:', supabaseError)
     }
     
-    // 尝试从服务器内存存储获取
-    if (ServerStorage.has(linkId)) {
-      const letter = ServerStorage.get(linkId)
-      console.log('Letter found in server storage:', linkId)
-      return NextResponse.json(letter)
+    // 如果Supabase失败，尝试从浏览器存储API获取
+    try {
+      const browserStorageResponse = await fetch(`${request.nextUrl.origin}/api/browser-storage/${linkId}`)
+      if (browserStorageResponse.ok) {
+        const data = await browserStorageResponse.json()
+        console.log('Letter found in browser storage:', linkId)
+        return NextResponse.json(data)
+      }
+    } catch (browserError) {
+      console.warn('Browser storage fetch failed:', browserError)
     }
 
     // 如果都没找到，返回404
     return NextResponse.json(
       { 
         error: 'Letter not found',
-        message: 'This letter might not be available due to technical issues. Please ask the sender to check the link.',
+        message: 'This letter might not be available. Please ask the sender to check the link.',
         linkId 
       },
       { status: 404 }
@@ -96,14 +82,35 @@ export async function POST(
       console.warn('Supabase save failed:', supabaseError)
     }
     
-    // 如果Supabase失败，保存到服务器内存存储
-    const letter = { ...letterData, link_id: linkId, created_at: new Date().toISOString() }
-    ServerStorage.set(linkId, letter)
-    console.log('Letter saved to server storage:', linkId)
+    // 如果Supabase失败，保存到浏览器存储API
+    try {
+      const letter = { ...letterData, link_id: linkId, created_at: new Date().toISOString() }
+      const browserStorageResponse = await fetch(`${request.nextUrl.origin}/api/browser-storage/${linkId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(letter)
+      })
+      
+      if (browserStorageResponse.ok) {
+        const savedData = await browserStorageResponse.json()
+        console.log('Letter saved to browser storage:', linkId)
+        return NextResponse.json({ 
+          ...savedData,
+          fallback: true 
+        })
+      }
+    } catch (browserError) {
+      console.error('Browser storage save failed:', browserError)
+    }
     
+    // 最后的fallback - 返回数据但标记为临时
+    const letter = { ...letterData, link_id: linkId, created_at: new Date().toISOString() }
     return NextResponse.json({ 
       ...letter,
-      fallback: true 
+      temporary: true,
+      message: 'Letter saved temporarily. Please try again later for permanent storage.'
     })
   } catch (error) {
     console.error('API error:', error)
