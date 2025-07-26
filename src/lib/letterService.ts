@@ -209,9 +209,30 @@ export class LetterService {
   // 清除公开Letters缓存
   private clearPublicLettersCache(): void {
     const keysToCheck = [
-      'public_letters_limit:20|offset:0|sortBy:created_at',
-      'public_letters_limit:6|offset:0|sortBy:created_at',
-      // 可以添加其他常用的组合
+      // 首页MusicCards使用的缓存键 - getPublicLetters(20, 0, 'created_at')
+      cacheManager.generateKey('public_letters', {
+        limit: 20,
+        offset: 0,
+        sortBy: 'created_at',
+        artist: 'none',
+        timeRange: 'all'
+      }),
+      // Explore页面可能使用的缓存键
+      cacheManager.generateKey('public_letters', {
+        limit: 6,
+        offset: 0,
+        sortBy: 'created_at',
+        artist: 'none',
+        timeRange: 'all'
+      }),
+      // 其他常用组合
+      cacheManager.generateKey('public_letters', {
+        limit: 10,
+        offset: 0,
+        sortBy: 'created_at',
+        artist: 'none',
+        timeRange: 'all'
+      })
     ]
     
     keysToCheck.forEach(key => {

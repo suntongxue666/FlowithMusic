@@ -1,16 +1,16 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
   "/api/spotify/search/route": "app/api/spotify/search/route.js",
   "/api/spotify/recommendations/route": "app/api/spotify/recommendations/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/sitemap.xml/route": "app/sitemap.xml/route.js",
-  "/debug-letters/page": "app/debug-letters/page.js",
   "/auth/callback/page": "app/auth/callback/page.js",
-  "/explore/page": "app/explore/page.js",
   "/page": "app/page.js",
-  "/send/page": "app/send/page.js",
   "/history/page": "app/history/page.js",
+  "/debug-letters/page": "app/debug-letters/page.js",
   "/privacy/page": "app/privacy/page.js",
   "/letter/[linkId]/page": "app/letter/[linkId]/page.js",
   "/terms/page": "app/terms/page.js",
-  "/test-auth/page": "app/test-auth/page.js"
+  "/test-auth/page": "app/test-auth/page.js",
+  "/send/page": "app/send/page.js",
+  "/explore/page": "app/explore/page.js"
 }

@@ -88,10 +88,8 @@ export default function SendPage() {
       // Show toast
       setShowToast(true)
 
-      // Wait for toast to show, then redirect
-      setTimeout(() => {
-        router.push('/history')
-      }, 2500) // Wait a bit longer than toast duration
+      // Immediately redirect without waiting for toast
+      router.push('/history')
 
     } catch (error) {
       console.error('Failed to submit:', error)
