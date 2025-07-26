@@ -682,6 +682,86 @@ export class LetterService {
       return `${baseUrl}/letter/${letter.link_id}`
     }
   }
+
+  // 根据linkId获取单个Letter
+  async getLetterByLinkId(linkId: string): Promise<Letter | null> {
+    if (!linkId) {
+      console.error('linkId is required')
+      return null
+    }
+
+    // 生成缓存键
+    const cacheKey = cacheManager.generateKey('letter_by_link_id', { linkId })
+    
+    // 尝试从缓存获取
+    const cachedData = cacheManager.get(cacheKey)
+    if (cachedData) {
+      console.log('Using cached letter:', linkId)
+      return cachedData
+    }
+
+    if (!supabase) {
+      console.warn('数据库连接不可用，尝试从简单存储获取')
+      
+      // 如果Supabase不可用，尝试从简单存储获取
+      try {
+        const letter = await simpleStorage.getLetter(linkId)
+        if (letter) {
+          console.log('Found letter in simple storage:', linkId)
+          // 缓存结果（缓存5分钟）
+          cacheManager.set(cacheKey, letter, 5 * 60 * 1000)
+          return letter
+        }
+      } catch (error) {
+        console.error('Failed to get letter from simple storage:', error)
+      }
+      
+      return null
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('letters')
+        .select(`
+          *,
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
+        `)
+        .eq('link_id', linkId)
+        .single()
+
+      if (error) {
+        console.error('Failed to get letter by linkId:', error)
+        
+        // 如果Supabase查询失败，尝试从简单存储获取
+        try {
+          const letter = await simpleStorage.getLetter(linkId)
+          if (letter) {
+            console.log('Found letter in simple storage as fallback:', linkId)
+            return letter
+          }
+        } catch (fallbackError) {
+          console.error('Fallback storage also failed:', fallbackError)
+        }
+        
+        return null
+      }
+
+      const letter = data as Letter
+      
+      // 缓存结果（缓存5分钟）
+      cacheManager.set(cacheKey, letter, 5 * 60 * 1000)
+      
+      console.log('Successfully retrieved letter from database:', linkId)
+      return letter
+    } catch (error) {
+      console.error('Database query error:', error)
+      return null
+    }
+  }
 }
 
 // 导出单例实例

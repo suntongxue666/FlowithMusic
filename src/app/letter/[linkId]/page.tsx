@@ -43,8 +43,18 @@ export default function LetterPage() {
             return
           }
 
-          // 3. 如果都没找到，显示未找到
-          console.log('❌ Letter not found:', linkId)
+          // 3. 从数据库获取Letter（最重要的步骤）
+          console.log('🔍 Searching in database for linkId:', linkId)
+          const databaseLetter = await letterService.getLetterByLinkId(linkId)
+          if (databaseLetter) {
+            console.log('✅ Found letter in database')
+            setLetter(databaseLetter)
+            setLoading(false)
+            return
+          }
+
+          // 4. 如果都没找到，显示未找到
+          console.log('❌ Letter not found anywhere:', linkId)
           setLetter(null)
         } catch (error) {
           console.error('Failed to load letter:', error)
