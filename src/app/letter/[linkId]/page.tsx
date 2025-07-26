@@ -16,10 +16,33 @@ export default function LetterPage() {
     const loadLetter = async () => {
       if (typeof linkId === 'string') {
         try {
-          const foundLetter = await letterService.getLetterByLinkId(linkId)
-          setLetter(foundLetter)
+          // 1. 先尝试从localStorage获取数据（本地优先）
+          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+          const localLetter = localLetters.find((l: any) => l.link_id === linkId)
+          
+          if (localLetter) {
+            console.log('Found letter in localStorage:', localLetter.link_id)
+            setLetter(localLetter)
+            setLoading(false) // 立即显示本地数据
+          }
+
+          // 2. 然后异步从远程获取最新数据
+          const remoteLetter = await letterService.getLetterByLinkId(linkId)
+          if (remoteLetter) {
+            console.log('Found letter in remote database')  
+            setLetter(remoteLetter) // 用远程数据覆盖（如果有的话）
+          } else if (!localLetter) {
+            // 如果远程和本地都没有，才显示未找到
+            setLetter(null)
+          }
         } catch (error) {
           console.error('Failed to load letter:', error)
+          // 如果远程加载失败，但有本地数据，就保持本地数据
+          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+          const localLetter = localLetters.find((l: any) => l.link_id === linkId)
+          if (!localLetter) {
+            setLetter(null)
+          }
         }
       }
       setLoading(false)

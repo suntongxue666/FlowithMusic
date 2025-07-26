@@ -18,13 +18,45 @@ export default function HistoryPage() {
   useEffect(() => {
     const loadUserLetters = async () => {
       try {
-        setLoading(true)
-        console.log('Loading user letters, isAuthenticated:', isAuthenticated)
-        const userLetters = await letterService.getUserLetters(50, 0)
-        console.log('Loaded letters:', userLetters.length)
-        setLetters(userLetters)
+        // 1. 立即加载本地数据，显示给用户
+        const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+        if (localLetters.length > 0) {
+          console.log('Loading local letters first:', localLetters.length)
+          setLetters(localLetters.reverse()) // 最新的在前面
+          setLoading(false) // 立即停止loading
+        }
+
+        // 2. 然后异步加载远程数据并合并
+        console.log('Loading remote letters, isAuthenticated:', isAuthenticated)
+        const remoteLetters = await letterService.getUserLetters(50, 0)
+        console.log('Loaded remote letters:', remoteLetters.length)
+
+        // 3. 合并本地和远程数据，去重
+        const allLettersMap = new Map()
+        
+        // 先添加远程数据（作为权威数据源）
+        remoteLetters.forEach(letter => {
+          allLettersMap.set(letter.link_id, letter)
+        })
+        
+        // 再添加本地数据（如果远程没有的话，可能是刚创建的）
+        localLetters.forEach((letter: any) => {
+          if (!allLettersMap.has(letter.link_id)) {
+            allLettersMap.set(letter.link_id, letter)
+          }
+        })
+        
+        const mergedLetters = Array.from(allLettersMap.values())
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        
+        setLetters(mergedLetters)
       } catch (error) {
         console.error('Failed to load letters:', error)
+        // 如果远程加载失败，至少显示本地数据
+        const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+        if (localLetters.length > 0) {
+          setLetters(localLetters.reverse())
+        }
       } finally {
         setLoading(false)
       }
