@@ -94,10 +94,22 @@
       "namedRegex": "^/history(?:/)?$"
     },
     {
+      "page": "/migrate-data",
+      "regex": "^/migrate\\-data(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/migrate\\-data(?:/)?$"
+    },
+    {
       "page": "/privacy",
       "regex": "^/privacy(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/privacy(?:/)?$"
+    },
+    {
+      "page": "/reset-data",
+      "regex": "^/reset\\-data(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/reset\\-data(?:/)?$"
     },
     {
       "page": "/send",

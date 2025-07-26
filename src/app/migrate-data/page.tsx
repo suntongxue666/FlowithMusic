@@ -26,7 +26,7 @@ export default function MigrateUserDataPage() {
       }
       
       // 3. 分析现有的Anonymous IDs
-      const anonymousIds = [...new Set(localLetters.map((letter: any) => letter.anonymous_id).filter(Boolean))]
+      const anonymousIds = Array.from(new Set(localLetters.map((letter: any) => letter.anonymous_id).filter(Boolean)))
       setResult(prev => prev + `发现的Anonymous IDs:\n${anonymousIds.map(id => `- ${id}`).join('\n')}\n\n`)
       
       // 4. 统计每个ID的Letters数量

@@ -25,22 +25,51 @@ export default function HistoryPage() {
           anonymousId: user?.anonymous_id
         })
 
-        // 1. 立即加载本地数据，显示给用户
+        // 1. 智能加载本地数据 - 更宽泛的匹配策略
         const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
         if (localLetters.length > 0) {
-          console.log('💾 Loading local letters first:', localLetters.length)
+          console.log('💾 Found local letters:', localLetters.length)
           
-          // 过滤出属于当前用户的Letters
-          const userLocalLetters = localLetters.filter((letter: any) => {
-            if (user) {
-              // 已登录用户：匹配user_id或anonymous_id
-              return letter.user_id === user.id || letter.anonymous_id === user.anonymous_id
-            } else {
-              // 匿名用户：匹配anonymous_id
-              const currentAnonymousId = localStorage.getItem('anonymous_id')
-              return letter.anonymous_id === currentAnonymousId
+          let userLocalLetters: any[] = []
+          
+          if (user) {
+            // 已登录用户：匹配user_id或anonymous_id
+            userLocalLetters = localLetters.filter((letter: any) => 
+              letter.user_id === user.id || letter.anonymous_id === user.anonymous_id
+            )
+          } else {
+            // 匿名用户：智能匹配策略
+            const currentAnonymousId = localStorage.getItem('anonymous_id')
+            
+            // 首先尝试精确匹配
+            userLocalLetters = localLetters.filter((letter: any) => 
+              letter.anonymous_id === currentAnonymousId
+            )
+            
+            // 如果精确匹配没有结果，且当前用户没有Letters，则采用"继承"策略
+            if (userLocalLetters.length === 0 && localLetters.length > 0) {
+              console.log('🔍 No exact match found, using inheritance strategy')
+              
+              // 检测是否是同一个浏览器/设备的用户（基于时间连续性和设备特征）
+              const shouldInheritLetters = checkShouldInheritLetters(localLetters, currentAnonymousId)
+              
+              if (shouldInheritLetters) {
+                console.log('✅ Inheriting all letters to current user')
+                
+                // 将所有Letters更新为当前的Anonymous ID
+                const updatedLetters = localLetters.map((letter: any) => ({
+                  ...letter,
+                  anonymous_id: currentAnonymousId
+                }))
+                
+                // 保存更新后的Letters
+                localStorage.setItem('letters', JSON.stringify(updatedLetters))
+                userLocalLetters = updatedLetters
+                
+                console.log(`🔄 Updated ${updatedLetters.length} letters to current anonymous ID`)
+              }
             }
-          })
+          }
           
           if (userLocalLetters.length > 0) {
             const sortedLocalLetters = userLocalLetters.sort((a: any, b: any) => 
@@ -48,6 +77,7 @@ export default function HistoryPage() {
             )
             setLetters(sortedLocalLetters)
             setLoading(false) // 立即停止loading
+            console.log(`✅ Loaded ${sortedLocalLetters.length} local letters`)
           }
         }
 
@@ -65,8 +95,10 @@ export default function HistoryPage() {
         })
         
         // 再添加本地数据（如果远程没有的话，可能是刚创建的）
-        const currentAnonymousId = user?.anonymous_id || localStorage.getItem('anonymous_id')
-        localLetters.forEach((letter: any) => {
+        const currentAnonymousId = localStorage.getItem('anonymous_id')
+        const updatedLocalLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+        
+        updatedLocalLetters.forEach((letter: any) => {
           // 确保只添加属于当前用户的Letters
           const belongsToUser = user ? 
             (letter.user_id === user.id || letter.anonymous_id === user.anonymous_id) :
@@ -105,6 +137,39 @@ export default function HistoryPage() {
       } finally {
         setLoading(false)
       }
+    }
+
+    // 检查是否应该继承Letters的智能逻辑
+    const checkShouldInheritLetters = (letters: any[], currentAnonymousId: string | null): boolean => {
+      if (!currentAnonymousId || letters.length === 0) return false
+      
+      // 策略1: 如果所有Letters都来自同一个Anonymous ID，可能是同一用户
+      const anonymousIds = Array.from(new Set(letters.map(l => l.anonymous_id).filter(Boolean)))
+      if (anonymousIds.length === 1) {
+        console.log('🔍 All letters from single anonymous ID, likely same user')
+        return true
+      }
+      
+      // 策略2: 检查时间连续性（最近24小时内有活动）
+      const now = Date.now()
+      const recentLetters = letters.filter(l => {
+        const letterTime = new Date(l.created_at).getTime()
+        const hoursSince = (now - letterTime) / (1000 * 60 * 60)
+        return hoursSince < 24
+      })
+      
+      if (recentLetters.length > 0) {
+        console.log('🔍 Recent activity detected, likely same user')
+        return true
+      }
+      
+      // 策略3: 如果Letters数量较多，可能是长期用户
+      if (letters.length >= 5) {
+        console.log('🔍 Multiple letters detected, likely returning user')
+        return true
+      }
+      
+      return false
     }
 
     loadUserLetters()
