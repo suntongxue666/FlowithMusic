@@ -436,6 +436,50 @@ export class LetterService {
       return cachedData
     }
     
+    // 优先尝试代理API，失败时使用直接连接
+    try {
+      console.log('Attempting to get public letters via proxy API')
+      
+      let queryOptions: any = {
+        select: `
+          *,
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
+        `,
+        filters: { eq: { is_public: true } },
+        limit,
+        order: { column: sortBy, ascending: false }
+      }
+      
+      // 艺术家筛选
+      if (filterBy?.artist) {
+        queryOptions.filters.ilike = { song_artist: `%${filterBy.artist}%` }
+      }
+      
+      // TODO: 时间范围筛选需要在代理API中实现
+      
+      const { data: proxyData, error: proxyError } = await supabaseProxy.select('letters', queryOptions)
+      
+      if (!proxyError && proxyData) {
+        console.log('Successfully retrieved letters via proxy API:', proxyData.length)
+        
+        // 应用分页
+        const paginatedData = proxyData.slice(offset, offset + limit)
+        
+        // 缓存结果（缓存2分钟）
+        cacheManager.set(cacheKey, paginatedData, 2 * 60 * 1000)
+        
+        return paginatedData
+      } else {
+        console.warn('Proxy API failed, falling back to direct Supabase:', proxyError)
+      }
+    } catch (proxyError) {
+      console.warn('Proxy API error, falling back to direct Supabase:', proxyError)
+    }
+
     if (!supabase) {
       console.warn('数据库连接不可用')
       return []
