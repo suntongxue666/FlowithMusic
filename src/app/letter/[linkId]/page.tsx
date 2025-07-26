@@ -18,7 +18,22 @@ export default function LetterPage() {
         try {
           console.log('Loading letter with linkId:', linkId)
           
-          // 1. 尝试从简单存储API获取
+          // 1. 检查URL参数中是否有Letter数据
+          const urlParams = new URLSearchParams(window.location.search)
+          const letterDataParam = urlParams.get('data')
+          if (letterDataParam) {
+            try {
+              const letterData = JSON.parse(decodeURIComponent(letterDataParam))
+              console.log('Found letter data in URL parameters')
+              setLetter(letterData)
+              setLoading(false)
+              return
+            } catch (parseError) {
+              console.error('Failed to parse letter data from URL:', parseError)
+            }
+          }
+
+          // 2. 尝试从简单存储API获取
           try {
             console.log('Fetching from API:', `/api/simple-storage/${linkId}`)
             const response = await fetch(`/api/simple-storage/${linkId}`)
@@ -43,7 +58,7 @@ export default function LetterPage() {
             console.error('Simple storage API failed:', apiError)
           }
 
-          // 2. 备用：尝试从letterService获取（包含Supabase和其他fallback）
+          // 3. 备用：尝试从letterService获取（包含Supabase和其他fallback）
           const remoteLetter = await letterService.getLetterByLinkId(linkId)
           if (remoteLetter) {
             console.log('Found letter via letterService')  
@@ -52,7 +67,7 @@ export default function LetterPage() {
             return
           }
 
-          // 3. 最后尝试localStorage（用户本地数据）
+          // 4. 最后尝试localStorage（用户本地数据）
           const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const localLetter = localLetters.find((l: any) => l.link_id === linkId)
           if (localLetter) {
