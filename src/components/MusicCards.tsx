@@ -75,11 +75,11 @@ export default function MusicCards() {
         const publicLetters = await letterService.getPublicLetters(20, 0, 'created_at')
         console.log('📝 获取到的公开Letters:', publicLetters.length)
         
-        // 过滤出消息超过6个单词的Letters，并显示调试信息
+        // 过滤出消息超过12个单词的Letters，并显示调试信息
         const filteredLetters = publicLetters.filter(letter => {
           const wordCount = letter.message.trim().split(/\s+/).length
-          console.log(`📝 Letter "${letter.recipient_name}": ${wordCount} words - ${wordCount >= 6 ? '✅ 符合' : '❌ 不符合'}`)
-          return wordCount >= 6
+          console.log(`📝 Letter "${letter.recipient_name}": ${wordCount} words - ${wordCount >= 12 ? '✅ 符合' : '❌ 不符合'}`)
+          return wordCount >= 12
         })
         
         console.log('📝 过滤后的Letters:', filteredLetters.length)
