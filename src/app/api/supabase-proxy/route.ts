@@ -6,9 +6,23 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+// 添加CORS头
+function addCorsHeaders(response: NextResponse) {
+  response.headers.set('Access-Control-Allow-Origin', '*')
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type')
+  return response
+}
+
+export async function OPTIONS() {
+  return addCorsHeaders(new NextResponse(null, { status: 200 }))
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { action, table, data, filters, options } = await request.json()
+    
+    console.log('Proxy API called:', { action, table, hasData: !!data })
     
     switch (action) {
       case 'insert':
@@ -19,10 +33,11 @@ export async function POST(request: NextRequest) {
           .single()
         
         if (insertError) {
-          return NextResponse.json({ error: insertError }, { status: 400 })
+          console.error('Insert error:', insertError)
+          return addCorsHeaders(NextResponse.json({ error: insertError }, { status: 400 }))
         }
         
-        return NextResponse.json({ data: insertData })
+        return addCorsHeaders(NextResponse.json({ data: insertData }))
       
       case 'select':
         let query = supabase.from(table).select(options?.select || '*')
@@ -32,6 +47,11 @@ export async function POST(request: NextRequest) {
             if (key === 'eq') {
               Object.entries(value as any).forEach(([field, val]) => {
                 query = query.eq(field, val)
+              })
+            }
+            if (key === 'ilike') {
+              Object.entries(value as any).forEach(([field, val]) => {
+                query = query.ilike(field, val as string)
               })
             }
           })
@@ -52,19 +72,20 @@ export async function POST(request: NextRequest) {
         const { data: selectData, error: selectError } = await query
         
         if (selectError) {
-          return NextResponse.json({ error: selectError }, { status: 400 })
+          console.error('Select error:', selectError)
+          return addCorsHeaders(NextResponse.json({ error: selectError }, { status: 400 }))
         }
         
-        return NextResponse.json({ data: selectData })
+        return addCorsHeaders(NextResponse.json({ data: selectData }))
       
       default:
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+        return addCorsHeaders(NextResponse.json({ error: 'Invalid action' }, { status: 400 }))
     }
   } catch (error) {
     console.error('Proxy API error:', error)
-    return NextResponse.json({ 
+    return addCorsHeaders(NextResponse.json({ 
       error: error instanceof Error ? error.message : 'Unknown error' 
-    }, { status: 500 })
+    }, { status: 500 }))
   }
 }
 
@@ -73,31 +94,37 @@ export async function GET(request: NextRequest) {
   const action = searchParams.get('action')
   const table = searchParams.get('table')
   
+  console.log('Proxy GET called:', { action, table })
+  
   if (action === 'test') {
     try {
+      // 测试数据库连接
       const { data, error } = await supabase
         .from('letters')
         .select('count')
         .limit(1)
       
       if (error) {
-        return NextResponse.json({ 
+        console.error('Test error:', error)
+        return addCorsHeaders(NextResponse.json({ 
           success: false, 
           error: error.message 
-        })
+        }))
       }
       
-      return NextResponse.json({ 
+      return addCorsHeaders(NextResponse.json({ 
         success: true, 
-        message: 'Server-side Supabase connection successful' 
-      })
+        message: 'Server-side Supabase connection successful',
+        supabaseUrl: supabaseUrl,
+        timestamp: new Date().toISOString()
+      }))
     } catch (error) {
-      return NextResponse.json({ 
+      console.error('Test exception:', error)
+      return addCorsHeaders(NextResponse.json({ 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 
-      })
+      }))
     }
   }
   
-  return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
-}
+  return addCorsHeaders(NextResponse.json({ error: 'Invalid request' }, { status: 400 }))
