@@ -74,17 +74,78 @@ export default function HistoryPage() {
   }
 
   const handleCopyLink = (letter: Letter) => {
-    // 使用可分享链接（如果有的话），否则使用普通链接
-    const link = letter.shareable_link || `${window.location.origin}/letter/${letter.link_id}`
-    console.log('Letter object:', letter)
-    console.log('Shareable link:', letter.shareable_link)
-    console.log('Final link to copy:', link)
-    navigator.clipboard.writeText(link)
+    // 如果有shareable_link，直接使用
+    if (letter.shareable_link) {
+      console.log('✅ Using existing shareable_link:', letter.shareable_link)
+      navigator.clipboard.writeText(letter.shareable_link)
+      setShowToast(true)
+      return
+    }
+    
+    // 如果没有shareable_link，动态生成包含数据的链接
+    console.log('⚠️ No shareable_link found, generating one...')
+    const minimalLetter = {
+      id: letter.id,
+      link_id: letter.link_id,
+      recipient_name: letter.recipient_name,
+      message: letter.message,
+      song_id: letter.song_id,
+      song_title: letter.song_title,
+      song_artist: letter.song_artist,
+      song_album_cover: letter.song_album_cover,
+      song_preview_url: letter.song_preview_url,
+      song_spotify_url: letter.song_spotify_url,
+      created_at: letter.created_at,
+      view_count: letter.view_count || 0,
+      is_public: letter.is_public
+    }
+    
+    try {
+      const encodedData = encodeURIComponent(JSON.stringify(minimalLetter))
+      const linkWithData = `${window.location.origin}/letter/${letter.link_id}?data=${encodedData}`
+      console.log('✅ Generated link with data:', linkWithData)
+      navigator.clipboard.writeText(linkWithData)
+    } catch (error) {
+      console.error('Failed to generate link with data, using fallback:', error)
+      const fallbackLink = `${window.location.origin}/letter/${letter.link_id}`
+      navigator.clipboard.writeText(fallbackLink)
+    }
+    
     setShowToast(true)
   }
 
   const handleViewLetter = (letter: Letter) => {
-    router.push(`/letter/${letter.link_id}`)
+    // 优化：直接传递Letter数据，避免重新从数据库获取
+    if (letter.shareable_link) {
+      // 如果有shareable_link，直接使用（包含数据）
+      window.location.href = letter.shareable_link
+    } else {
+      // 如果没有，生成包含数据的URL
+      try {
+        const minimalLetter = {
+          id: letter.id,
+          link_id: letter.link_id,
+          recipient_name: letter.recipient_name,
+          message: letter.message,
+          song_id: letter.song_id,
+          song_title: letter.song_title,
+          song_artist: letter.song_artist,
+          song_album_cover: letter.song_album_cover,
+          song_preview_url: letter.song_preview_url,
+          song_spotify_url: letter.song_spotify_url,
+          created_at: letter.created_at,
+          view_count: letter.view_count || 0,
+          is_public: letter.is_public
+        }
+        const encodedData = encodeURIComponent(JSON.stringify(minimalLetter))
+        const urlWithData = `/letter/${letter.link_id}?data=${encodedData}`
+        router.push(urlWithData)
+      } catch (error) {
+        console.error('Failed to generate URL with data:', error)
+        // 备用方案：普通跳转
+        router.push(`/letter/${letter.link_id}`)
+      }
+    }
   }
 
   const handleToastClose = () => {
