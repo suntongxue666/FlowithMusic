@@ -1,5 +1,6 @@
 import { supabase, Letter } from './supabase'
 import { userService } from './userService'
+import { fallbackStorage } from './fallbackStorage'
 import { cacheManager } from './cacheManager'
 
 export interface CreateLetterData {
@@ -123,8 +124,8 @@ export class LetterService {
         if (error) {
           console.error('Failed to create letter:', error)
           
-          // 如果Supabase失败，使用localStorage作为fallback
-          console.warn('Supabase failed, falling back to localStorage')
+          // 如果Supabase失败，使用备用存储
+          console.warn('Supabase failed, falling back to alternative storage')
           
           const fallbackLetter: Letter = {
             id: linkId,
@@ -145,12 +146,13 @@ export class LetterService {
             updated_at: new Date().toISOString()
           }
           
-          // 保存到localStorage
+          // 保存到备用存储（可以被其他用户访问）
+          createdLetter = await fallbackStorage.saveLetter(fallbackLetter)
+          
+          // 同时保存到localStorage（用户本地访问）
           const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           existingLetters.push(fallbackLetter)
           localStorage.setItem('letters', JSON.stringify(existingLetters))
-          
-          createdLetter = fallbackLetter
         } else {
           createdLetter = data
         }
@@ -176,12 +178,13 @@ export class LetterService {
           updated_at: new Date().toISOString()
         }
         
-        // 保存到localStorage
+        // 保存到备用存储
+        createdLetter = await fallbackStorage.saveLetter(fallbackLetter)
+        
+        // 同时保存到localStorage
         const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
         existingLetters.push(fallbackLetter)
         localStorage.setItem('letters', JSON.stringify(existingLetters))
-        
-        createdLetter = fallbackLetter
       }
     }
     
@@ -265,7 +268,13 @@ export class LetterService {
 
       if (error) {
         console.error('Failed to get letter:', error)
-        // Fallback to localStorage
+        // 尝试从备用存储获取
+        const fallbackLetter = await fallbackStorage.getLetter(linkId)
+        if (fallbackLetter) {
+          return fallbackLetter
+        }
+        
+        // 最后尝试localStorage
         const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
         return existingLetters.find((letter: Letter) => letter.link_id === linkId) || null
       }
@@ -275,7 +284,15 @@ export class LetterService {
 
       return data
     } catch (networkError) {
-      console.error('Network error, checking localStorage:', networkError)
+      console.error('Network error, trying fallback storage:', networkError)
+      
+      // 尝试从备用存储获取
+      const fallbackLetter = await fallbackStorage.getLetter(linkId)
+      if (fallbackLetter) {
+        return fallbackLetter
+      }
+      
+      // 最后尝试localStorage
       const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
       return existingLetters.find((letter: Letter) => letter.link_id === linkId) || null
     }
