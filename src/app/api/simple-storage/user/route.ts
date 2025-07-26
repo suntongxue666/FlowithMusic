@@ -1,26 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Letter } from '@/lib/supabase'
 
-// 重用相同的服务器存储类
-class ServerLetterStorage {
-  private static letters = new Map<string, Letter>()
-  
-  static getAll(): Letter[] {
-    return Array.from(this.letters.values())
-  }
-  
-  static getUserLetters(userId?: string, anonymousId?: string): Letter[] {
-    const allLetters = this.getAll()
-    return allLetters.filter(letter => {
-      if (userId && userId !== '') {
-        return letter.user_id === userId
-      } else if (anonymousId && anonymousId !== '') {
-        return letter.anonymous_id === anonymousId
-      }
-      return false
-    }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-  }
-}
+// 导入共享的存储类
+import { ServerLetterStorage } from '../[linkId]/route'
 
 export async function GET(request: NextRequest) {
   try {

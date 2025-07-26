@@ -255,7 +255,7 @@ export default function HistoryPage() {
                   className="view-btn"
                   onClick={() => handleViewLetter(letter)}
                 >
-                  View
+                  View 💌
                 </button>
                 <button 
                   className="copy-link-btn"

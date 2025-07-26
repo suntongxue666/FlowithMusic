@@ -16,33 +16,51 @@ export default function LetterPage() {
     const loadLetter = async () => {
       if (typeof linkId === 'string') {
         try {
-          // 1. 先尝试从localStorage获取数据（本地优先）
+          console.log('Loading letter with linkId:', linkId)
+          
+          // 1. 尝试从简单存储API获取
+          try {
+            const response = await fetch(`/api/simple-storage/${linkId}`)
+            if (response.ok) {
+              const letter = await response.json()
+              console.log('Found letter in simple storage:', letter.link_id)
+              setLetter(letter)
+              setLoading(false)
+              return
+            } else if (response.status === 404) {
+              console.log('Letter not found in simple storage')
+            } else {
+              console.error('Simple storage API error:', response.status)
+            }
+          } catch (apiError) {
+            console.error('Simple storage API failed:', apiError)
+          }
+
+          // 2. 备用：尝试从letterService获取（包含Supabase和其他fallback）
+          const remoteLetter = await letterService.getLetterByLinkId(linkId)
+          if (remoteLetter) {
+            console.log('Found letter via letterService')  
+            setLetter(remoteLetter)
+            setLoading(false)
+            return
+          }
+
+          // 3. 最后尝试localStorage（用户本地数据）
           const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const localLetter = localLetters.find((l: any) => l.link_id === linkId)
-          
           if (localLetter) {
             console.log('Found letter in localStorage:', localLetter.link_id)
             setLetter(localLetter)
-            setLoading(false) // 立即显示本地数据
+            setLoading(false)
+            return
           }
 
-          // 2. 然后异步从远程获取最新数据
-          const remoteLetter = await letterService.getLetterByLinkId(linkId)
-          if (remoteLetter) {
-            console.log('Found letter in remote database')  
-            setLetter(remoteLetter) // 用远程数据覆盖（如果有的话）
-          } else if (!localLetter) {
-            // 如果远程和本地都没有，才显示未找到
-            setLetter(null)
-          }
+          // 如果都没找到
+          console.log('Letter not found anywhere:', linkId)
+          setLetter(null)
         } catch (error) {
           console.error('Failed to load letter:', error)
-          // 如果远程加载失败，但有本地数据，就保持本地数据
-          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-          const localLetter = localLetters.find((l: any) => l.link_id === linkId)
-          if (!localLetter) {
-            setLetter(null)
-          }
+          setLetter(null)
         }
       }
       setLoading(false)

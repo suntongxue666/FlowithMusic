@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Letter } from '@/lib/supabase'
 
 // 简单的服务器端存储
-class ServerLetterStorage {
+export class ServerLetterStorage {
   private static letters = new Map<string, Letter>()
   
   static save(linkId: string, letter: Letter) {
