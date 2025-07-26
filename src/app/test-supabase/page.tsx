@@ -19,9 +19,39 @@ export default function TestSupabasePage() {
 URL: ${supabaseUrl}
 Key: ${supabaseKey ? supabaseKey.substring(0, 20) + '...' : 'Not set'}
 
-Testing direct fetch...`)
+Step 1: Testing basic connectivity to Supabase...`)
 
-      // 直接测试HTTP请求
+      // 首先测试基本的连接性
+      try {
+        const basicResponse = await fetch(`${supabaseUrl}/rest/v1/`, {
+          method: 'GET',
+          headers: {
+            'apikey': supabaseKey || '',
+          }
+        })
+        
+        setResult(prev => prev + `
+
+Basic connectivity test:
+Status: ${basicResponse.status}
+Status Text: ${basicResponse.statusText}`)
+
+        if (basicResponse.status === 404) {
+          setResult(prev => prev + `
+
+⚠️ 404 Error - This suggests the Supabase project might not exist or the URL is incorrect.`)
+        }
+      } catch (basicError) {
+        setResult(prev => prev + `
+
+❌ Basic connectivity failed: ${basicError}`)
+      }
+
+      setResult(prev => prev + `
+
+Step 2: Testing letters table access...`)
+
+      // 然后测试具体的表访问
       const response = await fetch(`${supabaseUrl}/rest/v1/letters?select=count&limit=1`, {
         method: 'GET',
         headers: {
@@ -34,8 +64,9 @@ Testing direct fetch...`)
 
       setResult(prev => prev + `
 
-Response status: ${response.status}
-Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`)
+Letters table test:
+Status: ${response.status}
+Status Text: ${response.statusText}`)
 
       if (response.ok) {
         const data = await response.text()
@@ -54,7 +85,8 @@ Error body: ${errorText}`)
 
 ❌ Network Error: ${error}
 Error type: ${typeof error}
-Error message: ${error instanceof Error ? error.message : 'Unknown'}`)
+Error message: ${error instanceof Error ? error.message : 'Unknown'}
+Stack: ${error instanceof Error ? error.stack : 'No stack'}`)
     } finally {
       setLoading(false)
     }
@@ -135,6 +167,27 @@ Data: ${JSON.stringify(data, null, 2)}`)
           }}
         >
           {loading ? 'Testing...' : 'Test Supabase Client'}
+        </button>
+        
+        <button 
+          onClick={() => {
+            const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+            if (url) {
+              window.open(url, '_blank')
+            } else {
+              alert('No Supabase URL found')
+            }
+          }}
+          style={{ 
+            padding: '0.75rem 1.5rem', 
+            background: '#17a2b8', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '6px',
+            cursor: 'pointer'
+          }}
+        >
+          Open Supabase URL
         </button>
         
         <button 
