@@ -119,11 +119,19 @@ export default function DebugLettersPage() {
 
   const testDirectFetch = async () => {
     try {
-      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/letters?select=count&limit=1`
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      
+      if (!supabaseUrl || !supabaseKey) {
+        alert('Supabase environment variables are not set')
+        return
+      }
+      
+      const url = `${supabaseUrl}/rest/v1/letters?select=count&limit=1`
       const response = await fetch(url, {
         headers: {
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
           'Content-Type': 'application/json'
         }
       })
