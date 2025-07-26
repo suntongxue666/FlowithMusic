@@ -652,11 +652,7 @@ export class LetterService {
 
     return true
   }
-}
-
-// 导出单例实例
-export const letterService = LetterService.getInstance()  // 生成包含
-数据的可分享链接
+  // 生成包含数据的可分享链接
   private generateShareableLink(letter: Letter): string {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.flowithmusic.com'
     
