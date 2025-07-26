@@ -75,7 +75,10 @@ export default function HistoryPage() {
 
   const handleCopyLink = (letter: Letter) => {
     // 使用可分享链接（如果有的话），否则使用普通链接
-    const link = (letter as any).shareable_link || `${window.location.origin}/letter/${letter.link_id}`
+    const link = letter.shareable_link || `${window.location.origin}/letter/${letter.link_id}`
+    console.log('Letter object:', letter)
+    console.log('Shareable link:', letter.shareable_link)
+    console.log('Final link to copy:', link)
     navigator.clipboard.writeText(link)
     setShowToast(true)
   }

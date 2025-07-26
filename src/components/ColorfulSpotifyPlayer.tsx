@@ -122,10 +122,7 @@ export default function ColorfulSpotifyPlayer({ track }: ColorfulSpotifyPlayerPr
 
   return (
     <div className="colorful-spotify-container">
-      <div 
-        className="colorful-iframe-wrapper"
-        style={{ background: gradient }}
-      >
+      <div className="colorful-iframe-wrapper">
         <iframe
           style={{ borderRadius: '12px' }}
           src={embedUrl}

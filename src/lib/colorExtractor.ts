@@ -93,6 +93,12 @@ export class ColorExtractor {
     const g = parseInt(hex.substr(2, 2), 16)
     const b = parseInt(hex.substr(4, 2), 16)
     
+    // 如果颜色过于暗淡，使用默认的Spotify绿色
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000
+    if (brightness < 50) {
+      return 'linear-gradient(135deg, #1ED760, #1DB954, #1AA34A)'
+    }
+    
     // 创建更亮和更暗的版本
     const lighterR = Math.min(255, Math.floor(r * 1.3))
     const lighterG = Math.min(255, Math.floor(g * 1.3))
