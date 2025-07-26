@@ -85,13 +85,36 @@ export default function SendPage() {
       console.log('Letter created successfully:', newLetter)
       setCreatedLetter(newLetter)
 
+      // 立即将新Letter添加到localStorage中，确保History页面能看到
+      const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+      
+      // 检查是否已存在，避免重复
+      const exists = existingLetters.some((letter: any) => letter.link_id === newLetter.link_id)
+      if (!exists) {
+        existingLetters.unshift(newLetter) // 添加到开头
+        localStorage.setItem('letters', JSON.stringify(existingLetters))
+        console.log('✅ Letter added to localStorage for immediate visibility')
+      }
+
+      // 清理相关缓存，确保数据更新
+      if (typeof window !== 'undefined') {
+        // 清理所有可能相关的缓存
+        const keys = Object.keys(localStorage)
+        keys.forEach(key => {
+          if (key.startsWith('cache_')) {
+            localStorage.removeItem(key)
+          }
+        })
+        console.log('✅ Cleared all caches for fresh data loading')
+      }
+
       // Show toast
       setShowToast(true)
 
       // 等待一下确保数据已经保存，然后跳转
       setTimeout(() => {
         router.push('/history')
-      }, 1000)
+      }, 1500)
 
     } catch (error) {
       console.error('Failed to submit:', error)
