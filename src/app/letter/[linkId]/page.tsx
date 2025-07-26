@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Header from '@/components/Header'
-import SmartSpotifyPlayer from '@/components/SmartSpotifyPlayer'
+import ColorfulSpotifyPlayer from '@/components/ColorfulSpotifyPlayer'
 import { letterService } from '@/lib/letterService'
 import type { Letter } from '@/lib/supabase'
 
@@ -18,13 +18,13 @@ export default function LetterPage() {
         try {
           console.log('Loading letter with linkId:', linkId)
           
-          // 1. 检查URL参数中是否有Letter数据
+          // 1. 优先检查URL参数中的Letter数据（最快）
           const urlParams = new URLSearchParams(window.location.search)
           const letterDataParam = urlParams.get('data')
           if (letterDataParam) {
             try {
               const letterData = JSON.parse(decodeURIComponent(letterDataParam))
-              console.log('Found letter data in URL parameters')
+              console.log('✅ Found letter data in URL parameters')
               setLetter(letterData)
               setLoading(false)
               return
@@ -33,52 +33,18 @@ export default function LetterPage() {
             }
           }
 
-          // 2. 尝试从简单存储API获取
-          try {
-            console.log('Fetching from API:', `/api/simple-storage/${linkId}`)
-            const response = await fetch(`/api/simple-storage/${linkId}`)
-            console.log('API response status:', response.status)
-            
-            if (response.ok) {
-              const letter = await response.json()
-              console.log('Found letter in simple storage:', letter.link_id)
-              setLetter(letter)
-              setLoading(false)
-              return
-            } else if (response.status === 404) {
-              console.log('Letter not found in simple storage (404)')
-              const errorBody = await response.text()
-              console.log('404 response body:', errorBody)
-            } else {
-              console.error('Simple storage API error:', response.status)
-              const errorBody = await response.text()
-              console.error('Error response body:', errorBody)
-            }
-          } catch (apiError) {
-            console.error('Simple storage API failed:', apiError)
-          }
-
-          // 3. 备用：尝试从letterService获取（包含Supabase和其他fallback）
-          const remoteLetter = await letterService.getLetterByLinkId(linkId)
-          if (remoteLetter) {
-            console.log('Found letter via letterService')  
-            setLetter(remoteLetter)
-            setLoading(false)
-            return
-          }
-
-          // 4. 最后尝试localStorage（用户本地数据）
+          // 2. 快速检查localStorage（本地数据）
           const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const localLetter = localLetters.find((l: any) => l.link_id === linkId)
           if (localLetter) {
-            console.log('Found letter in localStorage:', localLetter.link_id)
+            console.log('✅ Found letter in localStorage')
             setLetter(localLetter)
             setLoading(false)
             return
           }
 
-          // 如果都没找到
-          console.log('Letter not found anywhere:', linkId)
+          // 3. 如果都没找到，显示未找到
+          console.log('❌ Letter not found:', linkId)
           setLetter(null)
         } catch (error) {
           console.error('Failed to load letter:', error)
@@ -159,7 +125,7 @@ export default function LetterPage() {
           </div>
           
           <div className="letter-player">
-            <SmartSpotifyPlayer 
+            <ColorfulSpotifyPlayer 
               track={{
                 id: letter.song_id,
                 name: letter.song_title,
@@ -173,7 +139,6 @@ export default function LetterPage() {
                   spotify: letter.song_spotify_url
                 }
               }}
-              size="large"
             />
           </div>
           
