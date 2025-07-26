@@ -12,6 +12,7 @@ export default function ColorfulSpotifyPlayer({ track }: ColorfulSpotifyPlayerPr
   const [isMobile, setIsMobile] = useState(false)
   const [isSafari, setIsSafari] = useState(false)
   const [showFallback, setShowFallback] = useState(false)
+  const [iframeLoaded, setIframeLoaded] = useState(false)
   const [dominantColor, setDominantColor] = useState('#1DB954')
   const [gradient, setGradient] = useState('linear-gradient(135deg, #1DB954, #1ED760)')
   const [textColor, setTextColor] = useState('#ffffff')
@@ -24,7 +25,23 @@ export default function ColorfulSpotifyPlayer({ track }: ColorfulSpotifyPlayerPr
     
     setIsMobile(isMobileDevice)
     setIsSafari(isSafariBrowser)
-  }, [])
+    
+    // 每次track变化时重置状态
+    setIframeLoaded(false)
+    setShowFallback(false)
+  }, [track])
+
+  useEffect(() => {
+    // H5环境下延迟检查iframe是否加载成功
+    if (isMobile && !showFallback && !iframeLoaded) {
+      const timer = setTimeout(() => {
+        console.log('⚠️ H5 iframe timeout, showing fallback')
+        setShowFallback(true)
+      }, 5000)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isMobile, showFallback, iframeLoaded])
 
   useEffect(() => {
     // 提取专辑封面的主色调
@@ -135,7 +152,8 @@ export default function ColorfulSpotifyPlayer({ track }: ColorfulSpotifyPlayerPr
           onError={handleIframeError}
           onLoad={() => {
             // 确保H5端也能正常加载Spotify播放器
-            console.log('Spotify player loaded successfully')
+            console.log('✅ Spotify player loaded successfully')
+            setIframeLoaded(true)
           }}
           sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
         />

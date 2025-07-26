@@ -600,35 +600,12 @@ export class LetterService {
 
     return true
   }
-  // 生成包含数据的可分享链接
+  // 生成简洁的可分享链接
   private generateShareableLink(letter: Letter): string {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.flowithmusic.com'
     
-    // 创建一个精简的Letter对象，只包含必要数据
-    const minimalLetter = {
-      id: letter.id,
-      link_id: letter.link_id,
-      recipient_name: letter.recipient_name,
-      message: letter.message,
-      song_id: letter.song_id,
-      song_title: letter.song_title,
-      song_artist: letter.song_artist,
-      song_album_cover: letter.song_album_cover,
-      song_preview_url: letter.song_preview_url,
-      song_spotify_url: letter.song_spotify_url,
-      created_at: letter.created_at,
-      view_count: letter.view_count || 0,
-      is_public: letter.is_public
-    }
-    
-    try {
-      const encodedData = encodeURIComponent(JSON.stringify(minimalLetter))
-      return `${baseUrl}/letter/${letter.link_id}?data=${encodedData}`
-    } catch (error) {
-      console.error('Failed to generate shareable link:', error)
-      // 如果编码失败，返回普通链接
-      return `${baseUrl}/letter/${letter.link_id}`
-    }
+    // 返回简洁的链接，不包含data参数
+    return `${baseUrl}/letter/${letter.link_id}`
   }
 
   // 根据linkId获取单个Letter
