@@ -10,6 +10,13 @@ export default function DebugLettersPage() {
   useEffect(() => {
     const loadDebugInfo = async () => {
       try {
+        // 检查环境变量
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        
+        // 动态导入supabase
+        const { supabase } = await import('@/lib/supabase')
+        
         // 获取用户信息
         const anonymousId = await userService.initializeUser()
         const currentUser = userService.getCurrentUser()
@@ -20,7 +27,24 @@ export default function DebugLettersPage() {
         // 获取用户letters
         const userLetters = await letterService.getUserLetters(50, 0)
         
+        // 测试Supabase连接
+        let supabaseTest = null
+        if (supabase) {
+          try {
+            const { data, error } = await supabase.from('letters').select('count').limit(1)
+            supabaseTest = { success: !error, error: error?.message, data }
+          } catch (err) {
+            supabaseTest = { success: false, error: String(err) }
+          }
+        }
+        
         setDebugInfo({
+          environment: {
+            supabaseUrl: supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'Not set',
+            supabaseKey: supabaseKey ? `${supabaseKey.substring(0, 20)}...` : 'Not set',
+            supabaseClient: !!supabase
+          },
+          supabaseTest,
           anonymousId,
           currentUser,
           localStorageLetters,
@@ -44,6 +68,7 @@ export default function DebugLettersPage() {
 
   const createTestLetter = async () => {
     try {
+      console.log('Creating test letter...')
       const letter = await letterService.createLetter({
         to: 'Debug Test',
         message: 'This is a debug test message',
@@ -57,9 +82,30 @@ export default function DebugLettersPage() {
       })
       
       console.log('Test letter created:', letter)
+      alert(`Test letter created with link_id: ${letter.link_id}`)
       window.location.reload()
     } catch (error) {
       console.error('Failed to create test letter:', error)
+      alert(`Failed to create test letter: ${error}`)
+    }
+  }
+
+  const testSupabaseConnection = async () => {
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      if (!supabase) {
+        alert('Supabase client is not available')
+        return
+      }
+      
+      const { data, error } = await supabase.from('letters').select('*').limit(1)
+      if (error) {
+        alert(`Supabase error: ${error.message}`)
+      } else {
+        alert(`Supabase connection successful! Found ${data?.length || 0} records`)
+      }
+    } catch (error) {
+      alert(`Supabase test failed: ${error}`)
     }
   }
 
@@ -96,6 +142,21 @@ export default function DebugLettersPage() {
           }}
         >
           Clear LocalStorage
+        </button>
+        
+        <button 
+          onClick={testSupabaseConnection}
+          style={{ 
+            padding: '0.75rem 1.5rem', 
+            background: '#6f42c1', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '6px',
+            cursor: 'pointer',
+            marginRight: '1rem'
+          }}
+        >
+          Test Supabase
         </button>
         
         <button 
