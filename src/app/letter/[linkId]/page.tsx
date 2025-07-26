@@ -18,11 +18,14 @@ export default function LetterPage() {
         try {
           console.log('🔍 Loading letter with linkId:', linkId)
           
+          let foundLetter: Letter | null = null
+          
           // 1. 快速检查localStorage（本地数据） - 立即显示
           const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const localLetter = localLetters.find((l: any) => l.link_id === linkId)
           if (localLetter) {
             console.log('✅ Found letter in localStorage')
+            foundLetter = localLetter
             setLetter(localLetter)
             setLoading(false)
             // 仍然继续从数据库加载，以确保数据是最新的
@@ -33,6 +36,7 @@ export default function LetterPage() {
           const databaseLetter = await letterService.getLetterByLinkId(linkId)
           if (databaseLetter) {
             console.log('✅ Found letter in database')
+            foundLetter = databaseLetter
             setLetter(databaseLetter)
             setLoading(false)
             return
@@ -45,6 +49,7 @@ export default function LetterPage() {
             if (apiResponse.ok) {
               const apiLetter = await apiResponse.json()
               console.log('✅ Found letter via direct API')
+              foundLetter = apiLetter
               setLetter(apiLetter)
               setLoading(false)
               return
@@ -55,10 +60,10 @@ export default function LetterPage() {
             console.error('API fetch error:', apiError)
           }
 
-          // 4. 如果本地有但数据库和API都没有，仍然显示本地数据
-          if (localLetter) {
-            console.log('✅ Using local letter as final fallback')
-            setLetter(localLetter)
+          // 4. 如果之前找到了本地Letter，继续使用它
+          if (foundLetter) {
+            console.log('✅ Using previously found letter as final result')
+            setLetter(foundLetter)
             setLoading(false)
             return
           }
