@@ -71,6 +71,8 @@ export default function MusicCards() {
     const loadPublicLetters = async () => {
       try {
         setLoading(true)
+        console.log('📝 开始获取公开Letters...')
+        
         // 获取公开的Letters，按时间排序
         const publicLetters = await letterService.getPublicLetters(20, 0, 'created_at')
         console.log('📝 获取到的公开Letters:', publicLetters.length)
@@ -83,10 +85,60 @@ export default function MusicCards() {
         })
         
         console.log('📝 过滤后的Letters:', filteredLetters.length)
-        setLetters(filteredLetters.slice(0, 6)) // 只取前6个
+        
+        if (filteredLetters.length > 0) {
+          setLetters(filteredLetters.slice(0, 6)) // 只取前6个
+        } else {
+          // 如果没有公开Letters，检查localStorage中的Letters
+          console.log('📝 没有公开Letters，检查本地存储...')
+          
+          if (typeof window !== 'undefined') {
+            const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+            const validLocalLetters = localLetters
+              .filter((letter: Letter) => {
+                const wordCount = letter.message.trim().split(/\s+/).length
+                return wordCount >= 12
+              })
+              .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              .slice(0, 6)
+            
+            console.log('📝 本地有效Letters:', validLocalLetters.length)
+            
+            if (validLocalLetters.length > 0) {
+              setLetters(validLocalLetters)
+            } else {
+              console.log('📝 使用样例卡片')
+              setLetters([]) // 显示样例卡片
+            }
+          } else {
+            setLetters([]) // 显示样例卡片
+          }
+        }
       } catch (error) {
         console.error('Failed to load public letters:', error)
-        setLetters([]) // 出错时显示样例卡片
+        
+        // 数据库失败时，尝试显示localStorage中的Letters
+        console.log('📝 数据库失败，尝试本地存储...')
+        if (typeof window !== 'undefined') {
+          try {
+            const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+            const validLocalLetters = localLetters
+              .filter((letter: Letter) => {
+                const wordCount = letter.message.trim().split(/\s+/).length
+                return wordCount >= 12
+              })
+              .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              .slice(0, 6)
+            
+            console.log('📝 错误恢复：本地Letters:', validLocalLetters.length)
+            setLetters(validLocalLetters)
+          } catch (localError) {
+            console.error('本地存储也失败:', localError)
+            setLetters([]) // 显示样例卡片
+          }
+        } else {
+          setLetters([]) // 显示样例卡片
+        }
       } finally {
         setLoading(false)
       }
