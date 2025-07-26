@@ -112,7 +112,8 @@ export default function DebugLettersPage() {
       }
     } catch (error) {
       console.error('Connection test error:', error)
-      alert(`Supabase test failed: ${error}\nType: ${typeof error}\nMessage: ${error.message || 'Unknown error'}`)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      alert(`Supabase test failed: ${errorMessage}\nType: ${typeof error}`)
     }
   }
 
@@ -134,7 +135,8 @@ export default function DebugLettersPage() {
       const data = await response.json()
       alert(`Direct fetch successful: ${JSON.stringify(data)}`)
     } catch (error) {
-      alert(`Direct fetch failed: ${error}`)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      alert(`Direct fetch failed: ${errorMessage}`)
     }
   }
 
