@@ -9,7 +9,20 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // 在构建时提供默认值以避免构建错误
 export const supabase = supabaseUrl && supabaseAnonKey 
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        fetch: (url, options = {}) => {
+          // 绕过浏览器扩展干扰的fetch实现
+          return fetch(url, {
+            ...options,
+            headers: {
+              ...options.headers,
+              'X-Requested-With': 'XMLHttpRequest',
+            },
+          })
+        },
+      },
+    })
   : null
 
 // 数据库类型定义
