@@ -45,6 +45,7 @@ export interface Letter {
   updated_at: string
   view_count: number
   is_public: boolean
+  shareable_link?: string // 包含数据的可分享链接
   user?: User // 关联用户信息
 }
 
