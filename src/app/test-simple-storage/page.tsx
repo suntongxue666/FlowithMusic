@@ -86,6 +86,34 @@ Error: ${errorText}`)
     window.open(`/letter/${testLinkId}`, '_blank')
   }
 
+  const testDirectAPI = async () => {
+    setLoading(true)
+    setResult('Testing direct API access...')
+    
+    try {
+      const response = await fetch(`/api/simple-storage/${testLinkId}`)
+      
+      if (response.ok) {
+        const letter = await response.json()
+        setResult(`✅ Direct API access successful!
+Link ID: ${letter.link_id}
+This means the API works, but Letter page might have issues.`)
+      } else if (response.status === 404) {
+        setResult(`❌ Letter not found via direct API: ${testLinkId}
+Status: ${response.status}
+This suggests the letter wasn't saved or server restarted.`)
+      } else {
+        const errorText = await response.text()
+        setResult(`❌ Direct API failed: ${response.status} ${response.statusText}
+Error: ${errorText}`)
+      }
+    } catch (error) {
+      setResult(`❌ Direct API error: ${error}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
       <h1>Simple Storage Test</h1>
@@ -138,6 +166,21 @@ Error: ${errorText}`)
         </button>
         
         <button 
+          onClick={testDirectAPI}
+          disabled={loading}
+          style={{ 
+            padding: '0.75rem 1.5rem', 
+            background: '#fd7e14', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '6px',
+            cursor: loading ? 'not-allowed' : 'pointer'
+          }}
+        >
+          {loading ? 'Testing...' : '3. Test Direct API'}
+        </button>
+        
+        <button 
           onClick={testLetterPage}
           style={{ 
             padding: '0.75rem 1.5rem', 
@@ -148,7 +191,7 @@ Error: ${errorText}`)
             cursor: 'pointer'
           }}
         >
-          3. Test Letter Page
+          4. Test Letter Page
         </button>
         
         <button 

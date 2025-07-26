@@ -1,37 +1,29 @@
 import { Letter } from './supabase'
+import { persistentStorage } from './persistentStorage'
 
-// 简单的服务器端存储
+// 简单的服务器端存储，使用持久化存储
 export class ServerLetterStorage {
-  private static letters = new Map<string, Letter>()
-  
-  static save(linkId: string, letter: Letter) {
-    this.letters.set(linkId, letter)
+  static async save(linkId: string, letter: Letter): Promise<Letter> {
+    const savedLetter = await persistentStorage.saveLetter(letter)
     console.log(`Letter saved to server storage: ${linkId}`)
+    return savedLetter
   }
   
-  static get(linkId: string): Letter | null {
-    const letter = this.letters.get(linkId)
+  static async get(linkId: string): Promise<Letter | null> {
+    const letter = await persistentStorage.getLetter(linkId)
     if (letter) {
       console.log(`Letter found in server storage: ${linkId}`)
     } else {
       console.log(`Letter not found in server storage: ${linkId}`)
     }
-    return letter || null
+    return letter
   }
   
-  static getAll(): Letter[] {
-    return Array.from(this.letters.values())
+  static async getAll(): Promise<Letter[]> {
+    return persistentStorage.getAllLetters()
   }
   
-  static getUserLetters(userId?: string, anonymousId?: string): Letter[] {
-    const allLetters = this.getAll()
-    return allLetters.filter(letter => {
-      if (userId && userId !== '') {
-        return letter.user_id === userId
-      } else if (anonymousId && anonymousId !== '') {
-        return letter.anonymous_id === anonymousId
-      }
-      return false
-    }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  static async getUserLetters(userId?: string, anonymousId?: string): Promise<Letter[]> {
+    return await persistentStorage.getUserLetters(userId, anonymousId)
   }
 }

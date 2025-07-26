@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId')
     const anonymousId = searchParams.get('anonymousId')
     
-    const letters = ServerLetterStorage.getUserLetters(
+    const letters = await ServerLetterStorage.getUserLetters(
       userId || undefined, 
       anonymousId || undefined
     )

@@ -20,7 +20,10 @@ export default function LetterPage() {
           
           // 1. 尝试从简单存储API获取
           try {
+            console.log('Fetching from API:', `/api/simple-storage/${linkId}`)
             const response = await fetch(`/api/simple-storage/${linkId}`)
+            console.log('API response status:', response.status)
+            
             if (response.ok) {
               const letter = await response.json()
               console.log('Found letter in simple storage:', letter.link_id)
@@ -28,9 +31,13 @@ export default function LetterPage() {
               setLoading(false)
               return
             } else if (response.status === 404) {
-              console.log('Letter not found in simple storage')
+              console.log('Letter not found in simple storage (404)')
+              const errorBody = await response.text()
+              console.log('404 response body:', errorBody)
             } else {
               console.error('Simple storage API error:', response.status)
+              const errorBody = await response.text()
+              console.error('Error response body:', errorBody)
             }
           } catch (apiError) {
             console.error('Simple storage API failed:', apiError)

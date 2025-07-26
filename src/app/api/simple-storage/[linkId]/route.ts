@@ -9,7 +9,7 @@ export async function GET(
   try {
     const { linkId } = await params
     
-    const letter = ServerLetterStorage.get(linkId)
+    const letter = await ServerLetterStorage.get(linkId)
     
     if (letter) {
       return NextResponse.json(letter)
@@ -43,7 +43,7 @@ export async function POST(
       updated_at: new Date().toISOString()
     }
     
-    ServerLetterStorage.save(linkId, letter)
+    await ServerLetterStorage.save(linkId, letter)
     
     return NextResponse.json(letter)
   } catch (error) {
