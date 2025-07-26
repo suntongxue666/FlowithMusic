@@ -98,14 +98,43 @@ export default function DebugLettersPage() {
         return
       }
       
-      const { data, error } = await supabase.from('letters').select('*').limit(1)
+      console.log('Testing Supabase connection...')
+      console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+      
+      // 测试简单的查询
+      const { data, error } = await supabase.from('letters').select('count').limit(1)
+      
       if (error) {
-        alert(`Supabase error: ${error.message}`)
+        console.error('Supabase error details:', error)
+        alert(`Supabase error: ${error.message}\nCode: ${error.code}\nDetails: ${error.details}`)
       } else {
-        alert(`Supabase connection successful! Found ${data?.length || 0} records`)
+        alert(`Supabase connection successful! Query returned: ${JSON.stringify(data)}`)
       }
     } catch (error) {
-      alert(`Supabase test failed: ${error}`)
+      console.error('Connection test error:', error)
+      alert(`Supabase test failed: ${error}\nType: ${typeof error}\nMessage: ${error.message || 'Unknown error'}`)
+    }
+  }
+
+  const testDirectFetch = async () => {
+    try {
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/letters?select=count&limit=1`
+      const response = await fetch(url, {
+        headers: {
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      alert(`Direct fetch successful: ${JSON.stringify(data)}`)
+    } catch (error) {
+      alert(`Direct fetch failed: ${error}`)
     }
   }
 
@@ -157,6 +186,21 @@ export default function DebugLettersPage() {
           }}
         >
           Test Supabase
+        </button>
+        
+        <button 
+          onClick={testDirectFetch}
+          style={{ 
+            padding: '0.75rem 1.5rem', 
+            background: '#fd7e14', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '6px',
+            cursor: 'pointer',
+            marginRight: '1rem'
+          }}
+        >
+          Test Direct Fetch
         </button>
         
         <button 
