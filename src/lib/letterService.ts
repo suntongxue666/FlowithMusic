@@ -1,6 +1,7 @@
 import { supabase, Letter } from './supabase'
 import { userService } from './userService'
 import { fallbackStorage } from './fallbackStorage'
+import { simpleStorage } from './simpleStorage'
 import { cacheManager } from './cacheManager'
 
 export interface CreateLetterData {
@@ -58,9 +59,9 @@ export class LetterService {
     
     let createdLetter: Letter
     
-    // 如果Supabase不可用，使用localStorage作为fallback
+    // 如果Supabase不可用，使用简单存储作为fallback
     if (!supabase) {
-      console.warn('Supabase not available, using localStorage fallback')
+      console.warn('Supabase not available, using simple storage fallback')
       
       const fallbackLetter: Letter = {
         id: linkId,
@@ -81,12 +82,13 @@ export class LetterService {
         is_public: true
       }
       
-      // 保存到localStorage
+      // 保存到简单存储（可以被其他用户访问）
+      createdLetter = await simpleStorage.saveLetter(fallbackLetter)
+      
+      // 同时保存到localStorage（用户本地缓存）
       const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
       existingLetters.push(fallbackLetter)
       localStorage.setItem('letters', JSON.stringify(existingLetters))
-      
-      createdLetter = fallbackLetter
     } else {
       // 构建新letter数据
       const newLetter = {
@@ -146,20 +148,8 @@ export class LetterService {
             updated_at: new Date().toISOString()
           }
           
-          // 保存到备用存储（可以被其他用户访问）
-          createdLetter = await fallbackStorage.saveLetter(fallbackLetter)
-          
-          // 同时通过API保存到服务器存储
-          try {
-            await fetch(`/api/letters/${linkId}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(fallbackLetter)
-            })
-            console.log('Letter also saved via API:', linkId)
-          } catch (apiError) {
-            console.warn('API save failed:', apiError)
-          }
+          // 保存到简单存储（可以被其他用户访问）
+          createdLetter = await simpleStorage.saveLetter(fallbackLetter)
           
           // 同时保存到localStorage（用户本地访问）
           const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
@@ -190,20 +180,8 @@ export class LetterService {
           updated_at: new Date().toISOString()
         }
         
-        // 保存到备用存储
-        createdLetter = await fallbackStorage.saveLetter(fallbackLetter)
-        
-        // 同时通过API保存到服务器存储
-        try {
-          await fetch(`/api/letters/${linkId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(fallbackLetter)
-          })
-          console.log('Letter also saved via API:', linkId)
-        } catch (apiError) {
-          console.warn('API save failed:', apiError)
-        }
+        // 保存到简单存储
+        createdLetter = await simpleStorage.saveLetter(fallbackLetter)
         
         // 同时保存到localStorage
         const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
@@ -269,11 +247,10 @@ export class LetterService {
 
   // 根据linkId获取Letter
   async getLetterByLinkId(linkId: string): Promise<Letter | null> {
-    // 如果Supabase不可用，从localStorage获取
+    // 如果Supabase不可用，从简单存储获取
     if (!supabase) {
-      console.warn('Supabase not available, checking localStorage')
-      const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-      return existingLetters.find((letter: Letter) => letter.link_id === linkId) || null
+      console.warn('Supabase not available, checking simple storage')
+      return await simpleStorage.getLetter(linkId)
     }
 
     try {
@@ -292,10 +269,10 @@ export class LetterService {
 
       if (error) {
         console.error('Failed to get letter:', error)
-        // 尝试从备用存储获取
-        const fallbackLetter = await fallbackStorage.getLetter(linkId)
-        if (fallbackLetter) {
-          return fallbackLetter
+        // 尝试从简单存储获取
+        const simpleLetter = await simpleStorage.getLetter(linkId)
+        if (simpleLetter) {
+          return simpleLetter
         }
         
         // 最后尝试localStorage
@@ -310,10 +287,10 @@ export class LetterService {
     } catch (networkError) {
       console.error('Network error, trying fallback storage:', networkError)
       
-      // 尝试从备用存储获取
-      const fallbackLetter = await fallbackStorage.getLetter(linkId)
-      if (fallbackLetter) {
-        return fallbackLetter
+      // 尝试从简单存储获取
+      const simpleLetter = await simpleStorage.getLetter(linkId)
+      if (simpleLetter) {
+        return simpleLetter
       }
       
       // 最后尝试localStorage
