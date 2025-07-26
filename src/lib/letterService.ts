@@ -251,59 +251,7 @@ export class LetterService {
     })
   }
 
-  // 根据linkId获取Letter
-  async getLetterByLinkId(linkId: string): Promise<Letter | null> {
-    // 如果Supabase不可用，从简单存储获取
-    if (!supabase) {
-      console.warn('Supabase not available, checking simple storage')
-      return await simpleStorage.getLetter(linkId)
-    }
 
-    try {
-      const { data, error } = await supabase
-        .from('letters')
-        .select(`
-          *,
-          user:users(
-            id,
-            display_name,
-            avatar_url
-          )
-        `)
-        .eq('link_id', linkId)
-        .single()
-
-      if (error) {
-        console.error('Failed to get letter:', error)
-        // 尝试从简单存储获取
-        const simpleLetter = await simpleStorage.getLetter(linkId)
-        if (simpleLetter) {
-          return simpleLetter
-        }
-        
-        // 最后尝试localStorage
-        const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-        return existingLetters.find((letter: Letter) => letter.link_id === linkId) || null
-      }
-
-      // 增加浏览次数
-      await this.incrementViewCount(data.id, linkId)
-
-      return data
-    } catch (networkError) {
-      console.error('Network error, trying fallback storage:', networkError)
-      
-      // 尝试从简单存储获取
-      const simpleLetter = await simpleStorage.getLetter(linkId)
-      if (simpleLetter) {
-        return simpleLetter
-      }
-      
-      // 最后尝试localStorage
-      const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-      return existingLetters.find((letter: Letter) => letter.link_id === linkId) || null
-    }
-  }
 
   // 增加浏览次数
   private async incrementViewCount(letterId: string, linkId?: string): Promise<void> {
