@@ -20,6 +20,22 @@
   },
   "dynamicRoutes": [
     {
+      "page": "/api/browser-storage/[linkId]",
+      "regex": "^/api/browser\\-storage/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPlinkId": "nxtPlinkId"
+      },
+      "namedRegex": "^/api/browser\\-storage/(?<nxtPlinkId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/letters/[linkId]",
+      "regex": "^/api/letters/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPlinkId": "nxtPlinkId"
+      },
+      "namedRegex": "^/api/letters/(?<nxtPlinkId>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/letter/[linkId]",
       "regex": "^/letter/([^/]+?)(?:/)?$",
       "routeKeys": {
@@ -52,6 +68,18 @@
       "regex": "^/debug\\-letters(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/debug\\-letters(?:/)?$"
+    },
+    {
+      "page": "/debug-supabase",
+      "regex": "^/debug\\-supabase(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/debug\\-supabase(?:/)?$"
+    },
+    {
+      "page": "/debug-user-letters",
+      "regex": "^/debug\\-user\\-letters(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/debug\\-user\\-letters(?:/)?$"
     },
     {
       "page": "/explore",
@@ -94,6 +122,36 @@
       "regex": "^/test\\-auth(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/test\\-auth(?:/)?$"
+    },
+    {
+      "page": "/test-database",
+      "regex": "^/test\\-database(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/test\\-database(?:/)?$"
+    },
+    {
+      "page": "/test-history",
+      "regex": "^/test\\-history(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/test\\-history(?:/)?$"
+    },
+    {
+      "page": "/test-simple-storage",
+      "regex": "^/test\\-simple\\-storage(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/test\\-simple\\-storage(?:/)?$"
+    },
+    {
+      "page": "/test-supabase",
+      "regex": "^/test\\-supabase(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/test\\-supabase(?:/)?$"
+    },
+    {
+      "page": "/test-user-identity",
+      "regex": "^/test\\-user\\-identity(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/test\\-user\\-identity(?:/)?$"
     }
   ],
   "dataRoutes": [],

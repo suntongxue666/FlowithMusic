@@ -1,4 +1,5 @@
 import { supabase, User, AnonymousSession } from './supabase'
+import { ImprovedUserIdentity } from './improvedUserIdentity'
 
 // 生成匿名ID
 export function generateAnonymousId(): string {
@@ -30,17 +31,19 @@ export class UserService {
 
   // 初始化用户会话
   async initializeUser(): Promise<string> {
+    // 使用改进的用户身份识别
+    const identity = ImprovedUserIdentity.getOrCreateIdentity()
+    this.anonymousId = identity.id
+    
+    // 兼容性：同时在旧的localStorage key中保存
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('anonymous_id', identity.id)
+    }
+
     // 检查Supabase是否可用
     if (!supabase) {
-      // 如果Supabase不可用，只使用匿名ID
-      let anonymousId = localStorage.getItem('anonymous_id')
-      if (!anonymousId) {
-        anonymousId = generateAnonymousId()
-        localStorage.setItem('anonymous_id', anonymousId)
-        localStorage.setItem('user_agent', getUserAgent())
-      }
-      this.anonymousId = anonymousId
-      return anonymousId
+      console.log('🔄 Supabase not available, using improved identity:', identity.id)
+      return identity.id
     }
 
     try {
@@ -62,39 +65,21 @@ export class UserService {
         }
       }
 
-      // 匿名用户处理
-      let anonymousId = localStorage.getItem('anonymous_id')
-      
-      if (!anonymousId) {
-        anonymousId = generateAnonymousId()
-        localStorage.setItem('anonymous_id', anonymousId)
-        localStorage.setItem('user_agent', getUserAgent())
-        
-        // 记录匿名会话
-        try {
-          await supabase.from('anonymous_sessions').insert({
-            anonymous_id: anonymousId,
-            user_agent: getUserAgent()
-          })
-        } catch (error) {
-          console.warn('Failed to record anonymous session:', error)
-        }
+      // 匿名用户处理 - 记录匿名会话
+      try {
+        await supabase.from('anonymous_sessions').insert({
+          anonymous_id: identity.id,
+          user_agent: identity.deviceInfo.userAgent,
+          device_fingerprint: identity.fingerprint
+        })
+      } catch (error) {
+        console.warn('Failed to record anonymous session:', error)
       }
 
-      this.anonymousId = anonymousId
-      return anonymousId
+      return identity.id
     } catch (error) {
       console.error('Error initializing user:', error)
-      
-      // Fallback to localStorage only
-      let anonymousId = localStorage.getItem('anonymous_id')
-      if (!anonymousId) {
-        anonymousId = generateAnonymousId()
-        localStorage.setItem('anonymous_id', anonymousId)
-        localStorage.setItem('user_agent', getUserAgent())
-      }
-      this.anonymousId = anonymousId
-      return anonymousId
+      return identity.id
     }
   }
 

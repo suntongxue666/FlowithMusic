@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { UserProvider } from '@/contexts/UserContext'
+import UserIdentityNotification from '@/components/UserIdentityNotification'
 
 export const metadata: Metadata = {
   title: 'FlowithMusic - Send the song, Connect with Hearts Through Music',
@@ -35,6 +36,7 @@ export default function RootLayout({
       <body>
         <UserProvider>
           {children}
+          <UserIdentityNotification />
         </UserProvider>
       </body>
     </html>

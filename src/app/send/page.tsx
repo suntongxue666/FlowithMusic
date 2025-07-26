@@ -88,8 +88,10 @@ export default function SendPage() {
       // Show toast
       setShowToast(true)
 
-      // Immediately redirect without waiting for toast
-      router.push('/history')
+      // 等待一下确保数据已经保存，然后跳转
+      setTimeout(() => {
+        router.push('/history')
+      }, 1000)
 
     } catch (error) {
       console.error('Failed to submit:', error)

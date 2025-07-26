@@ -14,22 +14,47 @@ export default function HistoryPage() {
   const [letters, setLetters] = useState<Letter[]>([])
   const [loading, setLoading] = useState(true)
   const [showToast, setShowToast] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     const loadUserLetters = async () => {
       try {
+        console.log('🔄 Loading user letters, context:', {
+          isAuthenticated,
+          userId: user?.id,
+          anonymousId: user?.anonymous_id
+        })
+
         // 1. 立即加载本地数据，显示给用户
         const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
         if (localLetters.length > 0) {
-          console.log('Loading local letters first:', localLetters.length)
-          setLetters(localLetters.reverse()) // 最新的在前面
-          setLoading(false) // 立即停止loading
+          console.log('💾 Loading local letters first:', localLetters.length)
+          
+          // 过滤出属于当前用户的Letters
+          const userLocalLetters = localLetters.filter((letter: any) => {
+            if (user) {
+              // 已登录用户：匹配user_id或anonymous_id
+              return letter.user_id === user.id || letter.anonymous_id === user.anonymous_id
+            } else {
+              // 匿名用户：匹配anonymous_id
+              const currentAnonymousId = localStorage.getItem('anonymous_id')
+              return letter.anonymous_id === currentAnonymousId
+            }
+          })
+          
+          if (userLocalLetters.length > 0) {
+            const sortedLocalLetters = userLocalLetters.sort((a: any, b: any) => 
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )
+            setLetters(sortedLocalLetters)
+            setLoading(false) // 立即停止loading
+          }
         }
 
         // 2. 然后异步加载远程数据并合并
-        console.log('Loading remote letters, isAuthenticated:', isAuthenticated)
+        console.log('🌐 Loading remote letters...')
         const remoteLetters = await letterService.getUserLetters(50, 0)
-        console.log('Loaded remote letters:', remoteLetters.length)
+        console.log('📡 Loaded remote letters:', remoteLetters.length)
 
         // 3. 合并本地和远程数据，去重
         const allLettersMap = new Map()
@@ -40,8 +65,14 @@ export default function HistoryPage() {
         })
         
         // 再添加本地数据（如果远程没有的话，可能是刚创建的）
+        const currentAnonymousId = user?.anonymous_id || localStorage.getItem('anonymous_id')
         localLetters.forEach((letter: any) => {
-          if (!allLettersMap.has(letter.link_id)) {
+          // 确保只添加属于当前用户的Letters
+          const belongsToUser = user ? 
+            (letter.user_id === user.id || letter.anonymous_id === user.anonymous_id) :
+            (letter.anonymous_id === currentAnonymousId)
+            
+          if (belongsToUser && !allLettersMap.has(letter.link_id)) {
             allLettersMap.set(letter.link_id, letter)
           }
         })
@@ -49,13 +80,27 @@ export default function HistoryPage() {
         const mergedLetters = Array.from(allLettersMap.values())
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         
+        console.log('✅ Final merged letters:', mergedLetters.length)
         setLetters(mergedLetters)
       } catch (error) {
-        console.error('Failed to load letters:', error)
+        console.error('❌ Failed to load letters:', error)
         // 如果远程加载失败，至少显示本地数据
         const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-        if (localLetters.length > 0) {
-          setLetters(localLetters.reverse())
+        const currentAnonymousId = localStorage.getItem('anonymous_id')
+        
+        const userLocalLetters = localLetters.filter((letter: any) => {
+          if (user) {
+            return letter.user_id === user.id || letter.anonymous_id === user.anonymous_id
+          } else {
+            return letter.anonymous_id === currentAnonymousId
+          }
+        })
+        
+        if (userLocalLetters.length > 0) {
+          const sortedLetters = userLocalLetters.sort((a: any, b: any) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )
+          setLetters(sortedLetters)
         }
       } finally {
         setLoading(false)
@@ -63,7 +108,61 @@ export default function HistoryPage() {
     }
 
     loadUserLetters()
-  }, [isAuthenticated])
+  }, [isAuthenticated, user])
+
+  // 手动刷新功能
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      console.log('🔄 Manual refresh triggered')
+      
+      // 清除缓存
+      if (typeof window !== 'undefined') {
+        // 清除letterService的缓存
+        const currentUser = user
+        const currentAnonymousId = user?.anonymous_id || localStorage.getItem('anonymous_id')
+        
+        // 这里可以添加缓存清理逻辑
+        console.log('🗑️ Clearing caches...')
+      }
+      
+      // 重新加载数据
+      const remoteLetters = await letterService.getUserLetters(50, 0)
+      console.log('🔄 Refreshed remote letters:', remoteLetters.length)
+      
+      // 同时获取最新的本地数据
+      const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+      const currentAnonymousId = localStorage.getItem('anonymous_id')
+      
+      const allLettersMap = new Map()
+      
+      // 添加远程数据
+      remoteLetters.forEach(letter => {
+        allLettersMap.set(letter.link_id, letter)
+      })
+      
+      // 添加本地数据
+      localLetters.forEach((letter: any) => {
+        const belongsToUser = user ? 
+          (letter.user_id === user.id || letter.anonymous_id === user.anonymous_id) :
+          (letter.anonymous_id === currentAnonymousId)
+          
+        if (belongsToUser && !allLettersMap.has(letter.link_id)) {
+          allLettersMap.set(letter.link_id, letter)
+        }
+      })
+      
+      const mergedLetters = Array.from(allLettersMap.values())
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      
+      setLetters(mergedLetters)
+      console.log('✅ Refresh complete:', mergedLetters.length)
+    } catch (error) {
+      console.error('❌ Refresh failed:', error)
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   const handleSignIn = async () => {
     try {
@@ -203,6 +302,12 @@ export default function HistoryPage() {
 
   return (
     <main>
+      <style jsx>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
       <Header currentPage="history" />
       <div className="history-container">
         {/* Google登录按钮 - 放在标题上方，居中显示 */}
@@ -238,7 +343,33 @@ export default function HistoryPage() {
           </div>
         )}
         
-        <h1 className="history-title" style={{ marginBottom: '2rem' }}>Your Message History</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <h1 className="history-title" style={{ margin: 0 }}>Your Message History</h1>
+          <button 
+            onClick={handleRefresh}
+            disabled={refreshing}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: refreshing ? '#ccc' : '#007BFF',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: refreshing ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            <span style={{ 
+              display: 'inline-block',
+              animation: refreshing ? 'spin 1s linear infinite' : 'none'
+            }}>
+              🔄
+            </span>
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
         
         <div className="message-list">
           {letters.map((letter) => (
