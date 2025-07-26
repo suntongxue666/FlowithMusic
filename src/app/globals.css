@@ -1668,8 +1668,12 @@ nav {
   }
   
   .letter-content {
-    padding: 1.5rem;
+    padding: 1.5rem 1rem; /* 减少左右padding */
     border-radius: 8px;
+  }
+  
+  .letter-header {
+    margin-bottom: 1rem; /* 减少header下方间距 */
   }
   
   .letter-header h2 {
@@ -1682,9 +1686,38 @@ nav {
     line-height: 1.2;
   }
   
+  .letter-player {
+    margin: 1rem -1rem !important; /* 负margin让播放器占据全宽 */
+    padding: 0 !important; /* 移除内边距 */
+  }
+  
+  .colorful-spotify-container {
+    border-radius: 0 !important; /* H5环境下移除圆角 */
+    width: 100% !important;
+    max-width: none !important;
+  }
+  
+  .colorful-iframe-wrapper {
+    border-radius: 0 !important; /* H5环境下移除圆角 */
+    height: 152px !important;
+  }
+  
+  .colorful-iframe-wrapper iframe {
+    border-radius: 0 !important; /* H5环境下移除圆角 */
+    height: 152px !important;
+  }
+  
+  .colorful-spotify-fallback {
+    border-radius: 0 !important; /* H5环境下移除圆角 */
+    height: 152px !important;
+    margin: 0 !important;
+  }
+  
   .message-title {
     font-size: 1.1rem;
     line-height: 1.2;
+    margin-top: 1.5rem; /* 增加与播放器的间距 */
+    margin-bottom: 1rem;
   }
   
   .letter-player-enhanced {
