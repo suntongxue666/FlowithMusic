@@ -214,7 +214,7 @@ nav {
 /* Cards Styles */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   padding: 2rem;
   max-width: 1200px;
@@ -476,14 +476,19 @@ nav {
   
   .search-box {
     flex-direction: column;
-  }
-  
-  .search-btn {
-    border-radius: 0;
+    border: none;
+    background: transparent;
   }
   
   .search-input {
-    border-bottom: 1px solid #eee;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+  
+  .search-btn {
+    border-radius: 8px;
+    width: 100%;
   }
 }
 

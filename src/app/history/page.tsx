@@ -14,7 +14,6 @@ export default function HistoryPage() {
   const [letters, setLetters] = useState<Letter[]>([])
   const [loading, setLoading] = useState(true)
   const [showToast, setShowToast] = useState(false)
-  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     const loadUserLetters = async () => {
@@ -175,60 +174,6 @@ export default function HistoryPage() {
     loadUserLetters()
   }, [isAuthenticated, user])
 
-  // 手动刷新功能
-  const handleRefresh = async () => {
-    setRefreshing(true)
-    try {
-      console.log('🔄 Manual refresh triggered')
-      
-      // 清除缓存
-      if (typeof window !== 'undefined') {
-        // 清除letterService的缓存
-        const currentUser = user
-        const currentAnonymousId = user?.anonymous_id || localStorage.getItem('anonymous_id')
-        
-        // 这里可以添加缓存清理逻辑
-        console.log('🗑️ Clearing caches...')
-      }
-      
-      // 重新加载数据
-      const remoteLetters = await letterService.getUserLetters(50, 0)
-      console.log('🔄 Refreshed remote letters:', remoteLetters.length)
-      
-      // 同时获取最新的本地数据
-      const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-      const currentAnonymousId = localStorage.getItem('anonymous_id')
-      
-      const allLettersMap = new Map()
-      
-      // 添加远程数据
-      remoteLetters.forEach(letter => {
-        allLettersMap.set(letter.link_id, letter)
-      })
-      
-      // 添加本地数据
-      localLetters.forEach((letter: any) => {
-        const belongsToUser = user ? 
-          (letter.user_id === user.id || letter.anonymous_id === user.anonymous_id) :
-          (letter.anonymous_id === currentAnonymousId)
-          
-        if (belongsToUser && !allLettersMap.has(letter.link_id)) {
-          allLettersMap.set(letter.link_id, letter)
-        }
-      })
-      
-      const mergedLetters = Array.from(allLettersMap.values())
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      
-      setLetters(mergedLetters)
-      console.log('✅ Refresh complete:', mergedLetters.length)
-    } catch (error) {
-      console.error('❌ Refresh failed:', error)
-    } finally {
-      setRefreshing(false)
-    }
-  }
-
   const handleSignIn = async () => {
     try {
       await signInWithGoogle()
@@ -322,12 +267,6 @@ export default function HistoryPage() {
 
   return (
     <main>
-      <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
       <Header currentPage="history" />
       <div className="history-container">
         {/* Google登录按钮 - 只在没有Letters且有内容的情况下显示，移动端友好 */}
@@ -365,33 +304,7 @@ export default function HistoryPage() {
           </div>
         )}
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <h1 className="history-title" style={{ margin: 0 }}>Your Message History</h1>
-          <button 
-            onClick={handleRefresh}
-            disabled={refreshing}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: refreshing ? '#ccc' : '#007BFF',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: refreshing ? 'not-allowed' : 'pointer',
-              fontSize: '0.9rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            <span style={{ 
-              display: 'inline-block',
-              animation: refreshing ? 'spin 1s linear infinite' : 'none'
-            }}>
-              🔄
-            </span>
-            {refreshing ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
+        <h1 className="history-title" style={{ marginBottom: '2rem' }}>Your Message History</h1>
         
         <div className="message-list">
           {letters.map((letter) => (

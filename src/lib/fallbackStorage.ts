@@ -16,10 +16,11 @@ class FallbackStorage {
   // 保存Letter到备用存储
   async saveLetter(letter: Letter): Promise<Letter> {
     try {
-      // 在浏览器环境中，通过API保存到服务器内存
+      // 在浏览器环境中，通过API保存到服务器内存AND尝试持久化
       if (typeof window !== 'undefined') {
         try {
-          const response = await fetch(`/api/letters/${letter.link_id}`, {
+          // 1. 保存到服务器共享存储
+          const response = await fetch(`/api/browser-storage/${letter.link_id}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -29,11 +30,28 @@ class FallbackStorage {
           
           if (response.ok) {
             const data = await response.json()
-            console.log('Letter saved via API to server storage:', letter.link_id)
-            return data
+            console.log('Letter saved via shared storage API:', letter.link_id)
+            
+            // 2. 同时保存到localStorage作为本地备份
+            const localLetters = JSON.parse(localStorage.getItem('shared_letters') || '{}')
+            localLetters[letter.link_id] = letter
+            localStorage.setItem('shared_letters', JSON.stringify(localLetters))
+            console.log('Letter also backed up to shared_letters localStorage')
+            
+            return data.letter || letter
           }
         } catch (apiError) {
-          console.warn('API save failed:', apiError)
+          console.warn('Shared storage API save failed:', apiError)
+        }
+        
+        // 3. 如果API失败，至少保存到本地shared_letters
+        try {
+          const localLetters = JSON.parse(localStorage.getItem('shared_letters') || '{}')
+          localLetters[letter.link_id] = letter
+          localStorage.setItem('shared_letters', JSON.stringify(localLetters))
+          console.log('Letter saved to local shared_letters as fallback')
+        } catch (localError) {
+          console.error('Local shared storage failed:', localError)
         }
       }
 
@@ -65,13 +83,35 @@ class FallbackStorage {
 
   // 从备用存储获取Letter
   async getLetter(linkId: string): Promise<Letter | null> {
-    // 在浏览器环境中，尝试通过API获取
+    // 在浏览器环境中，先检查本地shared_letters，然后尝试通过API获取
     if (typeof window !== 'undefined') {
+      // 1. 首先检查本地shared_letters
+      try {
+        const localSharedLetters = JSON.parse(localStorage.getItem('shared_letters') || '{}')
+        if (localSharedLetters[linkId]) {
+          console.log('Letter found in local shared_letters:', linkId)
+          return localSharedLetters[linkId]
+        }
+      } catch (localError) {
+        console.warn('Failed to check local shared_letters:', localError)
+      }
+      
+      // 2. 尝试通过API获取
       try {
         const response = await fetch(`/api/letters/${linkId}`)
         if (response.ok) {
           const data = await response.json()
           console.log('Letter found via API:', linkId)
+          
+          // 缓存到本地shared_letters
+          try {
+            const localSharedLetters = JSON.parse(localStorage.getItem('shared_letters') || '{}')
+            localSharedLetters[linkId] = data
+            localStorage.setItem('shared_letters', JSON.stringify(localSharedLetters))
+          } catch (cacheError) {
+            console.warn('Failed to cache to local shared_letters:', cacheError)
+          }
+          
           return data
         }
       } catch (error) {
