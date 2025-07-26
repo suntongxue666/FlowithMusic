@@ -757,6 +757,7 @@ export class LetterService {
           )
         `)
         .eq('link_id', linkId)
+        .eq('is_public', true) // 确保只获取公开的Letters
         .single()
 
       if (error) {
