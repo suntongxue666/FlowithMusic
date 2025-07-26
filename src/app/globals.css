@@ -3237,4 +3237,56 @@ etter Player Styles */
     padding: 0.4rem 0.8rem;
     font-size: 0.8rem;
   }
+}/* 
+修复播放器背景宽度问题 - 最终版本 */
+.letter-player {
+  margin: 2rem 0;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.colorful-spotify-container {
+  width: 100% !important;
+  max-width: 500px !important;
+  margin: 0 auto !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.colorful-iframe-wrapper {
+  width: 100% !important;
+  height: 152px !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.colorful-iframe-wrapper iframe {
+  width: 100% !important;
+  height: 152px !important;
+  border: none !important;
+  border-radius: 12px !important;
+  display: block !important;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .letter-player {
+    margin: 1.5rem 0 !important;
+  }
+  
+  .colorful-iframe-wrapper {
+    height: 132px !important;
+  }
+  
+  .colorful-iframe-wrapper iframe {
+    height: 132px !important;
+  }
 }
