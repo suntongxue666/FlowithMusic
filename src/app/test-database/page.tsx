@@ -220,7 +220,7 @@ export default function TestDatabasePage() {
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-      <h1>📊 数据库验证工具</h1>
+      <h1>📊 数据库验证工具 (新数据库)</h1>
       
       <div style={{ marginBottom: '2rem' }}>
         <button 
