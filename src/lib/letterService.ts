@@ -284,7 +284,7 @@ export class LetterService {
     const anonymousId = userService.getAnonymousId()
     
     // 生成缓存键
-    const cacheKey = cacheManager.constructor.generateKey('user_letters', {
+    const cacheKey = cacheManager.generateKey('user_letters', {
       userId: user?.id || 'anonymous',
       anonymousId: anonymousId || 'none',
       limit,
@@ -407,7 +407,7 @@ export class LetterService {
     }
   ): Promise<Letter[]> {
     // 生成缓存键
-    const cacheKey = cacheManager.constructor.generateKey('public_letters', {
+    const cacheKey = cacheManager.generateKey('public_letters', {
       limit,
       offset,
       sortBy,
