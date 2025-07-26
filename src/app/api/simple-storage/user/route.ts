@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Letter } from '@/lib/supabase'
-
-// 导入共享的存储类
-import { ServerLetterStorage } from '../[linkId]/route'
+import { ServerLetterStorage } from '@/lib/serverStorage'
 
 export async function GET(request: NextRequest) {
   try {
