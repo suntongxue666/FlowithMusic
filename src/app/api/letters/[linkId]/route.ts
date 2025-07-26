@@ -5,10 +5,10 @@ const letters = new Map()
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { linkId: string } }
+  { params }: { params: Promise<{ linkId: string }> }
 ) {
   try {
-    const { linkId } = params
+    const { linkId } = await params
     
     // 首先尝试从Supabase获取
     try {
@@ -48,10 +48,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { linkId: string } }
+  { params }: { params: Promise<{ linkId: string }> }
 ) {
   try {
-    const { linkId } = params
+    const { linkId } = await params
     const letterData = await request.json()
     
     // 首先尝试保存到Supabase
