@@ -67,7 +67,40 @@ export default function LetterPage() {
       <main>
         <Header />
         <div className="letter-container">
-          <div className="error">Letter not found</div>
+          <div className="letter-content">
+            <div className="letter-header">
+              <h2>🔍 Letter Not Found</h2>
+              <p style={{ color: '#666', marginBottom: '2rem' }}>
+                We're having trouble loading this letter right now. This might be due to:
+              </p>
+              <ul style={{ textAlign: 'left', color: '#666', marginBottom: '2rem' }}>
+                <li>The link might be incorrect or expired</li>
+                <li>We're experiencing temporary technical issues</li>
+                <li>The letter might not have been saved properly</li>
+              </ul>
+              <p style={{ color: '#666', marginBottom: '2rem' }}>
+                Please ask the sender to check the link or try sending a new message.
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <a href="/send" className="send-button black-button">
+                  💌 Send a New Message
+                </a>
+                <button 
+                  onClick={() => window.location.reload()} 
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'transparent',
+                    border: '1px solid #ddd',
+                    borderRadius: '25px',
+                    cursor: 'pointer',
+                    fontSize: '1rem'
+                  }}
+                >
+                  🔄 Try Again
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     )
