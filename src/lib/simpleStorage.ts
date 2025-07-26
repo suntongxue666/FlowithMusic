@@ -60,6 +60,28 @@ class SimpleStorage {
     }
   }
 
+  // 获取公开的Letters
+  async getPublicLetters(limit: number = 20): Promise<Letter[]> {
+    try {
+      const response = await fetch(`/api/simple-storage/public?limit=${limit}`)
+      
+      if (response.ok) {
+        const letters = await response.json()
+        return letters
+      } else {
+        throw new Error(`Failed to fetch public letters: ${response.status}`)
+      }
+    } catch (error) {
+      console.error('Failed to fetch public letters from simple storage:', error)
+      // 备用：从本地内存获取
+      const allLetters = Array.from(this.letters.values())
+      return allLetters
+        .filter(letter => letter.is_public)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, limit)
+    }
+  }
+
   // 获取用户的Letters
   async getUserLetters(userId?: string, anonymousId?: string): Promise<Letter[]> {
     try {

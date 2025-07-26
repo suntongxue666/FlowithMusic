@@ -124,7 +124,13 @@ export class LetterService {
           .single()
 
         if (error) {
-          console.error('Failed to create letter:', error)
+          console.error('Failed to create letter in Supabase:', error)
+          console.error('Error details:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+          })
           
           // 如果Supabase失败，使用备用存储
           console.warn('Supabase failed, falling back to alternative storage')
@@ -415,29 +421,90 @@ export class LetterService {
       return cachedData
     }
     
-    if (!supabase) {
-      console.warn('数据库连接不可用')
-      return []
+    let letters: Letter[] = []
+    
+    // 1. 优先从Supabase获取
+    if (supabase) {
+      try {
+        let query = supabase
+          .from('letters')
+          .select(`
+            *,
+            user:users(
+              id,
+              display_name,
+              avatar_url
+            )
+          `)
+          .eq('is_public', true)
+
+        // 艺术家筛选
+        if (filterBy?.artist) {
+          query = query.ilike('song_artist', `%${filterBy.artist}%`)
+        }
+
+        // 时间范围筛选
+        if (filterBy?.timeRange && filterBy.timeRange !== 'all') {
+          const now = new Date()
+          let startDate = new Date()
+          
+          switch (filterBy.timeRange) {
+            case 'day':
+              startDate.setDate(now.getDate() - 1)
+              break
+            case 'week':
+              startDate.setDate(now.getDate() - 7)
+              break
+            case 'month':
+              startDate.setMonth(now.getMonth() - 1)
+              break
+          }
+          
+          query = query.gte('created_at', startDate.toISOString())
+        }
+
+        // 排序
+        const ascending = false // 默认降序
+        query = query.order(sortBy, { ascending })
+
+        // 分页
+        query = query.range(offset, offset + limit - 1)
+
+        const { data, error } = await query
+
+        if (!error && data) {
+          letters = data || []
+          console.log(`✅ Got ${letters.length} letters from Supabase`)
+        } else {
+          console.error('Supabase query failed:', error)
+        }
+      } catch (error) {
+        console.error('Supabase connection failed:', error)
+      }
     }
-
-    let query = supabase
-      .from('letters')
-      .select(`
-        *,
-        user:users(
-          id,
-          display_name,
-          avatar_url
-        )
-      `)
-      .eq('is_public', true)
-
-    // 艺术家筛选
+    
+    // 2. 从fallback存储获取补充数据
+    try {
+      const fallbackLetters = await simpleStorage.getPublicLetters(limit * 2) // 获取更多数据用于合并
+      console.log(`📦 Got ${fallbackLetters.length} letters from fallback storage`)
+      
+      // 合并数据，去重（优先Supabase数据）
+      const existingLinkIds = new Set(letters.map(l => l.link_id))
+      const newLetters = fallbackLetters.filter(l => !existingLinkIds.has(l.link_id))
+      
+      letters = [...letters, ...newLetters]
+      console.log(`🔗 Merged total: ${letters.length} letters`)
+    } catch (error) {
+      console.error('Fallback storage query failed:', error)
+    }
+    
+    // 3. 应用客户端过滤和排序
     if (filterBy?.artist) {
-      query = query.ilike('song_artist', `%${filterBy.artist}%`)
+      letters = letters.filter(letter => 
+        letter.song_artist.toLowerCase().includes(filterBy.artist!.toLowerCase())
+      )
     }
-
-    // 时间范围筛选
+    
     if (filterBy?.timeRange && filterBy.timeRange !== 'all') {
       const now = new Date()
       let startDate = new Date()
@@ -454,24 +521,24 @@ export class LetterService {
           break
       }
       
-      query = query.gte('created_at', startDate.toISOString())
+      letters = letters.filter(letter => 
+        new Date(letter.created_at) >= startDate
+      )
     }
-
+    
     // 排序
-    const ascending = false // 默认降序
-    query = query.order(sortBy, { ascending })
-
+    letters.sort((a, b) => {
+      if (sortBy === 'view_count') {
+        return (b.view_count || 0) - (a.view_count || 0)
+      } else {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      }
+    })
+    
     // 分页
-    query = query.range(offset, offset + limit - 1)
-
-    const { data, error } = await query
-
-    if (error) {
-      console.error('获取公开Letters失败:', error)
-      return []
-    }
-
-    const letters = data || []
+    letters = letters.slice(offset, offset + limit)
+    
+    console.log(`📊 Final result: ${letters.length} public letters after filtering and pagination`)
     
     // 缓存结果（缓存2分钟）
     cacheManager.set(cacheKey, letters, 2 * 60 * 1000)
