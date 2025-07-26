@@ -18,22 +18,7 @@ export default function LetterPage() {
         try {
           console.log('Loading letter with linkId:', linkId)
           
-          // 1. 优先检查URL参数中的Letter数据（最快）
-          const urlParams = new URLSearchParams(window.location.search)
-          const letterDataParam = urlParams.get('data')
-          if (letterDataParam) {
-            try {
-              const letterData = JSON.parse(decodeURIComponent(letterDataParam))
-              console.log('✅ Found letter data in URL parameters')
-              setLetter(letterData)
-              setLoading(false)
-              return
-            } catch (parseError) {
-              console.error('Failed to parse letter data from URL:', parseError)
-            }
-          }
-
-          // 2. 快速检查localStorage（本地数据）
+          // 1. 快速检查localStorage（本地数据）
           const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const localLetter = localLetters.find((l: any) => l.link_id === linkId)
           if (localLetter) {
@@ -43,7 +28,7 @@ export default function LetterPage() {
             return
           }
 
-          // 3. 从数据库获取Letter（最重要的步骤）
+          // 2. 从数据库获取Letter（主要数据源）
           console.log('🔍 Searching in database for linkId:', linkId)
           const databaseLetter = await letterService.getLetterByLinkId(linkId)
           if (databaseLetter) {
@@ -53,7 +38,7 @@ export default function LetterPage() {
             return
           }
 
-          // 4. 如果都没找到，显示未找到
+          // 3. 如果都没找到，显示未找到
           console.log('❌ Letter not found anywhere:', linkId)
           setLetter(null)
         } catch (error) {

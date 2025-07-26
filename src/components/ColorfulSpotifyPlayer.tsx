@@ -67,9 +67,9 @@ export default function ColorfulSpotifyPlayer({ track }: ColorfulSpotifyPlayerPr
 
   const trackId = getTrackId(track)
   
-  // Safari特殊处理的embed URL
+  // Safari移动端的embed URL，添加特殊参数以确保播放功能
   const embedUrl = isSafari && isMobile 
-    ? `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`
+    ? `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0&autoplay=0&show_info=1`
     : `https://open.spotify.com/embed/track/${trackId}?utm_source=generator`
 
   const handleIframeError = () => {
@@ -80,7 +80,7 @@ export default function ColorfulSpotifyPlayer({ track }: ColorfulSpotifyPlayerPr
     window.open(track.external_urls?.spotify, '_blank', 'noopener,noreferrer')
   }
 
-  if (showFallback || (isSafari && isMobile)) {
+  if (showFallback) {
     return (
       <div className="colorful-spotify-container">
         <div 
@@ -133,7 +133,11 @@ export default function ColorfulSpotifyPlayer({ track }: ColorfulSpotifyPlayerPr
           allow="encrypted-media"
           title={`${track.name} by ${track.artists[0]?.name}`}
           onError={handleIframeError}
-          sandbox="allow-scripts allow-same-origin allow-presentation"
+          onLoad={() => {
+            // 确保H5端也能正常加载Spotify播放器
+            console.log('Spotify player loaded successfully')
+          }}
+          sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
         />
       </div>
     </div>
