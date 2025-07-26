@@ -16,7 +16,7 @@ export default function ExploreCards({ searchQuery }: ExploreCardsProps) {
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(0)
   
-  const LETTERS_PER_PAGE = 30 // 6 columns * 5 rows
+  const LETTERS_PER_PAGE = 18 // 6 columns * 3 rows
 
   const loadLetters = useCallback(async (pageNum: number, isNewSearch = false) => {
     try {

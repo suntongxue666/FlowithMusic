@@ -16,6 +16,27 @@ class FallbackStorage {
   // 保存Letter到备用存储
   async saveLetter(letter: Letter): Promise<Letter> {
     try {
+      // 在浏览器环境中，通过API保存到服务器内存
+      if (typeof window !== 'undefined') {
+        try {
+          const response = await fetch(`/api/letters/${letter.link_id}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(letter)
+          })
+          
+          if (response.ok) {
+            const data = await response.json()
+            console.log('Letter saved via API to server storage:', letter.link_id)
+            return data
+          }
+        } catch (apiError) {
+          console.warn('API save failed:', apiError)
+        }
+      }
+
       // 尝试保存到Vercel KV（如果可用）
       if (typeof process !== 'undefined' && process.env.KV_REST_API_URL) {
         const response = await fetch(`${process.env.KV_REST_API_URL}/set/${letter.link_id}`, {
@@ -33,7 +54,7 @@ class FallbackStorage {
         }
       }
     } catch (error) {
-      console.warn('Vercel KV not available:', error)
+      console.warn('External storage not available:', error)
     }
 
     // 备用：保存到内存（仅用于开发/演示）
