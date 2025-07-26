@@ -31,7 +31,8 @@ export const supabase = supabaseUrl && supabaseAnonKey
         },
         fetch: (url, options = {}) => {
           // 增强的fetch实现绕过浏览器扩展
-          console.log('Supabase fetch request:', url.substring(0, 50) + '...')
+          const urlString = typeof url === 'string' ? url : url.toString()
+          console.log('Supabase fetch request:', urlString.substring(0, 50) + '...')
           
           return fetch(url, {
             ...options,
