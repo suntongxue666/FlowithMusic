@@ -128,3 +128,4 @@ export async function GET(request: NextRequest) {
   }
   
   return addCorsHeaders(NextResponse.json({ error: 'Invalid request' }, { status: 400 }))
+}
