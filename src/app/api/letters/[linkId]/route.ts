@@ -182,3 +182,76 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Debug failed' }, { status: 500 })
   }
 }
+
+// 新增：调试所有Letters的端点
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ linkId: string }> }
+) {
+  try {
+    const { linkId } = await params
+    
+    console.log('🔍 DEBUGGING LETTER ACCESS for linkId:', linkId)
+    
+    const debugInfo: any = {
+      linkId,
+      timestamp: new Date().toISOString(),
+      checks: {}
+    }
+    
+    // 1. 检查全局存储
+    debugInfo.checks.globalStorage = {
+      exists: globalLetterStorage.has(linkId),
+      total: globalLetterStorage.size,
+      allKeys: Array.from(globalLetterStorage.keys())
+    }
+    
+    // 2. 检查Supabase
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      if (supabase) {
+        const { data, error } = await supabase
+          .from('letters')
+          .select('link_id, is_public, created_at, recipient_name')
+          .eq('link_id', linkId)
+          .single()
+        
+        debugInfo.checks.supabase = {
+          found: !error && !!data,
+          error: error?.message,
+          data: data || null
+        }
+      } else {
+        debugInfo.checks.supabase = { error: 'Supabase not initialized' }
+      }
+    } catch (supabaseError) {
+      debugInfo.checks.supabase = { 
+        error: `Connection failed: ${supabaseError instanceof Error ? supabaseError.message : 'Unknown error'}` 
+      }
+    }
+    
+    // 3. 检查browser storage API
+    try {
+      const browserResponse = await fetch(`${request.nextUrl.origin}/api/browser-storage/${linkId}`)
+      debugInfo.checks.browserStorage = {
+        status: browserResponse.status,
+        found: browserResponse.ok
+      }
+      if (browserResponse.ok) {
+        const browserData = await browserResponse.json()
+        debugInfo.checks.browserStorage.data = browserData
+      }
+    } catch (browserError) {
+      debugInfo.checks.browserStorage = {
+        error: browserError instanceof Error ? browserError.message : 'Unknown error'
+      }
+    }
+    
+    return NextResponse.json(debugInfo)
+  } catch (error) {
+    return NextResponse.json({
+      error: 'Debug failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
+  }
+}

@@ -1687,28 +1687,33 @@ nav {
   }
   
   .letter-player {
-    margin: 1rem -1rem !important; /* 负margin让播放器占据全宽 */
+    margin: 1rem 0 !important; /* 恢复正常margin */
     padding: 0 !important; /* 移除内边距 */
   }
   
   .colorful-spotify-container {
-    border-radius: 0 !important; /* H5环境下移除圆角 */
+    border-radius: 12px !important; /* 恢复圆角 */
     width: 100% !important;
-    max-width: none !important;
+    max-width: 500px !important; /* 限制最大宽度 */
+    margin: 0 auto !important; /* 居中显示 */
+    background: white !important; /* 添加白色背景 */
+    padding: 1rem !important; /* 添加内边距与播放器匹配 */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; /* 添加阴影效果 */
   }
   
   .colorful-iframe-wrapper {
-    border-radius: 0 !important; /* H5环境下移除圆角 */
+    border-radius: 8px !important; /* 内部圆角稍小 */
     height: 152px !important;
+    overflow: hidden !important; /* 确保圆角生效 */
   }
   
   .colorful-iframe-wrapper iframe {
-    border-radius: 0 !important; /* H5环境下移除圆角 */
+    border-radius: 8px !important; /* 内部圆角稍小 */
     height: 152px !important;
   }
   
   .colorful-spotify-fallback {
-    border-radius: 0 !important; /* H5环境下移除圆角 */
+    border-radius: 8px !important; /* 内部圆角稍小 */
     height: 152px !important;
     margin: 0 !important;
   }
@@ -3424,14 +3429,16 @@ etter Player Styles */
   width: 100% !important;
   max-width: 500px !important;
   margin: 0 auto !important;
-  background: transparent !important;
-  padding: 0 !important;
+  background: white !important; /* 白色背景容器 */
+  padding: 1rem !important; /* 与播放器匹配的内边距 */
+  border-radius: 12px !important; /* 外层圆角 */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; /* 阴影效果 */
 }
 
 .colorful-iframe-wrapper {
   width: 100% !important;
   height: 152px !important;
-  border-radius: 12px !important;
+  border-radius: 8px !important; /* 内层圆角稍小 */
   overflow: hidden !important;
   display: flex !important;
   align-items: center !important;
@@ -3446,7 +3453,7 @@ etter Player Styles */
   width: 100% !important;
   height: 152px !important;
   border: none !important;
-  border-radius: 12px !important;
+  border-radius: 8px !important; /* 内层圆角与wrapper匹配 */
   display: block !important;
 }
 
@@ -3456,11 +3463,20 @@ etter Player Styles */
     margin: 1.5rem 0 !important;
   }
   
+  .colorful-spotify-container {
+    background: white !important; /* 确保移动端也有白色背景 */
+    padding: 0.75rem !important; /* 移动端稍微减少内边距 */
+    border-radius: 12px !important; /* 保持外层圆角 */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; /* 保持阴影 */
+  }
+  
   .colorful-iframe-wrapper {
     height: 132px !important;
+    border-radius: 8px !important; /* 保持内层圆角 */
   }
   
   .colorful-iframe-wrapper iframe {
     height: 132px !important;
+    border-radius: 8px !important; /* 保持内层圆角 */
   }
 }
