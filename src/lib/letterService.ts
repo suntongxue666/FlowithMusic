@@ -1,4 +1,5 @@
 import { supabase, Letter } from './supabase'
+import { supabaseProxy } from './supabaseProxy'
 import { userService } from './userService'
 import { fallbackStorage } from './fallbackStorage'
 import { cacheManager } from './cacheManager'
@@ -109,18 +110,33 @@ export class LetterService {
       console.log('Inserting letter data:', newLetter)
 
       try {
-        const { data, error } = await supabase
-          .from('letters')
-          .insert(newLetter)
-          .select(`
-            *,
-            user:users(
-              id,
-              display_name,
-              avatar_url
-            )
-          `)
-          .single()
+        // 优先尝试使用代理API绕过扩展干扰
+        let data, error
+        
+        try {
+          const proxyResult = await supabaseProxy.insert('letters', newLetter)
+          data = proxyResult.data
+          error = proxyResult.error
+        } catch (proxyError) {
+          console.warn('Proxy API failed, falling back to direct Supabase:', proxyError)
+          
+          // 如果代理失败，尝试直接连接
+          const directResult = await supabase
+            .from('letters')
+            .insert(newLetter)
+            .select(`
+              *,
+              user:users(
+                id,
+                display_name,
+                avatar_url
+              )
+            `)
+            .single()
+          
+          data = directResult.data
+          error = directResult.error
+        }
 
         if (error) {
           console.error('Failed to create letter in Supabase:', error)
