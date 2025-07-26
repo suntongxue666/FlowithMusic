@@ -81,8 +81,8 @@ export class LetterService {
         is_public: true
       }
       
-      // 保存到简单存储（可以被其他用户访问）
-      createdLetter = await simpleStorage.saveLetter(fallbackLetter)
+      // 保存到fallback存储（可以被其他用户访问）
+      createdLetter = await fallbackStorage.saveLetter(fallbackLetter)
       
       // 同时保存到localStorage（用户本地缓存）
       const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
