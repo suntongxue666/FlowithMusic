@@ -3,6 +3,23 @@ import { NextRequest, NextResponse } from 'next/server'
 // 临时的内存存储（生产环境中应该使用真正的数据库）
 const letters = new Map()
 
+// 简单的内存存储，用于跨请求共享数据
+class ServerStorage {
+  private static letters = new Map()
+  
+  static set(key: string, value: any) {
+    this.letters.set(key, value)
+  }
+  
+  static get(key: string) {
+    return this.letters.get(key)
+  }
+  
+  static has(key: string) {
+    return this.letters.has(key)
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ linkId: string }> }
@@ -28,7 +45,14 @@ export async function GET(
       console.warn('Supabase failed, trying fallback:', supabaseError)
     }
     
-    // 如果Supabase失败，返回404但带有友好消息
+    // 尝试从服务器内存存储获取
+    if (ServerStorage.has(linkId)) {
+      const letter = ServerStorage.get(linkId)
+      console.log('Letter found in server storage:', linkId)
+      return NextResponse.json(letter)
+    }
+
+    // 如果都没找到，返回404
     return NextResponse.json(
       { 
         error: 'Letter not found',
@@ -72,13 +96,13 @@ export async function POST(
       console.warn('Supabase save failed:', supabaseError)
     }
     
-    // 如果Supabase失败，临时存储在内存中（仅用于演示）
-    letters.set(linkId, { ...letterData, link_id: linkId, created_at: new Date().toISOString() })
+    // 如果Supabase失败，保存到服务器内存存储
+    const letter = { ...letterData, link_id: linkId, created_at: new Date().toISOString() }
+    ServerStorage.set(linkId, letter)
+    console.log('Letter saved to server storage:', linkId)
     
     return NextResponse.json({ 
-      ...letterData, 
-      link_id: linkId,
-      created_at: new Date().toISOString(),
+      ...letter,
       fallback: true 
     })
   } catch (error) {

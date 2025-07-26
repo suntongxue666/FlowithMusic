@@ -69,17 +69,17 @@ export default function LetterPage() {
         <div className="letter-container">
           <div className="letter-content">
             <div className="letter-header">
-              <h2>🔍 Letter Not Found</h2>
-              <p style={{ color: '#666', marginBottom: '2rem' }}>
-                We're having trouble loading this letter right now. This might be due to:
+              <h2 className="handwritten-greeting">🔍 Hmm, we can't find this letter...</h2>
+              <p className="message-content handwritten" style={{ color: '#666', marginBottom: '2rem', fontSize: '1.2rem' }}>
+                Something's not quite right here. This could be because:
               </p>
-              <ul style={{ textAlign: 'left', color: '#666', marginBottom: '2rem' }}>
-                <li>The link might be incorrect or expired</li>
-                <li>We're experiencing temporary technical issues</li>
-                <li>The letter might not have been saved properly</li>
-              </ul>
-              <p style={{ color: '#666', marginBottom: '2rem' }}>
-                Please ask the sender to check the link or try sending a new message.
+              <div className="message-content handwritten" style={{ textAlign: 'left', color: '#666', marginBottom: '2rem', fontSize: '1.1rem' }}>
+                <p>• Maybe the link got a little mixed up?</p>
+                <p>• We might be having some behind-the-scenes hiccups</p>
+                <p>• The letter might have gotten lost in the digital mail</p>
+              </div>
+              <p className="message-content handwritten" style={{ color: '#666', marginBottom: '2rem', fontSize: '1.2rem' }}>
+                Could you ask your friend to double-check the link? Or maybe they could send you a fresh one?
               </p>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                 <a href="/send" className="send-button black-button">

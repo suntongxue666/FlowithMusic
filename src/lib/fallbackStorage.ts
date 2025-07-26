@@ -44,8 +44,22 @@ class FallbackStorage {
 
   // 从备用存储获取Letter
   async getLetter(linkId: string): Promise<Letter | null> {
+    // 在浏览器环境中，尝试通过API获取
+    if (typeof window !== 'undefined') {
+      try {
+        const response = await fetch(`/api/letters/${linkId}`)
+        if (response.ok) {
+          const data = await response.json()
+          console.log('Letter found via API:', linkId)
+          return data
+        }
+      } catch (error) {
+        console.warn('API fetch failed:', error)
+      }
+    }
+
+    // 服务器端：尝试从Vercel KV获取
     try {
-      // 尝试从Vercel KV获取
       if (typeof process !== 'undefined' && process.env.KV_REST_API_URL) {
         const response = await fetch(`${process.env.KV_REST_API_URL}/get/${linkId}`, {
           headers: {

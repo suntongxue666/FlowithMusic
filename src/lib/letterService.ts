@@ -149,6 +149,18 @@ export class LetterService {
           // 保存到备用存储（可以被其他用户访问）
           createdLetter = await fallbackStorage.saveLetter(fallbackLetter)
           
+          // 同时通过API保存到服务器存储
+          try {
+            await fetch(`/api/letters/${linkId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(fallbackLetter)
+            })
+            console.log('Letter also saved via API:', linkId)
+          } catch (apiError) {
+            console.warn('API save failed:', apiError)
+          }
+          
           // 同时保存到localStorage（用户本地访问）
           const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           existingLetters.push(fallbackLetter)
@@ -180,6 +192,18 @@ export class LetterService {
         
         // 保存到备用存储
         createdLetter = await fallbackStorage.saveLetter(fallbackLetter)
+        
+        // 同时通过API保存到服务器存储
+        try {
+          await fetch(`/api/letters/${linkId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fallbackLetter)
+          })
+          console.log('Letter also saved via API:', linkId)
+        } catch (apiError) {
+          console.warn('API save failed:', apiError)
+        }
         
         // 同时保存到localStorage
         const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
