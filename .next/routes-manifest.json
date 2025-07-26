@@ -48,6 +48,12 @@
       "namedRegex": "^/auth/callback(?:/)?$"
     },
     {
+      "page": "/debug-letters",
+      "regex": "^/debug\\-letters(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/debug\\-letters(?:/)?$"
+    },
+    {
       "page": "/explore",
       "regex": "^/explore(?:/)?$",
       "routeKeys": {},
@@ -82,6 +88,12 @@
       "regex": "^/terms(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/terms(?:/)?$"
+    },
+    {
+      "page": "/test-auth",
+      "regex": "^/test\\-auth(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/test\\-auth(?:/)?$"
     }
   ],
   "dataRoutes": [],

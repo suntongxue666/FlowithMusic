@@ -30,7 +30,7 @@ export default function DebugLettersPage() {
         })
       } catch (error) {
         console.error('Debug error:', error)
-        setDebugInfo({ error: error.toString() })
+        setDebugInfo({ error: String(error) })
       }
     }
     
