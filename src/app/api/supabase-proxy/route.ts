@@ -57,10 +57,6 @@ export async function POST(request: NextRequest) {
           })
         }
         
-        if (options?.single) {
-          query = query.single()
-        }
-        
         if (options?.limit) {
           query = query.limit(options.limit)
         }
@@ -69,7 +65,14 @@ export async function POST(request: NextRequest) {
           query = query.order(options.order.column, { ascending: options.order.ascending })
         }
         
-        const { data: selectData, error: selectError } = await query
+        let selectResult
+        if (options?.single) {
+          selectResult = await query.single()
+        } else {
+          selectResult = await query
+        }
+        
+        const { data: selectData, error: selectError } = selectResult
         
         if (selectError) {
           console.error('Select error:', selectError)
