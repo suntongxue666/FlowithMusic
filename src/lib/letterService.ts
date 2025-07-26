@@ -1,7 +1,6 @@
 import { supabase, Letter } from './supabase'
 import { userService } from './userService'
 import { fallbackStorage } from './fallbackStorage'
-import { simpleStorage } from './simpleStorage'
 import { cacheManager } from './cacheManager'
 
 export interface CreateLetterData {
@@ -155,7 +154,7 @@ export class LetterService {
           }
           
           // 保存到简单存储（可以被其他用户访问）
-          createdLetter = await simpleStorage.saveLetter(fallbackLetter)
+          createdLetter = await fallbackStorage.saveLetter(fallbackLetter)
           
           // 同时保存到localStorage（用户本地访问）
           const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
@@ -187,7 +186,7 @@ export class LetterService {
         }
         
         // 保存到简单存储
-        createdLetter = await simpleStorage.saveLetter(fallbackLetter)
+        createdLetter = await fallbackStorage.saveLetter(fallbackLetter)
         
         // 同时保存到localStorage
         const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
@@ -421,90 +420,29 @@ export class LetterService {
       return cachedData
     }
     
-    let letters: Letter[] = []
-    
-    // 1. 优先从Supabase获取
-    if (supabase) {
-      try {
-        let query = supabase
-          .from('letters')
-          .select(`
-            *,
-            user:users(
-              id,
-              display_name,
-              avatar_url
-            )
-          `)
-          .eq('is_public', true)
-
-        // 艺术家筛选
-        if (filterBy?.artist) {
-          query = query.ilike('song_artist', `%${filterBy.artist}%`)
-        }
-
-        // 时间范围筛选
-        if (filterBy?.timeRange && filterBy.timeRange !== 'all') {
-          const now = new Date()
-          let startDate = new Date()
-          
-          switch (filterBy.timeRange) {
-            case 'day':
-              startDate.setDate(now.getDate() - 1)
-              break
-            case 'week':
-              startDate.setDate(now.getDate() - 7)
-              break
-            case 'month':
-              startDate.setMonth(now.getMonth() - 1)
-              break
-          }
-          
-          query = query.gte('created_at', startDate.toISOString())
-        }
-
-        // 排序
-        const ascending = false // 默认降序
-        query = query.order(sortBy, { ascending })
-
-        // 分页
-        query = query.range(offset, offset + limit - 1)
-
-        const { data, error } = await query
-
-        if (!error && data) {
-          letters = data || []
-          console.log(`✅ Got ${letters.length} letters from Supabase`)
-        } else {
-          console.error('Supabase query failed:', error)
-        }
-      } catch (error) {
-        console.error('Supabase connection failed:', error)
-      }
+    if (!supabase) {
+      console.warn('数据库连接不可用')
+      return []
     }
-    
-    // 2. 从fallback存储获取补充数据
-    try {
-      const fallbackLetters = await simpleStorage.getPublicLetters(limit * 2) // 获取更多数据用于合并
-      console.log(`📦 Got ${fallbackLetters.length} letters from fallback storage`)
-      
-      // 合并数据，去重（优先Supabase数据）
-      const existingLinkIds = new Set(letters.map(l => l.link_id))
-      const newLetters = fallbackLetters.filter(l => !existingLinkIds.has(l.link_id))
-      
-      letters = [...letters, ...newLetters]
-      console.log(`🔗 Merged total: ${letters.length} letters`)
-    } catch (error) {
-      console.error('Fallback storage query failed:', error)
-    }
-    
-    // 3. 应用客户端过滤和排序
+
+    let query = supabase
+      .from('letters')
+      .select(`
+        *,
+        user:users(
+          id,
+          display_name,
+          avatar_url
+        )
+      `)
+      .eq('is_public', true)
+
+    // 艺术家筛选
     if (filterBy?.artist) {
-      letters = letters.filter(letter => 
-        letter.song_artist.toLowerCase().includes(filterBy.artist!.toLowerCase())
-      )
+      query = query.ilike('song_artist', `%${filterBy.artist}%`)
     }
-    
+
+    // 时间范围筛选
     if (filterBy?.timeRange && filterBy.timeRange !== 'all') {
       const now = new Date()
       let startDate = new Date()
@@ -521,24 +459,24 @@ export class LetterService {
           break
       }
       
-      letters = letters.filter(letter => 
-        new Date(letter.created_at) >= startDate
-      )
+      query = query.gte('created_at', startDate.toISOString())
     }
-    
+
     // 排序
-    letters.sort((a, b) => {
-      if (sortBy === 'view_count') {
-        return (b.view_count || 0) - (a.view_count || 0)
-      } else {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      }
-    })
-    
+    const ascending = false // 默认降序
+    query = query.order(sortBy, { ascending })
+
     // 分页
-    letters = letters.slice(offset, offset + limit)
-    
-    console.log(`📊 Final result: ${letters.length} public letters after filtering and pagination`)
+    query = query.range(offset, offset + limit - 1)
+
+    const { data, error } = await query
+
+    if (error) {
+      console.error('获取公开Letters失败:', error)
+      return []
+    }
+
+    const letters = data || []
     
     // 缓存结果（缓存2分钟）
     cacheManager.set(cacheKey, letters, 2 * 60 * 1000)
@@ -697,15 +635,15 @@ export class LetterService {
       
       // 如果Supabase不可用，尝试从简单存储获取
       try {
-        const letter = await simpleStorage.getLetter(linkId)
+        const letter = await fallbackStorage.getLetter(linkId)
         if (letter) {
-          console.log('Found letter in simple storage:', linkId)
+          console.log('Found letter in fallback storage:', linkId)
           // 缓存结果（缓存5分钟）
           cacheManager.set(cacheKey, letter, 5 * 60 * 1000)
           return letter
         }
       } catch (error) {
-        console.error('Failed to get letter from simple storage:', error)
+        console.error('Failed to get letter from fallback storage:', error)
       }
       
       return null
@@ -730,9 +668,9 @@ export class LetterService {
         
         // 如果Supabase查询失败，尝试从简单存储获取
         try {
-          const letter = await simpleStorage.getLetter(linkId)
+          const letter = await fallbackStorage.getLetter(linkId)
           if (letter) {
-            console.log('Found letter in simple storage as fallback:', linkId)
+            console.log('Found letter in fallback storage as fallback:', linkId)
             return letter
           }
         } catch (fallbackError) {
