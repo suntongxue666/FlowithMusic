@@ -236,6 +236,10 @@ export class LetterService {
     keysToCheck.forEach(key => {
       cacheManager.delete(key)
     })
+    
+    // 清除所有letter相关的缓存
+    cacheManager.clearByPattern('user_letters_')
+    cacheManager.clearByPattern('letter_by_link_id_')
   }
 
   // 清除公开Letters缓存

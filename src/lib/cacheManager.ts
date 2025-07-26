@@ -77,6 +77,33 @@ class CacheManager {
     }
   }
 
+  // 根据模式清除缓存
+  clearByPattern(pattern: string): void {
+    // 清除内存缓存
+    const keysToDelete: string[] = []
+    this.cache.forEach((_, key) => {
+      if (key.includes(pattern)) {
+        keysToDelete.push(key)
+      }
+    })
+    
+    keysToDelete.forEach(key => {
+      this.cache.delete(key)
+    })
+
+    // 清除localStorage缓存
+    try {
+      const keys = Object.keys(localStorage)
+      keys.forEach(key => {
+        if (key.startsWith('cache_') && key.includes(pattern)) {
+          localStorage.removeItem(key)
+        }
+      })
+    } catch (error) {
+      console.warn('Failed to clear pattern cache from localStorage:', error)
+    }
+  }
+
   // 清除所有缓存
   clear(): void {
     this.cache.clear()

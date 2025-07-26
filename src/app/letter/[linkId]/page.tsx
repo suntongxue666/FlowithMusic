@@ -18,14 +18,14 @@ export default function LetterPage() {
         try {
           console.log('Loading letter with linkId:', linkId)
           
-          // 1. 快速检查localStorage（本地数据）
+          // 1. 快速检查localStorage（本地数据） - 立即显示
           const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const localLetter = localLetters.find((l: any) => l.link_id === linkId)
           if (localLetter) {
             console.log('✅ Found letter in localStorage')
             setLetter(localLetter)
             setLoading(false)
-            return
+            // 仍然继续从数据库加载，以确保数据是最新的
           }
 
           // 2. 从数据库获取Letter（主要数据源）
@@ -38,12 +38,29 @@ export default function LetterPage() {
             return
           }
 
-          // 3. 如果都没找到，显示未找到
+          // 3. 如果本地有但数据库没有，仍然显示本地数据
+          if (localLetter) {
+            console.log('✅ Using local letter as fallback')
+            setLetter(localLetter)
+            setLoading(false)
+            return
+          }
+
+          // 4. 如果都没找到，显示未找到
           console.log('❌ Letter not found anywhere:', linkId)
           setLetter(null)
         } catch (error) {
           console.error('Failed to load letter:', error)
-          setLetter(null)
+          
+          // 在出错时，尝试从本地获取
+          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+          const localLetter = localLetters.find((l: any) => l.link_id === linkId)
+          if (localLetter) {
+            console.log('✅ Using local letter after error')
+            setLetter(localLetter)
+          } else {
+            setLetter(null)
+          }
         }
       }
       setLoading(false)
