@@ -75,7 +75,10 @@ export async function GET(
   } catch (error) {
     console.error('💥 API error:', error)
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { 
+        error: 'Internal server error', 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
@@ -151,7 +154,10 @@ export async function POST(
   } catch (error) {
     console.error('💥 Save error:', error)
     return NextResponse.json(
-      { error: 'Failed to save letter', details: error.message },
+      { 
+        error: 'Failed to save letter', 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
