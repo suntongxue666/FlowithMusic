@@ -279,15 +279,8 @@ export default function HistoryPage() {
             backgroundColor: '#f8f9fa',
             fontSize: '0.9rem'
           }}>
-            <p style={{ 
-              margin: '0 0 0.75rem 0', 
-              color: '#666', 
-              fontSize: '0.85rem'
-            }}>
-              💡 Sign in to save your Letters permanently
-            </p>
             <button className="google-sign-in-btn" onClick={handleSignIn} style={{ 
-              margin: '0 auto',
+              margin: '0 auto 0.75rem auto',
               display: 'inline-flex',
               alignItems: 'center',
               padding: '0.5rem 1rem',
@@ -301,6 +294,13 @@ export default function HistoryPage() {
               </svg>
               Sign in with Google
             </button>
+            <p style={{ 
+              margin: '0', 
+              color: '#666', 
+              fontSize: '0.85rem'
+            }}>
+              💡 Log in to save your Letters, or they'll be lost forever.
+            </p>
           </div>
         )}
         
