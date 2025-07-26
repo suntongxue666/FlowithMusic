@@ -1582,6 +1582,19 @@ nav {
   line-height: 1.2;
 }
 
+/* H5端Letter详情页面字号优化 */
+@media (max-width: 768px) {
+  .message-content.handwritten.large-text {
+    font-size: 1.8rem;
+    line-height: 1.3;
+  }
+  
+  .message-content.handwritten {
+    font-size: 1.4rem;
+    line-height: 1.4;
+  }
+}
+
 .handwritten-greeting {
   font-family: 'Nanum Pen Script', cursive;
   font-size: 2rem;
@@ -2576,5 +2589,226 @@ nav {
   
   .mobile-nav {
     right: 1rem;
+  }
+}/* Sm
+art Spotify Player Styles */
+.smart-player-large {
+  width: 100%;
+  max-width: 500px;
+  margin: 1rem auto;
+}
+
+.player-card-smart {
+  background: linear-gradient(135deg, #1DB954, #1ED760);
+  border-radius: 16px;
+  padding: 1.5rem;
+  color: white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.player-header-smart {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.album-cover-smart {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.track-info-smart {
+  flex: 1;
+  min-width: 0;
+}
+
+.track-title-smart {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track-artist-smart {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track-album-smart {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-controls-smart {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.play-button-smart {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  font-size: 1.2rem;
+  transition: all 0.2s;
+}
+
+.play-button-smart:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.progress-section-smart {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.time-display-smart {
+  font-size: 0.9rem;
+  font-weight: 500;
+  min-width: 40px;
+  text-align: center;
+}
+
+.progress-container-smart {
+  flex: 1;
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+.progress-bg-smart {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill-smart {
+  height: 100%;
+  background: white;
+  border-radius: 2px;
+  transition: width 0.1s ease;
+}
+
+.spotify-button-smart {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 25px;
+  padding: 0.75rem 1.5rem;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.spotify-button-smart:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.no-preview-smart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 1rem;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.fallback-message-smart {
+  text-align: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  opacity: 0.8;
+}
+
+.fallback-message-smart p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+/* Mobile optimizations for Smart Player */
+@media (max-width: 768px) {
+  .player-card-smart {
+    padding: 1rem;
+  }
+  
+  .player-header-smart {
+    gap: 0.75rem;
+  }
+  
+  .album-cover-smart {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .track-title-smart {
+    font-size: 1rem;
+  }
+  
+  .track-artist-smart {
+    font-size: 0.9rem;
+  }
+  
+  .track-album-smart {
+    font-size: 0.8rem;
+  }
+  
+  .player-controls-smart {
+    gap: 0.75rem;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .progress-section-smart {
+    order: 1;
+    min-width: auto;
+  }
+  
+  .play-button-smart {
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
+    align-self: center;
+  }
+  
+  .spotify-button-smart {
+    order: 2;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
   }
 }

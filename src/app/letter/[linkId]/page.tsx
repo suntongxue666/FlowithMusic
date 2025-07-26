@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Header from '@/components/Header'
-import EnhancedSpotifyPlayer from '@/components/EnhancedSpotifyPlayer'
+import SmartSpotifyPlayer from '@/components/SmartSpotifyPlayer'
 import { letterService } from '@/lib/letterService'
 import type { Letter } from '@/lib/supabase'
 
@@ -154,12 +154,12 @@ export default function LetterPage() {
           <div className="letter-header">
             <h2 className="handwritten-greeting">Hello, {letter.recipient_name}</h2>
             <p className="letter-subtitle">
-              Someone picked this song just for you :)
+              Someone picked the song just for you :)
             </p>
           </div>
           
           <div className="letter-player">
-            <EnhancedSpotifyPlayer 
+            <SmartSpotifyPlayer 
               track={{
                 id: letter.song_id,
                 name: letter.song_title,
@@ -173,6 +173,7 @@ export default function LetterPage() {
                   spotify: letter.song_spotify_url
                 }
               }}
+              size="large"
             />
           </div>
           
