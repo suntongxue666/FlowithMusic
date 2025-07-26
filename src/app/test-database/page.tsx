@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { letterService } from '@/lib/letterService'
-import { supabase } from '@/lib/supabase'
+import { supabaseProxy } from '@/lib/supabaseProxy'
 
 export default function TestDatabasePage() {
   const [result, setResult] = useState<string>('')
@@ -14,22 +14,13 @@ export default function TestDatabasePage() {
     
     try {
       // 1. 检查Supabase连接状态
-      setResult(prev => prev + '1️⃣ 检查Supabase连接状态...\n')
+      setResult(prev => prev + '1️⃣ 检查Supabase代理连接状态...\n')
       
-      if (!supabase) {
-        setResult(prev => prev + '❌ Supabase未初始化\n\n')
-        return
-      }
-      
-      try {
-        const { error } = await supabase.from('letters').select('count').limit(1)
-        if (error) {
-          setResult(prev => prev + `❌ Supabase连接失败: ${error.message}\n\n`)
-        } else {
-          setResult(prev => prev + '✅ Supabase连接正常\n\n')
-        }
-      } catch (e) {
-        setResult(prev => prev + `❌ Supabase连接异常: ${e instanceof Error ? e.message : 'Unknown'}\n\n`)
+      const proxyConnected = await supabaseProxy.testConnection()
+      if (proxyConnected) {
+        setResult(prev => prev + '✅ Supabase代理连接正常\n\n')
+      } else {
+        setResult(prev => prev + '❌ Supabase代理连接失败\n\n')
       }
       
       // 2. 创建测试Letter
@@ -53,20 +44,18 @@ export default function TestDatabasePage() {
       setResult(prev => prev + `👤 User ID: ${testLetter.user_id || 'NULL'}\n`)
       setResult(prev => prev + `👻 Anonymous ID: ${testLetter.anonymous_id || 'NULL'}\n\n`)
       
-      // 3. 验证Supabase数据库中是否存在
+      // 3. 验证Supabase数据库写入
       setResult(prev => prev + '3️⃣ 验证Supabase数据库写入...\n')
       
       let supabaseData = null
       try {
-        const { data: dbData, error: supabaseError } = await supabase
-          .from('letters')
-          .select('*')
-          .eq('link_id', testLetter.link_id)
-          .single()
+        const { data: dbData, error: supabaseError } = await supabaseProxy.select('letters', {
+          filters: { eq: { link_id: testLetter.link_id } },
+          single: true
+        })
         
         if (supabaseError) {
-          setResult(prev => prev + `❌ Supabase查询失败: ${supabaseError.message}\n`)
-          setResult(prev => prev + `📋 错误详情: ${JSON.stringify(supabaseError, null, 2)}\n`)
+          setResult(prev => prev + `❌ Supabase查询失败: ${supabaseError}\n`)
         } else if (dbData) {
           supabaseData = dbData
           setResult(prev => prev + `✅ 数据成功写入Supabase\n`)
@@ -80,7 +69,7 @@ export default function TestDatabasePage() {
       
       setResult(prev => prev + '\n')
       
-      // 4. 检查localStorage
+      // 4. 检查localStorage存储
       setResult(prev => prev + '4️⃣ 检查localStorage存储...\n')
       
       if (typeof window !== 'undefined') {
@@ -119,7 +108,7 @@ export default function TestDatabasePage() {
       
       setResult(prev => prev + '\n')
       
-      // 6. 检查首页是否显示
+      // 6. 检查首页数据显示
       setResult(prev => prev + '6️⃣ 检查首页数据显示...\n')
       
       const publicLetters = await letterService.getPublicLetters(20, 0, 'created_at')
@@ -163,27 +152,20 @@ export default function TestDatabasePage() {
     setResult('🔍 直接检查Supabase数据库内容...\n\n')
     
     try {
-      if (!supabase) {
-        setResult(prev => prev + '❌ Supabase未初始化\n')
-        return
-      }
-      
-      // 获取最近的10条记录
-      const { data: recentLetters, error } = await supabase
-        .from('letters')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10)
+      // 使用代理API获取最近的10条记录
+      const { data: recentLetters, error } = await supabaseProxy.select('letters', {
+        limit: 10,
+        order: { column: 'created_at', ascending: false }
+      })
       
       if (error) {
-        setResult(prev => prev + `❌ 查询失败: ${error.message}\n`)
-        setResult(prev => prev + `错误详情: ${JSON.stringify(error, null, 2)}\n`)
+        setResult(prev => prev + `❌ 查询失败: ${error}\n`)
       } else {
         setResult(prev => prev + `✅ 查询成功，找到 ${recentLetters?.length || 0} 条记录\n\n`)
         
         if (recentLetters && recentLetters.length > 0) {
           setResult(prev => prev + '📊 最近的Letters:\n')
-          recentLetters.forEach((letter, i) => {
+          recentLetters.forEach((letter: any, i: number) => {
             const date = new Date(letter.created_at).toLocaleString()
             setResult(prev => prev + `${i+1}. ${letter.recipient_name} | ${letter.song_title} | ${date}\n`)
             setResult(prev => prev + `   Link: /letter/${letter.link_id}\n`)
@@ -191,23 +173,6 @@ export default function TestDatabasePage() {
           })
         } else {
           setResult(prev => prev + '📝 数据库为空或无public数据\n')
-        }
-        
-        // 统计信息
-        const { data: stats } = await supabase
-          .from('letters')
-          .select('id, is_public, created_at')
-        
-        if (stats) {
-          const total = stats.length
-          const publicCount = stats.filter(l => l.is_public).length
-          const today = new Date().toDateString()
-          const todayCount = stats.filter(l => new Date(l.created_at).toDateString() === today).length
-          
-          setResult(prev => prev + `📈 统计信息:\n`)
-          setResult(prev => prev + `- 总计: ${total} Letters\n`)
-          setResult(prev => prev + `- 公开: ${publicCount} Letters\n`)
-          setResult(prev => prev + `- 今日: ${todayCount} Letters\n`)
         }
       }
       
@@ -220,7 +185,7 @@ export default function TestDatabasePage() {
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-      <h1>📊 数据库验证工具 (新数据库)</h1>
+      <h1>📊 数据库验证工具 (代理API版)</h1>
       
       <div style={{ marginBottom: '2rem' }}>
         <button 
@@ -276,6 +241,7 @@ export default function TestDatabasePage() {
           <li><strong>完整测试</strong>：创建新Letter并验证所有存储和访问流程</li>
           <li><strong>直接查询</strong>：查看Supabase数据库中的现有数据</li>
           <li>测试结果会显示数据是否成功写入Supabase、localStorage等</li>
+          <li><strong>新版本使用代理API绕过浏览器扩展干扰</strong></li>
         </ul>
       </div>
     </div>
