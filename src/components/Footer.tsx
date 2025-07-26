@@ -43,6 +43,7 @@ export default function Footer() {
             <div className="mobile-links">
               <Link href="/terms">Terms of Service</Link>
               <Link href="/privacy">Privacy Policy</Link>
+              <Link href="/sitemap">Sitemap</Link>
             </div>
           </div>
           
@@ -78,7 +79,7 @@ export default function Footer() {
                 <li><Link href="/send">Send</Link></li>
                 <li><Link href="/history">History</Link></li>
                 <li><Link href="/explore">Explore</Link></li>
-                <li><Link href="/sitemap.xml">Sitemap</Link></li>
+                <li><Link href="/sitemap">Sitemap</Link></li>
               </ul>
             </div>
             
