@@ -221,7 +221,7 @@ export default function LetterPage() {
             width={16} 
             height={16}
           />
-          <span>Log in to Spotify in your browser to listen to the full song.</span>
+          <span>  Log in to Spotify in your browser to listen to the full song.</span>
         </div>
       </div>
     </main>
