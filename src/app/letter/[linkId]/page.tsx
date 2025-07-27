@@ -25,77 +25,90 @@ export default function LetterPage() {
           
           let foundLetter: Letter | null = null
           
-          // 1. 快速检查localStorage（本地数据） - 立即显示
-          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-          const localLetter = localLetters.find((l: any) => l.link_id === linkId)
-          if (localLetter) {
-            console.log('✅ Found letter in localStorage')
-            foundLetter = localLetter
-            setLetter(localLetter)
-            setLoading(false)
-            // 仍然继续从数据库加载，以确保数据是最新的
-          }
-
-          // 2. 从数据库获取Letter（主要数据源）
-          console.log('🔍 Searching in database for linkId:', linkId)
-          const databaseLetter = await letterService.getLetterByLinkId(linkId)
-          if (databaseLetter) {
-            console.log('✅ Found letter in database')
-            foundLetter = databaseLetter
-            setLetter(databaseLetter)
-            setLoading(false)
-            return
-          }
-
-          // 3. 尝试从API直接获取（包括共享存储）
-          console.log('🔍 Trying direct API fetch for linkId:', linkId)
+          // 1. 直接从API获取（最可靠的数据源）
+          console.log('🔍 Fetching from API for linkId:', linkId)
           try {
             const apiResponse = await fetch(`/api/letters/${linkId}`)
             if (apiResponse.ok) {
               const apiLetter = await apiResponse.json()
-              console.log('✅ Found letter via direct API')
-              foundLetter = apiLetter
-              setLetter(apiLetter)
-              setLoading(false)
-              return
+              console.log('✅ Found letter via API:', apiLetter)
+              
+              // 验证Letter数据完整性
+              if (apiLetter && apiLetter.link_id && apiLetter.recipient_name && apiLetter.message) {
+                foundLetter = apiLetter
+                setLetter(apiLetter)
+                setLoading(false)
+                console.log('✅ Letter data is complete and valid')
+                return
+              } else {
+                console.warn('⚠️ Letter data incomplete from API:', {
+                  hasLinkId: !!apiLetter?.link_id,
+                  hasRecipient: !!apiLetter?.recipient_name,
+                  hasMessage: !!apiLetter?.message,
+                  hasSong: !!apiLetter?.song_title
+                })
+              }
             } else {
-              console.log('❌ API returned:', apiResponse.status, await apiResponse.text())
+              console.log('❌ API returned error:', apiResponse.status)
+              const errorText = await apiResponse.text()
+              console.log('Error details:', errorText)
             }
           } catch (apiError) {
             console.error('API fetch error:', apiError)
           }
 
-          // 4. 如果之前找到了本地Letter，继续使用它
-          if (foundLetter) {
-            console.log('✅ Using previously found letter as final result')
-            setLetter(foundLetter)
-            setLoading(false)
-            return
+          // 2. 从数据库获取Letter（通过letterService）
+          console.log('🔍 Trying letterService for linkId:', linkId)
+          try {
+            const databaseLetter = await letterService.getLetterByLinkId(linkId)
+            if (databaseLetter && databaseLetter.recipient_name && databaseLetter.message) {
+              console.log('✅ Found complete letter in database')
+              foundLetter = databaseLetter
+              setLetter(databaseLetter)
+              setLoading(false)
+              return
+            } else if (databaseLetter) {
+              console.warn('⚠️ Letter found but incomplete in database:', {
+                hasRecipient: !!databaseLetter.recipient_name,
+                hasMessage: !!databaseLetter.message,
+                hasSong: !!databaseLetter.song_title
+              })
+            }
+          } catch (dbError) {
+            console.error('Database fetch error:', dbError)
           }
 
-          // 5. 最终检查：尝试从所有用户的localStorage检查（调试用）
-          console.log('🔍 Final check: letter not found anywhere')
+          // 3. 检查localStorage作为最后备用
+          console.log('🔍 Checking localStorage as final fallback')
+          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+          const localLetter = localLetters.find((l: any) => l.link_id === linkId)
+          if (localLetter && localLetter.recipient_name && localLetter.message) {
+            console.log('✅ Found complete letter in localStorage')
+            foundLetter = localLetter
+            setLetter(localLetter)
+            setLoading(false)
+            return
+          } else if (localLetter) {
+            console.warn('⚠️ Letter found but incomplete in localStorage:', {
+              hasRecipient: !!localLetter.recipient_name,
+              hasMessage: !!localLetter.message,
+              hasSong: !!localLetter.song_title
+            })
+          }
+
+          // 4. 如果都没找到完整的Letter
+          console.log('❌ No complete letter found anywhere for linkId:', linkId)
           console.log('Available localStorage letters:', localLetters.map((l: any) => ({
             linkId: l.link_id,
             recipient: l.recipient_name,
+            hasMessage: !!l.message,
             created: l.created_at
           })))
 
-          // 6. 如果都没找到，显示未找到
-          console.log('❌ Letter not found anywhere:', linkId)
           setLetter(null)
         } catch (error) {
           console.error('Failed to load letter:', error)
-          
-          // 在出错时，尝试从本地获取
-          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-          const localLetter = localLetters.find((l: any) => l.link_id === linkId)
-          if (localLetter) {
-            console.log('✅ Using local letter after error')
-            setLetter(localLetter)
-          } else {
-            setLetter(null)
-          }
+          setLetter(null)
         }
       }
       setLoading(false)
@@ -171,29 +184,75 @@ export default function LetterPage() {
             </p>
           </div>
           
+          {/* Debug information */}
+          {process.env.NODE_ENV === 'development' && (
+            <div style={{ background: '#f0f0f0', padding: '1rem', margin: '1rem 0', fontSize: '12px' }}>
+              <strong>Debug Info:</strong><br/>
+              Link ID: {letter.link_id}<br/>
+              Recipient: {letter.recipient_name}<br/>
+              Message: {letter.message ? `"${letter.message.substring(0, 50)}..."` : 'MISSING'}<br/>
+              Song ID: {letter.song_id || 'MISSING'}<br/>
+              Song Title: {letter.song_title || 'MISSING'}<br/>
+              Song Artist: {letter.song_artist || 'MISSING'}<br/>
+              Album Cover: {letter.song_album_cover ? 'Present' : 'MISSING'}<br/>
+              Created: {letter.created_at}
+            </div>
+          )}
+          
           <div className="letter-player">
-            <ColorfulSpotifyPlayer 
-              track={{
-                id: letter.song_id,
-                name: letter.song_title,
-                artists: [{ name: letter.song_artist }],
-                album: {
+            {letter.song_title && letter.song_artist ? (
+              <ColorfulSpotifyPlayer 
+                track={{
+                  id: letter.song_id,
                   name: letter.song_title,
-                  images: [{ url: letter.song_album_cover }]
-                },
-                preview_url: letter.song_preview_url || null,
-                external_urls: {
-                  spotify: letter.song_spotify_url
-                }
-              }}
-            />
+                  artists: [{ name: letter.song_artist }],
+                  album: {
+                    name: letter.song_title,
+                    images: [{ url: letter.song_album_cover }]
+                  },
+                  preview_url: letter.song_preview_url || null,
+                  external_urls: {
+                    spotify: letter.song_spotify_url
+                  }
+                }}
+              />
+            ) : (
+              <div style={{ 
+                background: '#f8f9fa', 
+                padding: '2rem', 
+                borderRadius: '12px', 
+                textAlign: 'center',
+                border: '2px dashed #dee2e6' 
+              }}>
+                <p style={{ color: '#6c757d', margin: 0 }}>
+                  🎵 Song information is missing or unavailable
+                </p>
+                <small style={{ color: '#adb5bd' }}>
+                  Song: {letter.song_title || 'Not found'} | Artist: {letter.song_artist || 'Not found'}
+                </small>
+              </div>
+            )}
           </div>
           
           <div className="letter-message">
             <h3 className="message-title">A few words the sender wanted only you to see:</h3>
-            <div className={`message-content handwritten large-text ${hasChinese(letter.message) ? 'chinese-text' : ''}`}>
-              {letter.message}
-            </div>
+            {letter.message ? (
+              <div className={`message-content handwritten large-text ${hasChinese(letter.message) ? 'chinese-text' : ''}`}>
+                {letter.message}
+              </div>
+            ) : (
+              <div style={{ 
+                background: '#f8f9fa', 
+                padding: '2rem', 
+                borderRadius: '12px', 
+                textAlign: 'center',
+                border: '2px dashed #dee2e6' 
+              }}>
+                <p style={{ color: '#6c757d', margin: 0 }}>
+                  💬 Message content is missing or unavailable
+                </p>
+              </div>
+            )}
             <div className="letter-date centered-date">
               Sent on {new Date(letter.created_at).toLocaleDateString('en-US', {
                 year: 'numeric',
