@@ -61,8 +61,9 @@ export default function ExploreCards({ searchQuery }: ExploreCardsProps) {
                 const recipientMatch = letter.recipient_name.toLowerCase().includes(query)
                 const songMatch = letter.song_title.toLowerCase().includes(query)
                 const artistMatch = letter.song_artist.toLowerCase().includes(query)
-                return true(recipientMatch || songMatch || artistMatch)               }
-              return truewordCount >= 12
+                return (recipientMatch || songMatch || artistMatch)
+              }
+              return true
             })
             .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
           
@@ -93,8 +94,9 @@ export default function ExploreCards({ searchQuery }: ExploreCardsProps) {
                 const recipientMatch = letter.recipient_name.toLowerCase().includes(query)
                 const songMatch = letter.song_title.toLowerCase().includes(query)
                 const artistMatch = letter.song_artist.toLowerCase().includes(query)
-                return true(recipientMatch || songMatch || artistMatch)               }
-              return truewordCount >= 12
+                return (recipientMatch || songMatch || artistMatch)
+              }
+              return true
             })
             .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
           
