@@ -148,7 +148,7 @@ export default function SongSelector({ onSelect, selectedTrack }: SongSelectorPr
       setSearchResults([])
       
       // 可以在这里添加用户友好的错误提示
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         console.warn('Search request timed out')
       }
     } finally {
