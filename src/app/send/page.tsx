@@ -62,29 +62,19 @@ export default function SendPage() {
   }
 
   const handleSubmit = async () => {
-    if (!selectedTrack || !recipient.trim() || !message.trim() || !userInitialized) return
+    if (!selectedTrack || !recipient.trim() || !message.trim()) return
 
     setIsSubmitting(true)
     
     try {
-      // 确保用户已初始化
-      const currentUser = userService.getCurrentUser()
-      const anonymousId = userService.getAnonymousId()
+      // 确保用户服务可用（如果失败则继续，不阻止发送）
+      try {
+        await userService.initializeUser()
+      } catch (userError) {
+        console.warn('User service initialization failed, but continuing with letter creation:', userError)
+      }
       
-      console.log('Creating letter with user info:', {
-        currentUser: currentUser?.id,
-        anonymousId,
-        to: recipient.trim(),
-        message: message.trim(),
-        song: {
-          id: selectedTrack.id,
-          title: selectedTrack.name,
-          artist: selectedTrack.artists[0]?.name || 'Unknown Artist',
-          albumCover: selectedTrack.album.images[0]?.url || '',
-          previewUrl: selectedTrack.preview_url || undefined,
-          spotifyUrl: selectedTrack.external_urls.spotify
-        }
-      })
+      console.log('Creating letter with track:', selectedTrack.name)
 
       // Save to Supabase using letterService
       const newLetter = await letterService.createLetter({
@@ -153,8 +143,8 @@ export default function SendPage() {
     setErrorMessage('')
   }
 
-  // Check if all fields are filled and user is initialized
-  const isFormComplete = recipient.trim() && message.trim() && selectedTrack && userInitialized
+  // Check if all required fields are filled (removed userInitialized dependency)
+  const isFormComplete = recipient.trim() && message.trim() && selectedTrack
 
   return (
     <main>
