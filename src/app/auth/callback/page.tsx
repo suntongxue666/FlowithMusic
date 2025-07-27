@@ -21,7 +21,19 @@ function AuthCallbackComponent() {
           throw new Error('Supabase客户端未初始化')
         }
 
-        // 处理OAuth回调
+        // 处理OAuth回调 - 使用getSession来获取当前会话
+        console.log('🔍 AuthCallback: 当前URL:', window.location.href)
+        
+        // 首先检查URL中是否有认证信息
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const accessToken = hashParams.get('access_token')
+        
+        if (accessToken) {
+          console.log('✅ AuthCallback: 发现access_token，等待Supabase处理...')
+          // 等待一下让Supabase处理URL中的token
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+        
         const { data, error: authError } = await supabase.auth.getSession()
         
         if (authError) {
@@ -31,7 +43,17 @@ function AuthCallbackComponent() {
 
         if (!data.session) {
           console.error('❌ AuthCallback: 没有有效会话')
-          throw new Error('认证会话无效，请重新登录')
+          console.log('🔄 AuthCallback: 尝试刷新会话...')
+          
+          // 尝试刷新会话
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+          
+          if (refreshError || !refreshData.session) {
+            throw new Error('认证会话无效，请重新登录')
+          }
+          
+          console.log('✅ AuthCallback: 会话刷新成功')
+          data.session = refreshData.session
         }
 
         console.log('✅ AuthCallback: 会话验证成功')
