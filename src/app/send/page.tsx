@@ -67,11 +67,6 @@ export default function SendPage() {
     setIsSubmitting(true)
     
     try {
-      // Add timeout to prevent infinite hanging
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Letter creation timed out after 30 seconds')), 30000)
-      )
-
       // 确保用户服务可用（如果失败则继续，不阻止发送）
       try {
         await userService.initializeUser()
@@ -81,22 +76,19 @@ export default function SendPage() {
       
       console.log('Creating letter with track:', selectedTrack.name)
 
-      // Save to Supabase using letterService with timeout
-      const newLetter = await Promise.race([
-        letterService.createLetter({
-          to: recipient.trim(),
-          message: message.trim(),
-          song: {
-            id: selectedTrack.id,
-            title: selectedTrack.name,
-            artist: selectedTrack.artists[0]?.name || 'Unknown Artist',
-            albumCover: selectedTrack.album.images[0]?.url || '',
-            previewUrl: selectedTrack.preview_url || undefined,
-            spotifyUrl: selectedTrack.external_urls.spotify
-          }
-        }),
-        timeoutPromise
-      ]) as any
+      // Save to Supabase using letterService (已移除超时，letterService内部有优化的错误处理)
+      const newLetter = await letterService.createLetter({
+        to: recipient.trim(),
+        message: message.trim(),
+        song: {
+          id: selectedTrack.id,
+          title: selectedTrack.name,
+          artist: selectedTrack.artists[0]?.name || 'Unknown Artist',
+          albumCover: selectedTrack.album.images[0]?.url || '',
+          previewUrl: selectedTrack.preview_url || undefined,
+          spotifyUrl: selectedTrack.external_urls.spotify
+        }
+      })
 
       console.log('Letter created successfully:', newLetter)
       setCreatedLetter(newLetter)

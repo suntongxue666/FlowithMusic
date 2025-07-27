@@ -40,26 +40,78 @@ export default function SongSelector({ onSelect, selectedTrack }: SongSelectorPr
   const loadRecommendations = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/spotify/recommendations')
+      console.log('Loading Spotify recommendations...')
+      
+      // 添加超时保护，防止API卡住
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10秒超时
+      
+      const response = await fetch('/api/spotify/recommendations', {
+        signal: controller.signal
+      })
+      clearTimeout(timeoutId)
+      
+      if (!response.ok) {
+        throw new Error(`Recommendations API failed: ${response.status}`)
+      }
+      
       const data = await response.json()
       if (data.tracks && data.tracks.length > 0) {
         setRecommendations(data.tracks)
+        console.log('✅ Loaded recommendations:', data.tracks.length)
       } else {
-        // Fallback: search for popular songs
-        const fallbackResponse = await fetch('/api/spotify/search?q=popular%20hits%202024')
-        const fallbackData = await fallbackResponse.json()
-        setRecommendations(fallbackData.tracks || [])
+        throw new Error('No tracks in recommendations response')
       }
     } catch (error) {
-      console.error('Failed to load recommendations:', error)
-      // Try to load some popular songs as fallback
+      console.warn('Recommendations failed, trying fallback:', error)
+      
+      // Fallback 1: 尝试搜索热门歌曲
       try {
-        const fallbackResponse = await fetch('/api/spotify/search?q=top%20hits')
-        const fallbackData = await fallbackResponse.json()
-        setRecommendations(fallbackData.tracks || [])
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 8000) // 8秒超时
+        
+        const fallbackResponse = await fetch('/api/spotify/search?q=popular%20hits%202024', {
+          signal: controller.signal
+        })
+        clearTimeout(timeoutId)
+        
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json()
+          if (fallbackData.tracks && fallbackData.tracks.length > 0) {
+            setRecommendations(fallbackData.tracks)
+            console.log('✅ Loaded fallback tracks:', fallbackData.tracks.length)
+            return
+          }
+        }
       } catch (fallbackError) {
-        console.error('Fallback also failed:', fallbackError)
+        console.warn('First fallback failed:', fallbackError)
       }
+      
+      // Fallback 2: 尝试更简单的搜索
+      try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5秒超时
+        
+        const simpleFallbackResponse = await fetch('/api/spotify/search?q=music', {
+          signal: controller.signal
+        })
+        clearTimeout(timeoutId)
+        
+        if (simpleFallbackResponse.ok) {
+          const simpleFallbackData = await simpleFallbackResponse.json()
+          if (simpleFallbackData.tracks && simpleFallbackData.tracks.length > 0) {
+            setRecommendations(simpleFallbackData.tracks)
+            console.log('✅ Loaded simple fallback tracks:', simpleFallbackData.tracks.length)
+            return
+          }
+        }
+      } catch (simpleFallbackError) {
+        console.warn('Simple fallback also failed:', simpleFallbackError)
+      }
+      
+      // 如果所有方法都失败，设置空数组避免无限加载
+      console.warn('All recommendation methods failed, using empty array')
+      setRecommendations([])
     } finally {
       setLoading(false)
     }
@@ -73,12 +125,32 @@ export default function SongSelector({ onSelect, selectedTrack }: SongSelectorPr
 
     setLoading(true)
     try {
-      const response = await fetch(`/api/spotify/search?q=${encodeURIComponent(query)}`)
+      console.log('Searching for:', query)
+      
+      // 添加超时保护
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 8000) // 8秒超时
+      
+      const response = await fetch(`/api/spotify/search?q=${encodeURIComponent(query)}`, {
+        signal: controller.signal
+      })
+      clearTimeout(timeoutId)
+      
+      if (!response.ok) {
+        throw new Error(`Search API failed: ${response.status}`)
+      }
+      
       const data = await response.json()
       setSearchResults(data.tracks || [])
+      console.log(`✅ Search found ${data.tracks?.length || 0} tracks`)
     } catch (error) {
-      console.error('Search failed:', error)
+      console.warn('Search failed:', error)
       setSearchResults([])
+      
+      // 可以在这里添加用户友好的错误提示
+      if (error.name === 'AbortError') {
+        console.warn('Search request timed out')
+      }
     } finally {
       setLoading(false)
     }
