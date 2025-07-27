@@ -59,215 +59,97 @@ export class LetterService {
     
     let createdLetter: Letter
     
-    // 如果Supabase不可用，使用简单存储作为fallback
-    if (!supabase) {
-      console.warn('Supabase not available, using simple storage fallback')
-      
-      const fallbackLetter: Letter = {
-        id: linkId,
-        user_id: user?.id,
-        anonymous_id: user ? undefined : (anonymousId || undefined),
-        link_id: linkId,
-        recipient_name: letterData.to.trim(),
-        message: letterData.message.trim(),
-        song_id: letterData.song.id,
-        song_title: letterData.song.title,
-        song_artist: letterData.song.artist,
-        song_album_cover: letterData.song.albumCover,
-        song_preview_url: letterData.song.previewUrl,
-        song_spotify_url: letterData.song.spotifyUrl,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        view_count: 0,
-        is_public: true
-      }
-      
-      // 保存到fallback存储（可以被其他用户访问）
-      try {
-        createdLetter = await this.withTimeout(
-          fallbackStorage.saveLetter(fallbackLetter),
-          10000,
-          'Fallback storage timeout'
-        )
-        console.log('✅ Letter saved to fallback storage successfully')
-      } catch (fallbackError) {
-        console.error('Fallback storage failed:', fallbackError)
-        createdLetter = fallbackLetter
-      }
-      
-      // 同时保存到localStorage（用户本地缓存）
-      const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-      existingLetters.unshift(fallbackLetter) // 添加到开头
-      localStorage.setItem('letters', JSON.stringify(existingLetters))
-      console.log('✅ Letter added to localStorage for immediate access')
-    } else {
-      // 构建新letter数据
-      const newLetter = {
-        user_id: user?.id || null,
-        anonymous_id: user ? null : anonymousId,
-        link_id: linkId,
-        recipient_name: letterData.to.trim(),
-        message: letterData.message.trim(),
-        song_id: letterData.song.id,
-        song_title: letterData.song.title,
-        song_artist: letterData.song.artist,
-        song_album_cover: letterData.song.albumCover,
-        song_preview_url: letterData.song.previewUrl,
-        song_spotify_url: letterData.song.spotifyUrl,
-        view_count: 0,
-        is_public: true // 默认公开，后续可以添加隐私设置
-      }
+    // 构建新letter数据
+    const newLetter = {
+      user_id: user?.id || null,
+      anonymous_id: user ? null : anonymousId,
+      link_id: linkId,
+      recipient_name: letterData.to.trim(),
+      message: letterData.message.trim(),
+      song_id: letterData.song.id,
+      song_title: letterData.song.title,
+      song_artist: letterData.song.artist,
+      song_album_cover: letterData.song.albumCover,
+      song_preview_url: letterData.song.previewUrl,
+      song_spotify_url: letterData.song.spotifyUrl,
+      view_count: 0,
+      is_public: true
+    }
 
-      console.log('Inserting letter data:', newLetter)
+    console.log('Creating letter with data:', newLetter)
 
-      try {
-        // 优先尝试使用代理API绕过扩展干扰
-        let data, error
+    // 首先保存到localStorage确保数据不丢失
+    const localLetter: Letter = {
+      id: linkId,
+      user_id: newLetter.user_id || undefined,
+      anonymous_id: newLetter.anonymous_id || undefined,
+      link_id: newLetter.link_id,
+      recipient_name: newLetter.recipient_name,
+      message: newLetter.message,
+      song_id: newLetter.song_id,
+      song_title: newLetter.song_title,
+      song_artist: newLetter.song_artist,
+      song_album_cover: newLetter.song_album_cover,
+      song_preview_url: newLetter.song_preview_url,
+      song_spotify_url: newLetter.song_spotify_url,
+      view_count: newLetter.view_count,
+      is_public: newLetter.is_public,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+
+    // 立即保存到localStorage
+    const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+    existingLetters.unshift(localLetter)
+    localStorage.setItem('letters', JSON.stringify(existingLetters))
+    console.log('✅ Letter immediately saved to localStorage')
+    
+    // 设置默认返回值
+    createdLetter = localLetter
+
+    // 尝试保存到数据库（非关键，失败也不影响用户体验）
+    try {
+      if (supabase) {
+        console.log('Attempting to save to Supabase...')
         
-        try {
-          const proxyResult = await this.withTimeout(
-            supabaseProxy.insert('letters', newLetter),
-            15000,
-            'Proxy API timeout'
-          )
-          data = proxyResult.data
-          error = proxyResult.error
-        } catch (proxyError) {
-          console.warn('Proxy API failed, falling back to direct Supabase:', proxyError)
-          
-          // 如果代理失败，尝试直接连接
-          try {
-            const directResult = await this.withTimeout(
-              (async () => {
-                return await supabase
-                  .from('letters')
-                  .insert(newLetter)
-                  .select(`
-                    *,
-                    user:users(
-                      id,
-                      display_name,
-                      avatar_url
-                    )
-                  `)
-                  .single()
-              })(),
-              15000,
-              'Direct Supabase timeout'
+        const { data, error } = await supabase
+          .from('letters')
+          .insert(newLetter)
+          .select(`
+            *,
+            user:users(
+              id,
+              display_name,
+              avatar_url
             )
-            
-            data = directResult.data
-            error = directResult.error
-          } catch (directError) {
-            console.error('Direct Supabase also failed:', directError)
-            throw directError
-          }
-        }
+          `)
+          .single()
 
-        if (error) {
-          console.error('Failed to create letter in Supabase:', error)
-          console.error('Error details:', {
-            message: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint
-          })
-          
-          // 如果Supabase失败，使用备用存储，但也要尝试记录到fallback存储供其他用户访问
-          console.warn('Supabase failed, falling back to alternative storage')
-          
-          const fallbackLetter: Letter = {
-            id: linkId,
-            user_id: newLetter.user_id || undefined,
-            anonymous_id: newLetter.anonymous_id || undefined,
-            link_id: newLetter.link_id,
-            recipient_name: newLetter.recipient_name,
-            message: newLetter.message,
-            song_id: newLetter.song_id,
-            song_title: newLetter.song_title,
-            song_artist: newLetter.song_artist,
-            song_album_cover: newLetter.song_album_cover,
-            song_preview_url: newLetter.song_preview_url,
-            song_spotify_url: newLetter.song_spotify_url,
-            view_count: newLetter.view_count,
-            is_public: newLetter.is_public,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-          
-          // 保存到简单存储（可以被其他用户访问）
-          try {
-            createdLetter = await this.withTimeout(
-              fallbackStorage.saveLetter(fallbackLetter),
-              10000,
-              'Fallback storage timeout'
-            )
-            console.log('✅ Letter saved to fallback storage successfully')
-          } catch (fallbackError) {
-            console.error('Fallback storage also failed:', fallbackError)
-            // 即使fallback失败，也返回Letter对象，至少本地可用
-            createdLetter = fallbackLetter
-          }
-          
-          // 同时保存到localStorage（用户本地访问）
-          const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-          existingLetters.unshift(fallbackLetter) // 添加到开头
-          localStorage.setItem('letters', JSON.stringify(existingLetters))
-          console.log('✅ Letter added to localStorage as backup')
-        } else {
-          createdLetter = data
+        if (!error && data) {
           console.log('✅ Letter successfully saved to Supabase:', data.id)
+          createdLetter = data
           
-          // 即使Supabase成功，也保存到localStorage作为备份和即时访问
-          const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-          const exists = existingLetters.some((letter: any) => letter.link_id === data.link_id)
-          if (!exists) {
-            existingLetters.unshift(data)
-            localStorage.setItem('letters', JSON.stringify(existingLetters))
-            console.log('✅ Letter also backed up to localStorage')
+          // 更新localStorage中的数据
+          const updatedLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+          const index = updatedLetters.findIndex((l: any) => l.link_id === linkId)
+          if (index !== -1) {
+            updatedLetters[index] = data
+            localStorage.setItem('letters', JSON.stringify(updatedLetters))
           }
+        } else {
+          console.warn('Supabase save failed, but localStorage backup exists:', error)
         }
-      } catch (networkError) {
-        console.error('Network error, using localStorage fallback:', networkError)
-        
-        const fallbackLetter: Letter = {
-          id: linkId,
-          user_id: newLetter.user_id || undefined,
-          anonymous_id: newLetter.anonymous_id || undefined,
-          link_id: newLetter.link_id,
-          recipient_name: newLetter.recipient_name,
-          message: newLetter.message,
-          song_id: newLetter.song_id,
-          song_title: newLetter.song_title,
-          song_artist: newLetter.song_artist,
-          song_album_cover: newLetter.song_album_cover,
-          song_preview_url: newLetter.song_preview_url,
-          song_spotify_url: newLetter.song_spotify_url,
-          view_count: newLetter.view_count,
-          is_public: newLetter.is_public,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-        
-        // 保存到简单存储
-        try {
-          createdLetter = await this.withTimeout(
-            fallbackStorage.saveLetter(fallbackLetter),
-            10000,
-            'Fallback storage timeout'
-          )
-          console.log('✅ Letter saved to fallback storage due to network error')
-        } catch (fallbackError) {
-          console.error('Fallback storage also failed:', fallbackError)
-          createdLetter = fallbackLetter
-        }
-        
-        // 同时保存到localStorage
-        const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-        existingLetters.unshift(fallbackLetter) // 添加到开头
-        localStorage.setItem('letters', JSON.stringify(existingLetters))
-        console.log('✅ Letter added to localStorage due to network error')
       }
+    } catch (dbError) {
+      console.warn('Database save failed, but localStorage backup exists:', dbError)
+    }
+
+    // 尝试保存到fallback存储（用于跨用户访问）
+    try {
+      await fallbackStorage.saveLetter(createdLetter)
+      console.log('✅ Letter also saved to fallback storage')
+    } catch (fallbackError) {
+      console.warn('Fallback storage failed:', fallbackError)
     }
     
     // 为了确保Letter可以被访问，我们在Letter对象中添加一个包含数据的链接
@@ -281,16 +163,6 @@ export class LetterService {
     this.clearPublicLettersCache()
     
     return letterWithDataLink
-  }
-
-  // Add timeout wrapper utility
-  private withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
-    return Promise.race([
-      promise,
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
-      )
-    ])
   }
 
   // 清除用户Letters缓存
