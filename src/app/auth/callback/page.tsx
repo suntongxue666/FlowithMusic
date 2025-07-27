@@ -1,73 +1,128 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { userService } from '@/lib/userService'
+import { supabase } from '@/lib/supabase'
 
-export default function AuthCallback() {
+function AuthCallbackComponent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      console.log('🚀 AuthCallback: 开始处理Google OAuth回调...')
+      console.log('🔍 AuthCallback: 当前URL:', window.location.href)
+      
       try {
-        // 动态导入supabase以避免构建时错误
-        const { supabase } = await import('@/lib/supabase')
-        
-        // 检查Supabase是否可用
         if (!supabase) {
-          console.warn('Supabase not configured, redirecting to history')
-          router.push('/history')
-          return
+          throw new Error('Supabase客户端未初始化')
         }
 
         // 处理OAuth回调
-        const { data, error } = await supabase.auth.getSession()
+        const { data, error: authError } = await supabase.auth.getSession()
         
-        if (error) {
-          console.error('Session error:', error)
-          throw new Error(`认证失败: ${error.message}`)
+        if (authError) {
+          console.error('❌ AuthCallback: 获取会话失败:', authError)
+          throw new Error(`认证失败: ${authError.message}`)
         }
 
-        if (data.session?.user) {
-          console.log('User authenticated:', data.session.user.email)
-          
-          // 处理用户数据迁移和创建
-          await userService.handleAuthCallback(data.session.user)
-          
-          // 登录成功，重定向到历史页面
-          router.push('/history')
-        } else {
-          console.warn('No session found, redirecting to history')
-          // 没有会话，重定向到历史页面
-          router.push('/history')
+        if (!data.session) {
+          console.error('❌ AuthCallback: 没有有效会话')
+          throw new Error('认证会话无效，请重新登录')
         }
-      } catch (err) {
-        console.error('Auth callback error:', err)
-        const errorMessage = err instanceof Error ? err.message : '登录过程中发生未知错误'
-        setError(errorMessage)
+
+        console.log('✅ AuthCallback: 会话验证成功')
+        console.log('👤 AuthCallback: 用户信息:', {
+          id: data.session.user.id,
+          email: data.session.user.email
+        })
+
+        // 使用userService处理用户创建和数据迁移
+        const user = await userService.handleAuthCallback(data.session.user)
         
-        // 5秒后重定向到历史页面
+        console.log('✅ AuthCallback: 用户处理完成:', {
+          id: user.id,
+          email: user.email,
+          display_name: user.display_name
+        })
+
+        console.log('🎉 AuthCallback: 登录成功，即将重定向...')
+        
+        // 重定向到历史页面
+        router.push('/history?login=success')
+        
+      } catch (err: any) {
+        console.error('💥 AuthCallback: 回调处理出错:', err)
+        setError(err.message || '登录处理失败，请重试')
+        
+        // 等待3秒后重定向到主页
         setTimeout(() => {
-          router.push('/history')
-        }, 5000)
+          router.push('/history?login=error')
+        }, 3000)
       } finally {
         setLoading(false)
       }
     }
 
-    handleAuthCallback()
-  }, [router])
+    // 延迟执行以显示加载状态
+    const timeoutId = setTimeout(handleAuthCallback, 500)
+    
+    return () => clearTimeout(timeoutId)
+  }, [router, searchParams])
 
   if (loading) {
     return (
       <div className="auth-callback-container">
         <div className="auth-callback-content">
           <div className="loading-spinner"></div>
-          <h2>正在登录中...</h2>
-          <p>请稍候，我们正在处理您的登录信息</p>
+          <h2>正在验证登录...</h2>
+          <p>请稍候，我们正在处理您的Google登录信息</p>
+          <p className="auth-notice">🔐 正在建立安全连接</p>
         </div>
+        
+        <style jsx>{`
+          .auth-callback-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f5;
+          }
+          
+          .auth-callback-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+          }
+          
+          .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+          }
+          
+          .auth-notice {
+            color: #666;
+            font-size: 14px;
+            margin-top: 1rem;
+            font-style: italic;
+          }
+          
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     )
   }
@@ -76,17 +131,54 @@ export default function AuthCallback() {
     return (
       <div className="auth-callback-container">
         <div className="auth-callback-content error">
-          <div className="error-icon">⚠️</div>
+          <div className="error-icon">❌</div>
           <h2>登录失败</h2>
           <p>{error}</p>
-          <p>将在5秒后自动返回历史页面...</p>
-          <button 
-            onClick={() => router.push('/history')}
-            className="retry-btn"
-          >
-            立即返回
+          <p>即将重定向到主页...</p>
+          
+          <button onClick={() => router.push('/')} className="retry-btn">
+            返回主页
           </button>
         </div>
+        
+        <style jsx>{`
+          .auth-callback-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f5;
+          }
+          
+          .auth-callback-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+          }
+          
+          .error-icon {
+            font-size: 48px;
+            margin-bottom: 1rem;
+          }
+          
+          .retry-btn {
+            margin-top: 1rem;
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+          }
+          
+          .retry-btn:hover {
+            background-color: #0056b3;
+          }
+        `}</style>
       </div>
     )
   }
@@ -99,6 +191,80 @@ export default function AuthCallback() {
         <p>正在为您准备个人化体验...</p>
         <p>即将跳转到历史页面</p>
       </div>
+      
+      <style jsx>{`
+        .auth-callback-container {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: #f5f5f5;
+        }
+        
+        .auth-callback-content {
+          background: white;
+          padding: 2rem;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          text-align: center;
+          max-width: 400px;
+        }
+        
+        .success-icon {
+          font-size: 48px;
+          margin-bottom: 1rem;
+        }
+      `}</style>
     </div>
+  )
+}
+
+export default function AuthCallback() {
+  return (
+    <Suspense fallback={
+      <div className="auth-callback-container">
+        <div className="auth-callback-content">
+          <div className="loading-spinner"></div>
+          <h2>正在加载...</h2>
+          <p>请稍候，我们正在处理您的登录信息</p>
+        </div>
+        
+        <style jsx>{`
+          .auth-callback-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f5;
+          }
+          
+          .auth-callback-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+          }
+          
+          .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+          }
+          
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    }>
+      <AuthCallbackComponent />
+    </Suspense>
   )
 }
