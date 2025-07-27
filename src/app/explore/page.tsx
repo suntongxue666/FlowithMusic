@@ -33,12 +33,12 @@ export default function ExplorePage() {
             <input
               type="text"
               className="search-input"
-              placeholder="Input recipient name, song, artist to find the same tune"
+              placeholder="Input recipient,song,artist to find same tune"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyPress={handleKeyPress}
               onFocus={(e) => e.target.placeholder = ''}
-              onBlur={(e) => e.target.placeholder = 'Input recipient name, song, artist to find the same tune'}
+              onBlur={(e) => e.target.placeholder = 'Input recipient,song,artist to find same tune'}
             />
             <button 
               className="search-btn"

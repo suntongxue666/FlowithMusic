@@ -20,10 +20,10 @@ export default function Header({ currentPage }: HeaderProps) {
         <img 
           src="https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon//FlowtithMusic-100.png" 
           alt="FlowithMusic" 
-          width={32} 
-          height={32}
+          width={36} 
+          height={36}
         />
-        FlowithMusic
+        <span style={{ fontSize: '28px' }}>FlowithMusic</span>
       </Link>
       
       {/* Desktop Navigation */}

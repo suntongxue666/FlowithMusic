@@ -48,7 +48,7 @@ export default function Footer() {
           </div>
           
           <div className="footer-bottom">
-            <p>&copy; 2025 <span className="handwritten">FlowithMusic</span>. All rights reserved.</p>
+            <p>&copy; 2025 <span className="handwritten" style={{ fontFamily: "'Nanum Pen Script', cursive" }}>FlowithMusic</span>. All rights reserved.</p>
           </div>
         </div>
       </footer>
@@ -101,7 +101,7 @@ export default function Footer() {
         </div>
         
         <div className="footer-bottom">
-          <p>&copy; 2025 FlowithMusic. All rights reserved.</p>
+          <p>&copy; 2025 <span style={{ fontFamily: "'Nanum Pen Script', cursive" }}>FlowithMusic</span>. All rights reserved.</p>
         </div>
       </div>
     </footer>

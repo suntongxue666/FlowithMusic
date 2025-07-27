@@ -182,6 +182,15 @@ export default function LetterPage() {
                 }
               }}
             />
+            <div className="spotify-prompt desktop-only">
+              <img 
+                src="https://open.spotifycdn.com/cdn/images/favicon16.1c487bff.png" 
+                alt="Spotify" 
+                width={16} 
+                height={16}
+              />
+              <span>Log in to Spotify in your browser to listen to the full song.</span>
+            </div>
           </div>
           
           <div className="letter-message">

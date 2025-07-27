@@ -158,8 +158,13 @@ nav {
   border: none;
   cursor: pointer;
   text-decoration: none;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s;
+  width: 168px;
+  height: 42px;
+  box-sizing: border-box;
 }
 
 .btn-primary {
@@ -320,6 +325,13 @@ nav {
   position: absolute;
   right: 1rem;
   font-size: 1.2rem;
+  width: 26px;
+  height: 26px;
+  padding: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  bottom: 0;
 }
 
 /* Responsive */
@@ -335,7 +347,7 @@ nav {
   }
   
   .hero h1 {
-    font-size: 2rem;
+    font-size: 28px;
   }
   
   .cards {
@@ -484,6 +496,10 @@ nav {
     border: 2px solid #ccc;
     border-radius: 8px;
     margin-bottom: 1rem;
+    width: 358px;
+    height: 64px;
+    padding: 1rem 1.5rem;
+    box-sizing: border-box;
   }
   
   .search-btn {
@@ -555,6 +571,22 @@ nav {
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.spotify-prompt {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.spotify-prompt img {
+  flex-shrink: 0;
 }
 
 .song-search {
@@ -1793,6 +1825,7 @@ nav {
   font-style: normal;
   color: #333;
   line-height: 1.2;
+  text-align: center; /* 左右居中 */
 }
 
 .message-content.handwritten.large-text {
@@ -3429,10 +3462,10 @@ etter Player Styles */
   width: 100% !important;
   max-width: 500px !important;
   margin: 0 auto !important;
-  background: white !important; /* 白色背景容器 */
-  padding: 1rem !important; /* 与播放器匹配的内边距 */
-  border-radius: 12px !important; /* 外层圆角 */
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; /* 阴影效果 */
+  background: white !important;
+  padding: 0 !important; /* 移除内边距，让背景与播放器尺寸一致 */
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
 }
 
 .colorful-iframe-wrapper {
@@ -3464,19 +3497,21 @@ etter Player Styles */
   }
   
   .colorful-spotify-container {
-    background: white !important; /* 确保移动端也有白色背景 */
-    padding: 0.75rem !important; /* 移动端稍微减少内边距 */
-    border-radius: 12px !important; /* 保持外层圆角 */
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; /* 保持阴影 */
+    background: white !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+    max-width: 366px !important; /* H5端播放器宽度366px */
   }
   
   .colorful-iframe-wrapper {
-    height: 132px !important;
-    border-radius: 8px !important; /* 保持内层圆角 */
+    height: 120px !important; /* H5端播放器高度120px */
+    border-radius: 12px !important;
   }
   
   .colorful-iframe-wrapper iframe {
-    height: 132px !important;
-    border-radius: 8px !important; /* 保持内层圆角 */
+    height: 120px !important;
+    border-radius: 12px !important;
   }
+}
 }
