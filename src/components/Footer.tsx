@@ -48,7 +48,7 @@ export default function Footer() {
           </div>
           
           <div className="footer-bottom">
-            <p>&copy; 2025 <span className="handwritten" style={{ fontFamily: "'Nanum Pen Script', cursive" }}>FlowithMusic</span>. All rights reserved.</p>
+            <p>&copy; 2025 <span>FlowithMusic</span>. All rights reserved.</p>
           </div>
         </div>
       </footer>
@@ -66,7 +66,7 @@ export default function Footer() {
                 alt="FlowithMusic" 
                 className="footer-logo"
               />
-              <h2 className="footer-brand-name handwritten">FlowithMusic</h2>
+              <h2 className="footer-brand-name" style={{ fontFamily: "'Nanum Pen Script', cursive" }}>FlowithMusic</h2>
             </div>
             <p className="footer-tagline handwritten">Songs carry your unsaid words — that connects hearts.</p>
           </div>
@@ -101,7 +101,7 @@ export default function Footer() {
         </div>
         
         <div className="footer-bottom">
-          <p>&copy; 2025 <span style={{ fontFamily: "'Nanum Pen Script', cursive" }}>FlowithMusic</span>. All rights reserved.</p>
+          <p>&copy; 2025 <span>FlowithMusic</span>. All rights reserved.</p>
         </div>
       </div>
     </footer>

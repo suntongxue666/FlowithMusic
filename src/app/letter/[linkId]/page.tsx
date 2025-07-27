@@ -12,6 +12,11 @@ export default function LetterPage() {
   const [letter, setLetter] = useState<Letter | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // 检测文本是否包含中文字符
+  const hasChinese = (text: string) => {
+    return /[\u4e00-\u9fff]/.test(text)
+  }
+
   useEffect(() => {
     const loadLetter = async () => {
       if (typeof linkId === 'string') {
@@ -195,7 +200,7 @@ export default function LetterPage() {
           
           <div className="letter-message">
             <h3 className="message-title">A few words the sender wanted only you to see:</h3>
-            <div className="message-content handwritten large-text">
+            <div className={`message-content handwritten large-text ${hasChinese(letter.message) ? 'chinese-text' : ''}`}>
               {letter.message}
             </div>
             <div className="letter-date centered-date">

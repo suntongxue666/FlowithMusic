@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Nanum+Pen+Script&display=swap');
 
+/* 中文字体样式 */
+.chinese-text {
+  font-family: 'STXingkai', 'KaiTi', '楷体', serif;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -323,7 +328,7 @@ nav {
 
 .card .song .play-btn {
   position: absolute;
-  right: 1rem;
+  right: calc(1rem - 2px);
   font-size: 1.2rem;
   width: 26px;
   height: 26px;
@@ -331,7 +336,7 @@ nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  bottom: 0;
+  bottom: 14px;
 }
 
 /* Responsive */
@@ -576,13 +581,14 @@ nav {
 .spotify-prompt {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: 4px;
+  margin-top: 12px;
   padding: 0.5rem;
   background: #f8f9fa;
   border-radius: 6px;
   font-size: 0.9rem;
   color: #666;
+  justify-content: center;
 }
 
 .spotify-prompt img {
@@ -1826,6 +1832,11 @@ nav {
   color: #333;
   line-height: 1.2;
   text-align: center; /* 左右居中 */
+}
+
+/* 中文内容使用STXingkai字体 */
+.message-content.handwritten.chinese-text {
+  font-family: 'STXingkai', 'KaiTi', '楷体', serif;
 }
 
 .message-content.handwritten.large-text {
