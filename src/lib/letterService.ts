@@ -365,7 +365,9 @@ export class LetterService {
       // 过滤用户的Letters
       const userLetters = existingLetters.filter((letter: Letter) => {
         if (user) {
-          return letter.user_id === user.id
+          // 已登录用户：匹配user_id或anonymous_id
+          const anonymousIdForUser = userService.getAnonymousId()
+          return letter.user_id === user.id || (anonymousIdForUser && letter.anonymous_id === anonymousIdForUser)
         } else {
           return letter.anonymous_id === anonymousId
         }
@@ -397,8 +399,15 @@ export class LetterService {
             .range(offset, offset + limit - 1)
 
           if (user) {
-            query = query.eq('user_id', user.id)
+            // 已登录用户：查询user_id匹配的Letters，以及anonymous_id匹配的Letters（用于未迁移的情况）
+            const anonymousIdForUser = userService.getAnonymousId()
+            if (anonymousIdForUser) {
+              query = query.or(`user_id.eq.${user.id},anonymous_id.eq.${anonymousIdForUser}`)
+            } else {
+              query = query.eq('user_id', user.id)
+            }
           } else {
+            // 匿名用户：查询anonymous_id匹配
             query = query.eq('anonymous_id', anonymousId)
           }
 
@@ -410,7 +419,9 @@ export class LetterService {
             const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
             const userLetters = existingLetters.filter((letter: Letter) => {
               if (user) {
-                return letter.user_id === user.id
+                // 已登录用户：匹配user_id或anonymous_id
+                const anonymousIdForUser = userService.getAnonymousId()
+                return letter.user_id === user.id || (anonymousIdForUser && letter.anonymous_id === anonymousIdForUser)
               } else {
                 return letter.anonymous_id === anonymousId
               }
@@ -427,7 +438,9 @@ export class LetterService {
           const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const userLetters = existingLetters.filter((letter: Letter) => {
             if (user) {
-              return letter.user_id === user.id
+              // 已登录用户：匹配user_id或anonymous_id
+              const anonymousIdForUser = userService.getAnonymousId()
+              return letter.user_id === user.id || (anonymousIdForUser && letter.anonymous_id === anonymousIdForUser)
             } else {
               return letter.anonymous_id === anonymousId
             }
