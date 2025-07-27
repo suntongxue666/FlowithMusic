@@ -581,6 +581,7 @@ nav {
 .spotify-prompt {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   margin-top: 12px;
   padding: 0.5rem;
@@ -588,7 +589,8 @@ nav {
   border-radius: 6px;
   font-size: 0.9rem;
   color: #666;
-  justify-content: center;
+  text-align: center;
+  width: 100%;
 }
 
 .spotify-prompt img {
