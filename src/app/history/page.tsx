@@ -17,30 +17,91 @@ export default function HistoryPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
-    const loadLetters = async () => {
+    const loadLettersAndUser = async () => {
       try {
         setLoading(true)
         
-        // Initialize user service if needed
+        // Initialize user service
         await userService.initializeUser()
         
-        // Get current user
+        // Get current user state
         const currentUser = userService.getCurrentUser()
         const isAuth = userService.isAuthenticated()
+        
+        console.log('History page - User state:', {
+          isAuth,
+          user: currentUser?.email,
+          anonymousId: userService.getAnonymousId()
+        })
         
         setUser(currentUser)
         setIsAuthenticated(isAuth)
         
-        // Load letters
-        const userLetters = await letterService.getUserLetters(50, 0)
+        // Load letters based on authentication status
+        let userLetters: Letter[] = []
+        
+        if (isAuth && currentUser) {
+          // Authenticated user - get from database and migrate if needed
+          try {
+            userLetters = await letterService.getUserLetters(50, 0)
+            console.log(`Loaded ${userLetters.length} letters for authenticated user`)
+          } catch (error) {
+            console.warn('Failed to load from database, falling back to localStorage:', error)
+            // Fallback to localStorage
+            const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+            userLetters = localLetters.sort((a: any, b: any) => 
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )
+          }
+        } else {
+          // Anonymous user - get from localStorage only
+          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+          const anonymousId = userService.getAnonymousId()
+          
+          // Filter by anonymous ID if available
+          if (anonymousId) {
+            userLetters = localLetters.filter((letter: any) => 
+              letter.anonymous_id === anonymousId
+            )
+          } else {
+            // Show all local letters if no anonymous ID
+            userLetters = localLetters
+          }
+          
+          userLetters = userLetters.sort((a: any, b: any) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )
+          
+          console.log(`Loaded ${userLetters.length} letters for anonymous user`)
+        }
+        
         setLetters(userLetters)
         
-        console.log(`Loaded ${userLetters.length} letters for history page`)
+        // Check for login success callback
+        const urlParams = new URLSearchParams(window.location.search)
+        if (urlParams.get('login') === 'success') {
+          console.log('Login successful, showing toast')
+          setShowToast(true)
+          
+          // Clear URL params
+          window.history.replaceState({}, document.title, window.location.pathname)
+          
+          // Trigger letter migration for newly logged in user
+          setTimeout(async () => {
+            try {
+              const updatedLetters = await letterService.getUserLetters(50, 0)
+              setLetters(updatedLetters)
+              console.log('Updated letters after login migration')
+            } catch (error) {
+              console.warn('Failed to reload letters after migration:', error)
+            }
+          }, 2000)
+        }
         
       } catch (error) {
-        console.error('Failed to load letters:', error)
+        console.error('Failed to initialize History page:', error)
         
-        // Fallback to localStorage
+        // Final fallback - just show localStorage contents
         const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
         const sortedLetters = localLetters.sort((a: any, b: any) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -52,7 +113,7 @@ export default function HistoryPage() {
       }
     }
 
-    loadLetters()
+    loadLettersAndUser()
   }, [])
 
   const handleLetterClick = (linkId: string) => {
