@@ -84,7 +84,11 @@ export class LetterService {
       
       // 保存到fallback存储（可以被其他用户访问）
       try {
-        createdLetter = await fallbackStorage.saveLetter(fallbackLetter)
+        createdLetter = await this.withTimeout(
+          fallbackStorage.saveLetter(fallbackLetter),
+          10000,
+          'Fallback storage timeout'
+        )
         console.log('✅ Letter saved to fallback storage successfully')
       } catch (fallbackError) {
         console.error('Fallback storage failed:', fallbackError)
@@ -121,28 +125,43 @@ export class LetterService {
         let data, error
         
         try {
-          const proxyResult = await supabaseProxy.insert('letters', newLetter)
+          const proxyResult = await this.withTimeout(
+            supabaseProxy.insert('letters', newLetter),
+            15000,
+            'Proxy API timeout'
+          )
           data = proxyResult.data
           error = proxyResult.error
         } catch (proxyError) {
           console.warn('Proxy API failed, falling back to direct Supabase:', proxyError)
           
           // 如果代理失败，尝试直接连接
-          const directResult = await supabase
-            .from('letters')
-            .insert(newLetter)
-            .select(`
-              *,
-              user:users(
-                id,
-                display_name,
-                avatar_url
-              )
-            `)
-            .single()
-          
-          data = directResult.data
-          error = directResult.error
+          try {
+            const directResult = await this.withTimeout(
+              (async () => {
+                return await supabase
+                  .from('letters')
+                  .insert(newLetter)
+                  .select(`
+                    *,
+                    user:users(
+                      id,
+                      display_name,
+                      avatar_url
+                    )
+                  `)
+                  .single()
+              })(),
+              15000,
+              'Direct Supabase timeout'
+            )
+            
+            data = directResult.data
+            error = directResult.error
+          } catch (directError) {
+            console.error('Direct Supabase also failed:', directError)
+            throw directError
+          }
         }
 
         if (error) {
@@ -178,7 +197,11 @@ export class LetterService {
           
           // 保存到简单存储（可以被其他用户访问）
           try {
-            createdLetter = await fallbackStorage.saveLetter(fallbackLetter)
+            createdLetter = await this.withTimeout(
+              fallbackStorage.saveLetter(fallbackLetter),
+              10000,
+              'Fallback storage timeout'
+            )
             console.log('✅ Letter saved to fallback storage successfully')
           } catch (fallbackError) {
             console.error('Fallback storage also failed:', fallbackError)
@@ -228,7 +251,11 @@ export class LetterService {
         
         // 保存到简单存储
         try {
-          createdLetter = await fallbackStorage.saveLetter(fallbackLetter)
+          createdLetter = await this.withTimeout(
+            fallbackStorage.saveLetter(fallbackLetter),
+            10000,
+            'Fallback storage timeout'
+          )
           console.log('✅ Letter saved to fallback storage due to network error')
         } catch (fallbackError) {
           console.error('Fallback storage also failed:', fallbackError)
@@ -254,6 +281,16 @@ export class LetterService {
     this.clearPublicLettersCache()
     
     return letterWithDataLink
+  }
+
+  // Add timeout wrapper utility
+  private withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
+      )
+    ])
   }
 
   // 清除用户Letters缓存
