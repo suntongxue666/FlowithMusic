@@ -155,7 +155,13 @@ export default function HistoryPage() {
                 className="avatar-image"
               />
             ) : (
-              <div className="default-avatar">👤</div>
+              <div className="default-avatar">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="40" r="39" fill="white" stroke="#ccc" strokeWidth="2"/>
+                  <circle cx="40" cy="32" r="12" fill="none" stroke="#999" strokeWidth="2"/>
+                  <path d="M20 65c0-11 9-20 20-20s20 9 20 20" fill="none" stroke="#999" strokeWidth="2"/>
+                </svg>
+              </div>
             )}
           </div>
           
@@ -252,7 +258,7 @@ export default function HistoryPage() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          margin-bottom: 3rem;
+          margin-bottom: 1.5rem;
           padding: 2rem 0;
         }
 
@@ -265,18 +271,17 @@ export default function HistoryPage() {
           height: 80px;
           border-radius: 50%;
           object-fit: cover;
+          background: white;
+          border: 2px solid #ccc;
         }
 
         .default-avatar {
           width: 80px;
           height: 80px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 2rem;
-          color: white;
         }
 
         .google-signin-btn {
@@ -310,10 +315,11 @@ export default function HistoryPage() {
           max-width: 400px;
           line-height: 1.5;
           margin: 0;
+          white-space: nowrap;
         }
 
         .history-header {
-          margin-bottom: 2rem;
+          margin-bottom: 1rem;
         }
 
         .history-header h1 {
@@ -465,6 +471,37 @@ export default function HistoryPage() {
         @media (max-width: 768px) {
           .history-container {
             padding: 1rem;
+          }
+
+          .user-avatar {
+            margin-bottom: 1.5rem;
+          }
+
+          .avatar-image {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: white;
+            border: 2px solid #ccc;
+          }
+
+          .default-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .default-avatar svg {
+            width: 48px;
+            height: 48px;
+          }
+
+          .signin-description {
+            white-space: normal;
           }
 
           .letter-item {
