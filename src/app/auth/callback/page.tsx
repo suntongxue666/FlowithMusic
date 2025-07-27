@@ -41,6 +41,8 @@ function AuthCallbackComponent() {
           throw new Error(`认证失败: ${authError.message}`)
         }
 
+        let user: any
+        
         if (!data.session) {
           console.error('❌ AuthCallback: 没有有效会话')
           console.log('🔄 AuthCallback: 尝试刷新会话...')
@@ -53,17 +55,11 @@ function AuthCallbackComponent() {
           }
           
           console.log('✅ AuthCallback: 会话刷新成功')
-          data.session = refreshData.session
+          user = await userService.handleAuthCallback(refreshData.session.user)
+        } else {
+          console.log('✅ AuthCallback: 会话验证成功')
+          user = await userService.handleAuthCallback(data.session.user)
         }
-
-        console.log('✅ AuthCallback: 会话验证成功')
-        console.log('👤 AuthCallback: 用户信息:', {
-          id: data.session.user.id,
-          email: data.session.user.email
-        })
-
-        // 使用userService处理用户创建和数据迁移
-        const user = await userService.handleAuthCallback(data.session.user)
         
         console.log('✅ AuthCallback: 用户处理完成:', {
           id: user.id,
