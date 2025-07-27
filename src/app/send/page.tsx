@@ -67,6 +67,13 @@ export default function SendPage() {
     setIsSubmitting(true)
     
     try {
+      // 添加浏览器信息日志
+      console.log('Browser info:', {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      })
+      
       // 确保用户服务可用（如果失败则继续，不阻止发送）
       try {
         await userService.initializeUser()
@@ -76,8 +83,10 @@ export default function SendPage() {
       
       console.log('Creating letter with track:', selectedTrack.name)
 
-      // Save to Supabase using letterService (已移除超时，letterService内部有优化的错误处理)
-      const newLetter = await letterService.createLetter({
+      // 为PC浏览器添加额外的超时保护（手机Safari不需要，因为它工作正常）
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      
+      let letterPromise = letterService.createLetter({
         to: recipient.trim(),
         message: message.trim(),
         song: {
@@ -89,6 +98,19 @@ export default function SendPage() {
           spotifyUrl: selectedTrack.external_urls.spotify
         }
       })
+      
+      // 只对PC浏览器添加超时保护
+      if (!isMobile) {
+        console.log('🖥️ PC browser detected, adding timeout protection')
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('PC browser timeout: Letter creation took too long')), 45000)
+        )
+        letterPromise = Promise.race([letterPromise, timeoutPromise]) as Promise<any>
+      } else {
+        console.log('📱 Mobile browser detected, using normal flow')
+      }
+      
+      const newLetter = await letterPromise
 
       console.log('Letter created successfully:', newLetter)
       setCreatedLetter(newLetter)
@@ -126,8 +148,17 @@ export default function SendPage() {
 
     } catch (error) {
       console.error('Failed to submit:', error)
-      const errorMsg = error instanceof Error ? error.message : 'Failed to create letter. Please try again.'
-      setErrorMessage(`⚠️ ${errorMsg}`)
+      
+      // 特别处理PC浏览器的超时错误
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      if (!isMobile && error instanceof Error && error.message.includes('PC browser timeout')) {
+        console.warn('🖥️ PC browser timeout detected, showing specific error message')
+        setErrorMessage('⏰ PC浏览器提交超时了。请尝试刷新页面或切换到手机浏览器。手机Safari表现最佳！')
+      } else {
+        const errorMsg = error instanceof Error ? error.message : 'Failed to create letter. Please try again.'
+        setErrorMessage(`⚠️ ${errorMsg}`)
+      }
+      
       setShowErrorModal(true)
     } finally {
       setIsSubmitting(false)

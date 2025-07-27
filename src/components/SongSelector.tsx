@@ -20,6 +20,10 @@ export default function SongSelector({ onSelect, selectedTrack }: SongSelectorPr
 
   // Load recommendations when component mounts
   useEffect(() => {
+    console.log('SongSelector mounting on:', {
+      userAgent: navigator.userAgent,
+      isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    })
     loadRecommendations()
   }, [])
 
