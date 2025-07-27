@@ -501,15 +501,15 @@ nav {
     border: 2px solid #ccc;
     border-radius: 8px;
     margin-bottom: 1rem;
-    width: 358px;
+    width: 343px;
     height: 64px;
-    padding: 1rem 1.5rem;
+    padding: 18px 12px;
     box-sizing: border-box;
   }
   
   .search-btn {
     border-radius: 8px;
-    width: 100%;
+    width: 343px;
   }
 }
 
