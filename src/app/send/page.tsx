@@ -21,6 +21,24 @@ export default function SendPage() {
   const [errorMessage, setErrorMessage] = useState('')
   const [createdLetter, setCreatedLetter] = useState<any>(null)
   const [userInitialized, setUserInitialized] = useState(false)
+  const [showRecipientHint, setShowRecipientHint] = useState(false)
+  const [showMessageHint, setShowMessageHint] = useState(false)
+
+  // 检测中文字符
+  const hasChinese = (text: string) => {
+    return /[\u4e00-\u9fff]/.test(text)
+  }
+
+  // 显示中文提示
+  const showChineseHint = (field: 'recipient' | 'message') => {
+    if (field === 'recipient') {
+      setShowRecipientHint(true)
+      setTimeout(() => setShowRecipientHint(false), 5000)
+    } else {
+      setShowMessageHint(true)
+      setTimeout(() => setShowMessageHint(false), 5000)
+    }
+  }
 
   // 初始化用户
   useEffect(() => {
@@ -145,26 +163,48 @@ export default function SendPage() {
         <div className="send-form">
           <div className="form-section">
             <label htmlFor="recipient">Recipient</label>
-            <input 
-              type="text" 
-              id="recipient"
-              placeholder="Enter recipient's name"
-              className="form-input"
-              value={recipient}
-              onChange={(e) => setRecipient(e.target.value)}
-            />
+            <div className="input-with-hint">
+              <input 
+                type="text" 
+                id="recipient"
+                placeholder="Enter recipient's name"
+                className="form-input"
+                value={recipient}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setRecipient(value)
+                  if (hasChinese(value)) {
+                    showChineseHint('recipient')
+                  }
+                }}
+              />
+              {showRecipientHint && (
+                <div className="chinese-hint">抱歉暂不支持中文</div>
+              )}
+            </div>
           </div>
 
           <div className="form-section">
             <label htmlFor="message">Message</label>
-            <textarea 
-              id="message"
-              placeholder="Write your message here"
-              className="form-textarea"
-              rows={6}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
+            <div className="input-with-hint">
+              <textarea 
+                id="message"
+                placeholder="Write your message here"
+                className="form-textarea"
+                rows={6}
+                value={message}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setMessage(value)
+                  if (hasChinese(value)) {
+                    showChineseHint('message')
+                  }
+                }}
+              />
+              {showMessageHint && (
+                <div className="chinese-hint">抱歉暂不支持中文</div>
+              )}
+            </div>
           </div>
 
           <div className="form-section">

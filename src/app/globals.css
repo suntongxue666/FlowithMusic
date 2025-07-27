@@ -597,6 +597,24 @@ nav {
   flex-shrink: 0;
 }
 
+.input-with-hint {
+  position: relative;
+}
+
+.chinese-hint {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: #999;
+  font-size: 1rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  z-index: 10;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
 .song-search {
   position: relative;
 }
