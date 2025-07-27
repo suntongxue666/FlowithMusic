@@ -13,12 +13,19 @@ export async function GET(
     
     // 1. 首先尝试从Supabase获取
     try {
-      const { supabase } = await import('@/lib/supabase')
-      if (supabase) {
+      const { supabaseServer } = await import('@/lib/supabase-server')
+      if (supabaseServer) {
         console.log('📡 Trying Supabase for:', linkId)
-        const { data, error } = await supabase
+        const { data, error } = await supabaseServer
           .from('letters')
-          .select('*')
+          .select(`
+            *,
+            user:users(
+              id,
+              display_name,
+              avatar_url
+            )
+          `)
           .eq('link_id', linkId)
           .eq('is_public', true) // 确保只获取公开的Letters
           .single()
@@ -29,6 +36,8 @@ export async function GET(
         } else {
           console.log('❌ Supabase error:', error?.message)
         }
+      } else {
+        console.log('❌ Supabase server client not initialized')
       }
     } catch (supabaseError) {
       console.warn('⚠️ Supabase connection failed:', supabaseError)
@@ -105,13 +114,20 @@ export async function POST(
     
     // 1. 尝试保存到Supabase
     try {
-      const { supabase } = await import('@/lib/supabase')
-      if (supabase) {
+      const { supabaseServer } = await import('@/lib/supabase-server')
+      if (supabaseServer) {
         console.log('📡 Saving to Supabase:', linkId)
-        const { data, error } = await supabase
+        const { data, error } = await supabaseServer
           .from('letters')
           .insert(letter)
-          .select()
+          .select(`
+            *,
+            user:users(
+              id,
+              display_name,
+              avatar_url
+            )
+          `)
           .single()
         
         if (!error && data) {
@@ -122,6 +138,8 @@ export async function POST(
         } else {
           console.log('❌ Supabase save error:', error?.message)
         }
+      } else {
+        console.log('❌ Supabase server client not initialized')
       }
     } catch (supabaseError) {
       console.warn('⚠️ Supabase save failed:', supabaseError)
@@ -208,9 +226,9 @@ export async function PATCH(
     
     // 2. 检查Supabase
     try {
-      const { supabase } = await import('@/lib/supabase')
-      if (supabase) {
-        const { data, error } = await supabase
+      const { supabaseServer } = await import('@/lib/supabase-server')
+      if (supabaseServer) {
+        const { data, error } = await supabaseServer
           .from('letters')
           .select('link_id, is_public, created_at, recipient_name')
           .eq('link_id', linkId)
@@ -222,7 +240,7 @@ export async function PATCH(
           data: data || null
         }
       } else {
-        debugInfo.checks.supabase = { error: 'Supabase not initialized' }
+        debugInfo.checks.supabase = { error: 'Supabase server client not initialized' }
       }
     } catch (supabaseError) {
       debugInfo.checks.supabase = { 
