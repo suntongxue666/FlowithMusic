@@ -17,95 +17,42 @@ export default function HistoryPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
-    const initializeAndLoadLetters = async () => {
+    const loadLetters = async () => {
       try {
-        console.log('🔄 HistoryPage: 初始化用户和加载Letters...')
+        setLoading(true)
         
-        // 初始化用户服务
+        // Initialize user service if needed
         await userService.initializeUser()
         
-        // 获取当前用户状态
+        // Get current user
         const currentUser = userService.getCurrentUser()
         const isAuth = userService.isAuthenticated()
         
         setUser(currentUser)
         setIsAuthenticated(isAuth)
         
-        console.log('👤 HistoryPage: 用户状态:', {
-          isAuthenticated: isAuth,
-          userId: currentUser?.id,
-          email: currentUser?.email,
-          anonymousId: userService.getAnonymousId()
-        })
-
-        // 加载用户Letters
-        await loadUserLetters()
-        
-        // 检查是否是登录成功回调
-        const urlParams = new URLSearchParams(window.location.search)
-        if (urlParams.get('login') === 'success') {
-          console.log('🎉 HistoryPage: 登录成功！')
-          setShowToast(true)
-          
-          // 清理URL参数
-          window.history.replaceState({}, document.title, window.location.pathname)
-        }
-        
-      } catch (error) {
-        console.error('❌ HistoryPage: 初始化失败:', error)
-      }
-    }
-
-    const loadUserLetters = async () => {
-      try {
-        setLoading(true)
-        
-        // 使用letterService获取用户Letters
-        console.log('📝 HistoryPage: 加载用户Letters...')
-        const userLetters = await letterService.getUserLetters(50, 0) // 加载更多数据
-        
-        console.log(`✅ HistoryPage: 成功加载 ${userLetters.length} 条Letters`)
+        // Load letters
+        const userLetters = await letterService.getUserLetters(50, 0)
         setLetters(userLetters)
         
+        console.log(`Loaded ${userLetters.length} letters for history page`)
+        
       } catch (error) {
-        console.error('❌ HistoryPage: 加载Letters失败:', error)
+        console.error('Failed to load letters:', error)
         
-        // 如果服务失败，尝试从localStorage获取
-        console.log('🔄 HistoryPage: 尝试从本地存储获取...')
+        // Fallback to localStorage
         const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+        const sortedLetters = localLetters.sort((a: any, b: any) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+        setLetters(sortedLetters)
         
-        if (localLetters.length > 0) {
-          // 过滤用户的Letters
-          const currentUser = userService.getCurrentUser()
-          const anonymousId = userService.getAnonymousId()
-          
-          let userLocalLetters: any[] = []
-          
-          if (currentUser) {
-            // 认证用户：匹配user_id
-            userLocalLetters = localLetters.filter((letter: any) => 
-              letter.user_id === currentUser.id
-            )
-          } else {
-            // 匿名用户：匹配anonymous_id
-            userLocalLetters = localLetters.filter((letter: any) => 
-              letter.anonymous_id === anonymousId
-            )
-          }
-          
-          const sortedLetters = userLocalLetters.sort((a: any, b: any) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          )
-          
-          setLetters(sortedLetters)
-          console.log(`✅ HistoryPage: 从本地加载 ${sortedLetters.length} 条Letters`)
-        }
       } finally {
         setLoading(false)
       }
     }
 
-    initializeAndLoadLetters()
+    loadLetters()
   }, [])
 
   const handleLetterClick = (linkId: string) => {

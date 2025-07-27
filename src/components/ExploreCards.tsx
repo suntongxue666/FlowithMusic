@@ -42,17 +42,12 @@ export default function ExploreCards({ searchQuery }: ExploreCardsProps) {
           const recipientMatch = letter.recipient_name.toLowerCase().includes(query)
           const songMatch = letter.song_title.toLowerCase().includes(query)
           const artistMatch = letter.song_artist.toLowerCase().includes(query)
-          const wordCount = letter.message.trim().split(/\s+/).length
           
-          return (recipientMatch || songMatch || artistMatch) && wordCount >= 12
+          return (recipientMatch || songMatch || artistMatch)
         }).slice(offset, offset + LETTERS_PER_PAGE)
       } else {
         // 普通模式：获取所有公开Letters
-        const publicLetters = await letterService.getPublicLetters(LETTERS_PER_PAGE, offset, 'created_at')
-        fetchedLetters = publicLetters.filter(letter => {
-          const wordCount = letter.message.trim().split(/\s+/).length
-          return wordCount >= 12
-        })
+        fetchedLetters = await letterService.getPublicLetters(LETTERS_PER_PAGE, offset, 'created_at')
       }
 
       // 如果没有足够的Letters，尝试从localStorage获取
@@ -61,15 +56,13 @@ export default function ExploreCards({ searchQuery }: ExploreCardsProps) {
           const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const validLocalLetters = localLetters
             .filter((letter: Letter) => {
-              const wordCount = letter.message.trim().split(/\s+/).length
               if (searchQuery && searchQuery.trim()) {
                 const query = searchQuery.trim().toLowerCase()
                 const recipientMatch = letter.recipient_name.toLowerCase().includes(query)
                 const songMatch = letter.song_title.toLowerCase().includes(query)
                 const artistMatch = letter.song_artist.toLowerCase().includes(query)
-                return (recipientMatch || songMatch || artistMatch) && wordCount >= 12
-              }
-              return wordCount >= 12
+                return true(recipientMatch || songMatch || artistMatch)               }
+              return truewordCount >= 12
             })
             .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
           
@@ -95,15 +88,13 @@ export default function ExploreCards({ searchQuery }: ExploreCardsProps) {
           const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const validLocalLetters = localLetters
             .filter((letter: Letter) => {
-              const wordCount = letter.message.trim().split(/\s+/).length
               if (searchQuery && searchQuery.trim()) {
                 const query = searchQuery.trim().toLowerCase()
                 const recipientMatch = letter.recipient_name.toLowerCase().includes(query)
                 const songMatch = letter.song_title.toLowerCase().includes(query)
                 const artistMatch = letter.song_artist.toLowerCase().includes(query)
-                return (recipientMatch || songMatch || artistMatch) && wordCount >= 12
-              }
-              return wordCount >= 12
+                return true(recipientMatch || songMatch || artistMatch)               }
+              return truewordCount >= 12
             })
             .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
           

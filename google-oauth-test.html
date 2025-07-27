@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Google OAuth Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .error { color: red; background: #ffe6e6; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .success { color: green; background: #e6ffe6; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        button { padding: 12px 24px; background: #4285f4; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 10px 0; }
+        .log { background: #f5f5f5; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; margin: 10px 0; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>Google OAuth Configuration Test</h1>
+    
+    <div id="status">检查Google OAuth配置...</div>
+    
+    <button onclick="testGoogleOAuth()">测试Google登录</button>
+    <button onclick="checkConfig()">检查配置</button>
+    
+    <div id="log" class="log">点击按钮开始测试...\n</div>
+    
+    <div>
+        <h3>需要检查的配置项:</h3>
+        <ul>
+            <li>Google Cloud Console中的OAuth 2.0客户端ID</li>
+            <li>授权重定向URI: http://localhost:3000/auth/callback</li>
+            <li>Supabase项目中Google Provider配置</li>
+            <li>环境变量GOOGLE_CLIENT_ID和GOOGLE_CLIENT_SECRET</li>
+        </ul>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://oiggdnnehohoaycyiydn.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZ2dkbm5laG9ob2F5Y3lpeWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MjQ2NjksImV4cCI6MjA2OTAwMDY2OX0.lGA8b4PwJJog7YT8DXtBgiDJ7oXMzDXy7RXf43COrIU'
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+        
+        function log(message) {
+            const logElement = document.getElementById('log')
+            const time = new Date().toLocaleTimeString()
+            logElement.textContent += `${time}: ${message}\n`
+            logElement.scrollTop = logElement.scrollHeight
+            console.log(message)
+        }
+        
+        async function checkConfig() {
+            log('🔍 检查Supabase配置...')
+            
+            try {
+                // 测试Supabase连接
+                const { data, error } = await supabase.from('users').select('count').limit(1)
+                if (error) {
+                    log(`❌ Supabase连接失败: ${error.message}`)
+                } else {
+                    log('✅ Supabase连接成功')
+                }
+                
+                // 检查当前会话
+                const { data: session } = await supabase.auth.getSession()
+                log(`🔍 当前会话状态: ${session.session ? '已登录' : '未登录'}`)
+                
+            } catch (error) {
+                log(`💥 配置检查失败: ${error.message}`)
+            }
+        }
+        
+        async function testGoogleOAuth() {
+            log('🔗 开始Google OAuth测试...')
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: 'http://127.0.0.1:8080/auth/callback',
+                        queryParams: {
+                            access_type: 'offline',
+                            prompt: 'consent',
+                        }
+                    }
+                })
+                
+                if (error) {
+                    log(`❌ OAuth失败: ${error.message}`)
+                    if (error.message.includes('Provider not enabled')) {
+                        log('🔧 请在Supabase项目中启用Google Provider')
+                    }
+                    if (error.message.includes('redirect_uri_mismatch')) {
+                        log('🔧 请检查Google Cloud Console中的重定向URI配置')
+                    }
+                } else {
+                    log('✅ OAuth请求成功，应该会重定向到Google登录页面')
+                    log(`🔗 OAuth数据: ${JSON.stringify(data, null, 2)}`)
+                }
+            } catch (error) {
+                log(`💥 OAuth测试失败: ${error.message}`)
+            }
+        }
+        
+        // 页面加载时自动检查配置
+        window.addEventListener('load', () => {
+            log('📋 页面加载完成，开始初始化检查...')
+            checkConfig()
+        })
+    </script>
+</body>
+</html>

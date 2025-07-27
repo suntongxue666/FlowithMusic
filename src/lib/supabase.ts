@@ -1,15 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// 确保在客户端运行时获取环境变量
+const getSupabaseConfig = () => {
+  // 直接使用硬编码的值，确保配置正确
+  const supabaseUrl = 'https://oiggdnnehohoaycyiydn.supabase.co'
+  const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZ2dkbm5laG9ob2F5Y3lpeWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MjQ2NjksImV4cCI6MjA2OTAwMDY2OX0.lGA8b4PwJJog7YT8DXtBgiDJ7oXMzDXy7RXf43COrIU'
 
-// 详细的环境变量检查
-console.log('Supabase configuration check:', {
-  url: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'MISSING',
-  key: supabaseAnonKey ? supabaseAnonKey.substring(0, 20) + '...' : 'MISSING',
-  hasUrl: !!supabaseUrl,
-  hasKey: !!supabaseAnonKey
-})
+  console.log('🔧 Supabase配置检查:', {
+    url: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'MISSING',
+    key: supabaseAnonKey ? supabaseAnonKey.substring(0, 20) + '...' : 'MISSING',
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseAnonKey
+  })
+
+  return { supabaseUrl, supabaseAnonKey }
+}
+
+const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig()
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ Supabase environment variables are not configured properly:', {
@@ -27,25 +34,79 @@ export const supabase = supabaseUrl && supabaseAnonKey
       },
       global: {
         headers: {
-          'X-Client-Info': 'flowithmusic-web'
+          'X-Client-Info': 'flowithmusic-web',
+          'apikey': supabaseAnonKey, // 明确添加API密钥
+          'Authorization': `Bearer ${supabaseAnonKey}` // 添加Authorization头
         },
         fetch: (url, options = {}) => {
-          // 增强的fetch实现绕过浏览器扩展
+          // 增强的fetch实现，避免浏览器扩展干扰
           const urlString = typeof url === 'string' ? url : url.toString()
-          console.log('Supabase fetch request:', urlString.substring(0, 50) + '...')
+          console.log('🌐 Supabase fetch请求:', urlString.substring(0, 50) + '...')
           
-          return fetch(url, {
+          // 检查是否在浏览器环境中
+          if (typeof window === 'undefined') {
+            // 服务端环境，使用Node.js的fetch
+            return fetch(url, {
+              ...options,
+              headers: {
+                'apikey': supabaseAnonKey,
+                'Authorization': `Bearer ${supabaseAnonKey}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                ...options.headers,
+              },
+            }).then(response => {
+              console.log('📡 Supabase fetch响应(服务端):', response.status, response.statusText)
+              return response
+            }).catch(error => {
+              console.error('💥 Supabase fetch错误(服务端):', error)
+              throw error
+            })
+          }
+          
+          // 客户端环境，创建一个新的fetch请求，避免被浏览器扩展劫持
+          const originalFetch = window.fetch.bind(window)
+          
+          return originalFetch(url, {
             ...options,
             headers: {
-              ...options.headers,
+              'apikey': supabaseAnonKey,
+              'Authorization': `Bearer ${supabaseAnonKey}`,
+              'Content-Type': 'application/json',
               'X-Requested-With': 'XMLHttpRequest',
-              'User-Agent': 'FlowithMusic/1.0'
+              'User-Agent': 'FlowithMusic/1.0',
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache',
+              ...options.headers,
             },
+            mode: 'cors',
+            credentials: 'same-origin',
           }).then(response => {
-            console.log('Supabase fetch response:', response.status, response.statusText)
+            console.log('📡 Supabase fetch响应(客户端):', response.status, response.statusText)
+            if (!response.ok) {
+              console.error('❌ Supabase请求失败:', {
+                status: response.status,
+                statusText: response.statusText,
+                url: urlString
+              })
+            }
             return response
           }).catch(error => {
-            console.error('Supabase fetch error:', error)
+            // 检查是否是浏览器扩展干扰
+            if (error.message.includes('Receiving end does not exist')) {
+              console.warn('⚠️ 检测到浏览器扩展干扰，重试请求...')
+              // 重试一次
+              return originalFetch(url, {
+                ...options,
+                headers: {
+                  'apikey': supabaseAnonKey,
+                  'Authorization': `Bearer ${supabaseAnonKey}`,
+                  'Content-Type': 'application/json',
+                  ...options.headers,
+                },
+              })
+            }
+            console.error('💥 Supabase fetch错误(客户端):', error)
             throw error
           })
         },

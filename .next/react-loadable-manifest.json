@@ -15,10 +15,6 @@
     "id": 2410,
     "files": []
   },
-  "app/auth/callback/page.tsx -> @/lib/supabase": {
-    "id": 2099,
-    "files": []
-  },
   "app/debug-letters/page.tsx -> @/lib/supabase": {
     "id": 2099,
     "files": []
@@ -26,8 +22,8 @@
   "app/test-supabase/page.tsx -> @/lib/supabase": {
     "id": 2099,
     "files": [
-      "static/chunks/647-f5bc9f0a7edd8aa9.js",
-      "static/chunks/99.f43ae7384777ed6e.js"
+      "static/chunks/5647-983dc813fb592c46.js",
+      "static/chunks/2099.6751d0631ac49ef7.js"
     ]
   }
 }

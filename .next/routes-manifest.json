@@ -112,6 +112,12 @@
       "namedRegex": "^/migrate\\-data(?:/)?$"
     },
     {
+      "page": "/oauth-config",
+      "regex": "^/oauth\\-config(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/oauth\\-config(?:/)?$"
+    },
+    {
       "page": "/privacy",
       "regex": "^/privacy(?:/)?$",
       "routeKeys": {},
@@ -128,6 +134,12 @@
       "regex": "^/send(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/send(?:/)?$"
+    },
+    {
+      "page": "/simple-supabase-test",
+      "regex": "^/simple\\-supabase\\-test(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/simple\\-supabase\\-test(?:/)?$"
     },
     {
       "page": "/sitemap",
@@ -160,6 +172,12 @@
       "namedRegex": "^/test\\-database(?:/)?$"
     },
     {
+      "page": "/test-google-auth",
+      "regex": "^/test\\-google\\-auth(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/test\\-google\\-auth(?:/)?$"
+    },
+    {
       "page": "/test-history",
       "regex": "^/test\\-history(?:/)?$",
       "routeKeys": {},
@@ -176,6 +194,12 @@
       "regex": "^/test\\-supabase(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/test\\-supabase(?:/)?$"
+    },
+    {
+      "page": "/test-supabase-connection",
+      "regex": "^/test\\-supabase\\-connection(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/test\\-supabase\\-connection(?:/)?$"
     },
     {
       "page": "/test-user-identity",
