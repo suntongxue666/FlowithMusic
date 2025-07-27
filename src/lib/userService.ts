@@ -232,6 +232,13 @@ export class UserService {
       console.log('✅ UserService: 用户处理完成:', finalUser)
 
       this.currentUser = finalUser
+      
+      // 保存到localStorage以便跨组件访问
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(finalUser))
+        localStorage.setItem('isAuthenticated', 'true')
+      }
+      
       console.log('🎉 UserService: 登录处理成功')
       return finalUser
     } catch (error) {
@@ -254,6 +261,13 @@ export class UserService {
       }
       
       this.currentUser = fallbackUser
+      
+      // 保存到localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(fallbackUser))
+        localStorage.setItem('isAuthenticated', 'true')
+      }
+      
       console.log('✅ UserService: Fallback用户创建成功')
       return fallbackUser
     }
@@ -265,12 +279,37 @@ export class UserService {
       await supabase.auth.signOut()
     }
     this.currentUser = null
+    
+    // 清理localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user')
+      localStorage.removeItem('isAuthenticated')
+    }
+    
     // 保留匿名ID以便下次使用
   }
 
   // 获取当前用户
   getCurrentUser(): User | null {
-    return this.currentUser
+    if (this.currentUser) {
+      return this.currentUser
+    }
+    
+    // 从localStorage获取
+    if (typeof window !== 'undefined') {
+      try {
+        const userData = localStorage.getItem('user')
+        if (userData) {
+          const user = JSON.parse(userData)
+          this.currentUser = user
+          return user
+        }
+      } catch (error) {
+        console.error('Failed to parse user from localStorage:', error)
+      }
+    }
+    
+    return null
   }
 
   // 获取匿名ID
@@ -280,7 +319,18 @@ export class UserService {
 
   // 检查是否已登录
   isAuthenticated(): boolean {
-    return this.currentUser !== null
+    if (this.currentUser !== null) {
+      return true
+    }
+    
+    // 从localStorage检查
+    if (typeof window !== 'undefined') {
+      const isAuth = localStorage.getItem('isAuthenticated')
+      const userData = localStorage.getItem('user')
+      return isAuth === 'true' && userData !== null
+    }
+    
+    return false
   }
 
   // 更新用户资料
