@@ -14,7 +14,7 @@ export default function Header({ currentPage }: HeaderProps) {
   const [isUserModalOpen, setIsUserModalOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -159,7 +159,7 @@ export default function Header({ currentPage }: HeaderProps) {
           <div className="auth-section">
             {loading ? (
               <div className="loading-indicator">...</div>
-            ) : isAuthenticated && user ? (
+            ) : isAuthenticated && user && user.email ? (
               <button className="user-avatar-btn" onClick={toggleUserModal}>
                 {user.avatar_url ? (
                   <img src={user.avatar_url} alt="User Avatar" className="user-avatar" />
@@ -199,7 +199,7 @@ export default function Header({ currentPage }: HeaderProps) {
           <div className="mobile-auth-section">
             {loading ? (
               <div className="loading-indicator">加载中...</div>
-            ) : isAuthenticated && user ? (
+            ) : isAuthenticated && user && user.email ? (
               <button className="mobile-user-info" onClick={() => { toggleUserModal(); setIsMobileMenuOpen(false); }}>
                 {user.avatar_url ? (
                   <img src={user.avatar_url} alt="User Avatar" className="user-avatar" />
