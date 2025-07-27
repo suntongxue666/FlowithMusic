@@ -1108,6 +1108,18 @@ nav {
   border: 1px solid #e5e5e5;
 }
 
+.clickable-area {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-radius: 8px;
+  padding: 0.25rem;
+  margin: -0.25rem;
+}
+
+.clickable-area:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
 .message-main {
   display: flex;
   align-items: center;
@@ -1552,6 +1564,16 @@ nav {
     flex-direction: column;
     align-items: stretch;
     padding: 0.75rem;
+  }
+  
+  .clickable-area {
+    padding: 0.5rem;
+    margin: -0.5rem;
+    border-radius: 8px;
+  }
+  
+  .clickable-area:hover {
+    background-color: rgba(0, 0, 0, 0.03);
   }
   
   .message-main {
@@ -2846,7 +2868,7 @@ nav {
   }
   
   .hero h1 {
-    font-size: 2rem;
+    font-size: 28px;
   }
   
   .hero p {

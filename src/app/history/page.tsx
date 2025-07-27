@@ -309,7 +309,10 @@ export default function HistoryPage() {
         <div className="message-list">
           {letters.map((letter) => (
             <div key={letter.id} className="message-item">
-              <div className="message-main">
+              <div 
+                className="message-main clickable-area"
+                onClick={() => handleViewLetter(letter)}
+              >
                 <img 
                   src={letter.song_album_cover || '/default-album.png'}
                   alt={letter.song_title}
@@ -337,7 +340,10 @@ export default function HistoryPage() {
                 </button>
                 <button 
                   className="copy-link-btn"
-                  onClick={() => handleCopyLink(letter)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleCopyLink(letter)
+                  }}
                 >
                   Copy Link
                 </button>
