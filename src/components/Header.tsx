@@ -40,12 +40,22 @@ export default function Header({ currentPage }: HeaderProps) {
         const urlParams = new URLSearchParams(window.location.search)
         if (urlParams.get('login') === 'success') {
           console.log('🎉 Header: 检测到登录成功回调')
-          // 刷新用户状态
-          const updatedUser = userService.getCurrentUser()
-          if (updatedUser) {
-            setUser(updatedUser)
-            setIsAuthenticated(true)
-          }
+          // 刷新用户状态 - 等待一下让状态完全更新
+          setTimeout(() => {
+            const updatedUser = userService.getCurrentUser()
+            const updatedAuth = userService.isAuthenticated()
+            
+            console.log('🔄 Header: 更新后的用户状态:', {
+              user: updatedUser?.email || updatedUser?.display_name,
+              avatar: updatedUser?.avatar_url,
+              isAuth: updatedAuth
+            })
+            
+            if (updatedUser) {
+              setUser(updatedUser)
+              setIsAuthenticated(updatedAuth)
+            }
+          }, 1000)
         }
         
       } catch (error) {

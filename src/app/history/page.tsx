@@ -140,22 +140,38 @@ export default function HistoryPage() {
         // Check for login success callback
         const urlParams = new URLSearchParams(window.location.search)
         if (urlParams.get('login') === 'success') {
-          console.log('Login successful, showing toast')
+          console.log('History: Login successful, showing toast and refreshing user state')
           setShowToast(true)
           
           // Clear URL params
           window.history.replaceState({}, document.title, window.location.pathname)
           
-          // Trigger letter migration for newly logged in user
+          // Trigger letter migration for newly logged in user with enhanced user state refresh
           setTimeout(async () => {
             try {
+              // 重新获取用户状态以确保同步
+              await userService.initializeUser()
+              const refreshedUser = userService.getCurrentUser()
+              const refreshedAuth = userService.isAuthenticated()
+              
+              console.log('🔄 History: 刷新后的用户状态:', {
+                user: refreshedUser?.email || refreshedUser?.display_name,
+                avatar: refreshedUser?.avatar_url,
+                isAuth: refreshedAuth
+              })
+              
+              // 更新本地状态
+              setUser(refreshedUser)
+              setIsAuthenticated(refreshedAuth)
+              
+              // 重新加载Letters
               const updatedLetters = await letterService.getUserLetters(50, 0)
               setLetters(updatedLetters)
-              console.log('Updated letters after login migration')
+              console.log('History: Updated letters after login migration')
             } catch (error) {
-              console.warn('Failed to reload letters after migration:', error)
+              console.warn('History: Failed to reload user state and letters after migration:', error)
             }
-          }, 2000)
+          }, 1500)
         }
         
       } catch (error) {
@@ -174,6 +190,31 @@ export default function HistoryPage() {
     }
 
     loadLettersAndUser()
+    
+    // 监听localStorage变化，确保与Header组件状态同步
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'user' || e.key === 'isAuthenticated') {
+        console.log('🔄 History: 检测到用户状态变化，重新加载...')
+        
+        const currentUser = userService.getCurrentUser()
+        const isAuth = userService.isAuthenticated()
+        
+        console.log('📊 History: 用户状态同步更新:', {
+          user: currentUser?.email || currentUser?.display_name,
+          avatar: currentUser?.avatar_url,
+          isAuth
+        })
+        
+        setUser(currentUser)
+        setIsAuthenticated(isAuth)
+      }
+    }
+    
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [])
 
   const handleLetterClick = (linkId: string) => {
