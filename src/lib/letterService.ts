@@ -107,10 +107,13 @@ export class LetterService {
     // 设置默认返回值
     createdLetter = localLetter
 
-    // 尝试保存到数据库（非关键，失败也不影响用户体验）
+    // 尝试保存到数据库（重要：确保其他用户能看到）
+    let dbSaveSuccess = false
+    
+    // 首先尝试直接Supabase连接
     try {
       if (supabase) {
-        console.log('Attempting to save to Supabase...')
+        console.log('📝 尝试直接保存到Supabase...')
         
         const { data, error } = await supabase
           .from('letters')
@@ -126,8 +129,9 @@ export class LetterService {
           .single()
 
         if (!error && data) {
-          console.log('✅ Letter successfully saved to Supabase:', data.id)
+          console.log('✅ Letter成功保存到Supabase数据库:', data.id)
           createdLetter = data
+          dbSaveSuccess = true
           
           // 更新localStorage中的数据
           const updatedLetters = JSON.parse(localStorage.getItem('letters') || '[]')
@@ -137,11 +141,42 @@ export class LetterService {
             localStorage.setItem('letters', JSON.stringify(updatedLetters))
           }
         } else {
-          console.warn('Supabase save failed, but localStorage backup exists:', error)
+          console.warn('❌ 直接Supabase保存失败，尝试代理方式:', error)
         }
       }
     } catch (dbError) {
-      console.warn('Database save failed, but localStorage backup exists:', dbError)
+      console.warn('❌ 直接数据库连接失败，尝试代理方式:', dbError)
+    }
+    
+    // 如果直接连接失败，尝试使用supabaseProxy
+    if (!dbSaveSuccess) {
+      try {
+        console.log('📝 尝试通过代理保存到数据库...')
+        const proxyResult = await supabaseProxy.insert('letters', newLetter)
+        
+        if (proxyResult.data) {
+          console.log('✅ Letter通过代理成功保存到数据库:', proxyResult.data.id || proxyResult.data.link_id)
+          // 由于代理返回的数据可能不包含user信息，使用基础Letter数据
+          createdLetter = { ...localLetter, ...proxyResult.data }
+          dbSaveSuccess = true
+          
+          // 更新localStorage中的数据
+          const updatedLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+          const index = updatedLetters.findIndex((l: any) => l.link_id === linkId)
+          if (index !== -1) {
+            updatedLetters[index] = createdLetter
+            localStorage.setItem('letters', JSON.stringify(updatedLetters))
+          }
+        } else {
+          console.warn('❌ 代理保存也失败')
+        }
+      } catch (proxyError) {
+        console.warn('❌ 代理保存出错:', proxyError)
+      }
+    }
+    
+    if (!dbSaveSuccess) {
+      console.error('🚨 重要：Letter未能保存到数据库，其他用户将看不到此Letter!')
     }
 
     // 尝试保存到fallback存储（用于跨用户访问）
