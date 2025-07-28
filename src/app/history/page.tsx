@@ -84,7 +84,7 @@ export default function HistoryPage() {
           console.log('👤 Anonymous user data:', {
             anonymousId,
             totalLocalLetters: localLetters.length,
-            localLettersDetails: localLetters.map(l => ({
+            localLettersDetails: localLetters.map((l: any) => ({
               linkId: l.link_id,
               anonymousId: l.anonymous_id,
               userId: l.user_id,
