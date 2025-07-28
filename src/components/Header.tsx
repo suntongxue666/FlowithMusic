@@ -120,18 +120,30 @@ export default function Header({ currentPage }: HeaderProps) {
 
   const handleSignOut = async () => {
     try {
-      console.log('🚪 Header: 用户登出')
+      console.log('🚪 Header: 开始用户登出流程')
       setLoading(true)
       
+      // 先关闭用户modal
+      setIsUserModalOpen(false)
+      
+      // 执行登出
       await userService.signOut()
+      console.log('✅ Header: userService.signOut() 完成')
+      
+      // 更新UI状态
       setUser(null)
       setIsAuthenticated(false)
+      console.log('✅ Header: 已清除本地UI状态')
       
-      // 刷新页面以清除状态
-      window.location.reload()
+      // 稍微延迟后刷新页面以确保状态清除
+      setTimeout(() => {
+        console.log('🔄 Header: 刷新页面以完成登出')
+        window.location.reload()
+      }, 500)
       
     } catch (error: any) {
       console.error('💥 Header: 登出失败:', error)
+      alert(`登出失败: ${error.message || '未知错误'}`)
     } finally {
       setLoading(false)
     }

@@ -348,13 +348,16 @@ export default function HistoryPage() {
                 🔄 恢复数据
               </button>
             )}
-            <button 
-              className="debug-btn"
-              onClick={() => setShowDebugInfo(!showDebugInfo)}
-              title="显示调试信息"
-            >
-              🔍 调试
-            </button>
+            {/* 调试功能仅对内测用户开放 */}
+            {user?.email === 'sunwei7482@gmail.com' && (
+              <button 
+                className="debug-btn"
+                onClick={() => setShowDebugInfo(!showDebugInfo)}
+                title="显示调试信息"
+              >
+                🔍 调试
+              </button>
+            )}
           </div>
         </div>
 
@@ -401,6 +404,10 @@ export default function HistoryPage() {
               <button 
                 className="show-all-letters-btn"
                 onClick={() => {
+                  // 永久设置显示全部letters的标记
+                  localStorage.setItem('force_show_all_letters', 'true')
+                  console.log('📋 设置永久显示全部Letters标记')
+                  
                   const allLetters = JSON.parse(localStorage.getItem('letters') || '[]')
                   console.log('📋 显示所有localStorage中的Letters:', allLetters.length)
                   const sortedLetters = allLetters.sort((a: any, b: any) => 
@@ -409,7 +416,30 @@ export default function HistoryPage() {
                   setLetters(sortedLetters)
                 }}
               >
-                📋 显示全部
+                📋 永久显示全部
+              </button>
+              <button 
+                className="sync-data-btn"
+                onClick={async () => {
+                  console.log('🔄 开始数据同步...')
+                  
+                  // 清除所有可能的限制标记
+                  localStorage.removeItem('letters_recovered')
+                  localStorage.removeItem('supabase_auth_error')
+                  localStorage.removeItem('force_show_all_letters')
+                  
+                  // 重新初始化用户状态
+                  await userService.initializeUser()
+                  const refreshedUser = userService.getCurrentUser()
+                  const refreshedAuth = userService.isAuthenticated()
+                  setUser(refreshedUser)
+                  setIsAuthenticated(refreshedAuth)
+                  
+                  console.log('✅ 数据同步完成，将重新从数据库加载')
+                  window.location.reload()
+                }}
+              >
+                🔄 同步数据库
               </button>
             </div>
           </div>
@@ -661,7 +691,7 @@ export default function HistoryPage() {
           margin-top: 1rem;
         }
 
-        .sync-btn, .clear-btn, .force-signout-btn, .show-all-letters-btn {
+        .sync-btn, .clear-btn, .force-signout-btn, .show-all-letters-btn, .sync-data-btn {
           padding: 6px 12px;
           border-radius: 4px;
           border: none;
@@ -704,6 +734,15 @@ export default function HistoryPage() {
 
         .show-all-letters-btn:hover {
           background: #5a379c;
+        }
+        
+        .sync-data-btn {
+          background: #17a2b8;
+          color: white;
+        }
+
+        .sync-data-btn:hover {
+          background: #138496;
         }
 
         .modal-overlay {

@@ -95,6 +95,35 @@ export default function MusicCards() {
           return
         }
         
+        // 即使有公开Letters，也检查localStorage中是否有更新的Letters需要补充显示
+        if (localStorage.getItem('supabase_auth_error')) {
+          console.log('📝 检测到认证错误，合并localStorage数据以确保最新Letters显示')
+          
+          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+          const recentLocalLetters = localLetters
+            .filter((letter: Letter) => {
+              const wordCount = letter.message.trim().split(/\s+/).length
+              const letterTime = new Date(letter.created_at).getTime()
+              const fiveMinutesAgo = Date.now() - 5 * 60 * 1000
+              return wordCount >= 12 && letterTime > fiveMinutesAgo // 只显示最近5分钟的新Letters
+            })
+          
+          if (recentLocalLetters.length > 0) {
+            console.log('📝 发现最近的本地Letters，优先显示:', recentLocalLetters.length)
+            // 合并本地最新letters和数据库letters，去重
+            const combinedLetters = [...recentLocalLetters, ...publicLetters]
+            const uniqueLetters = combinedLetters.filter((letter, index, self) => 
+              index === self.findIndex(l => l.link_id === letter.link_id)
+            )
+            const sortedCombined = uniqueLetters
+              .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              .slice(0, 6)
+            
+            setLetters(sortedCombined)
+            return
+          }
+        }
+        
         // 过滤出消息超过12个单词的Letters，并显示调试信息
         const filteredLetters = publicLetters.filter(letter => {
           const wordCount = letter.message.trim().split(/\s+/).length

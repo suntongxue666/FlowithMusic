@@ -48,6 +48,27 @@ export default function ExploreCards({ searchQuery }: ExploreCardsProps) {
       } else {
         // 普通模式：获取所有公开Letters
         fetchedLetters = await letterService.getPublicLetters(LETTERS_PER_PAGE, offset, 'created_at')
+        
+        // 如果检测到认证错误，补充localStorage中的最新Letters
+        if (localStorage.getItem('supabase_auth_error') && pageNum === 0) {
+          console.log('📝 Explore: 检测到认证错误，合并localStorage最新数据')
+          
+          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+          const recentLocalLetters = localLetters.filter((letter: Letter) => {
+            const letterTime = new Date(letter.created_at).getTime()
+            const fiveMinutesAgo = Date.now() - 5 * 60 * 1000
+            return letterTime > fiveMinutesAgo // 最近5分钟的Letters
+          })
+          
+          if (recentLocalLetters.length > 0) {
+            console.log('📝 Explore: 发现最近的本地Letters，合并显示:', recentLocalLetters.length)
+            // 合并并去重
+            const combinedLetters = [...recentLocalLetters, ...fetchedLetters]
+            fetchedLetters = combinedLetters.filter((letter, index, self) => 
+              index === self.findIndex(l => l.link_id === letter.link_id)
+            ).sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          }
+        }
       }
 
       // 如果没有足够的Letters，尝试从localStorage获取

@@ -238,23 +238,27 @@ export class LetterService {
   }
 
   // 从localStorage获取Letters的辅助方法
-  private getLettersFromLocalStorage(user: any, anonymousId: string | null, limit: number, offset: number): Letter[] {
+  private getLettersFromLocalStorage(user: any, anonymousId: string | null, limit: number, offset: number, showAll: boolean = false): Letter[] {
     const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
     console.log('📱 localStorage中发现Letters:', existingLetters.length)
     
-    // 过滤用户的Letters
-    const userLetters = existingLetters.filter((letter: Letter) => {
-      if (user?.id) {
-        // 已登录用户：匹配user_id或anonymous_id
-        return letter.user_id === user.id || 
-               (anonymousId && letter.anonymous_id === anonymousId) ||
-               (!letter.user_id && letter.anonymous_id === anonymousId)
-      } else {
-        return letter.anonymous_id === anonymousId
-      }
-    })
+    let userLetters = existingLetters
     
-    console.log('📋 过滤后的用户Letters:', userLetters.length)
+    // 如果不是显示全部模式，则过滤用户的Letters
+    if (!showAll) {
+      userLetters = existingLetters.filter((letter: Letter) => {
+        if (user?.id) {
+          // 已登录用户：匹配user_id或anonymous_id
+          return letter.user_id === user.id || 
+                 (anonymousId && letter.anonymous_id === anonymousId) ||
+                 (!letter.user_id && letter.anonymous_id === anonymousId)
+        } else {
+          return letter.anonymous_id === anonymousId
+        }
+      })
+    }
+    
+    console.log('📋 ' + (showAll ? '显示全部Letters' : '过滤后的用户Letters') + ':', userLetters.length)
     
     // 按时间排序并分页
     return userLetters
@@ -266,6 +270,13 @@ export class LetterService {
   async getUserLetters(limit: number = 10, offset: number = 0): Promise<Letter[]> {
     const user = userService.getCurrentUser()
     const anonymousId = userService.getAnonymousId()
+    
+    // 检查是否设置了永久显示全部letters的标记
+    const forceShowAll = localStorage.getItem('force_show_all_letters')
+    if (forceShowAll) {
+      console.log('📋 检测到永久显示全部标记，直接从localStorage获取所有Letters')
+      return this.getLettersFromLocalStorage(user, anonymousId, limit, offset, true)
+    }
     
     // 检查是否最近进行过数据恢复
     const recoveryTimestamp = localStorage.getItem('letters_recovered')
