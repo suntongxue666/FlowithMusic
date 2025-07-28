@@ -372,9 +372,10 @@ export default function HistoryPage() {
         .signin-description {
           text-align: center;
           color: #666;
-          max-width: 400px;
+          width: auto;
+          max-width: 90%;
           line-height: 1.5;
-          margin: 0;
+          margin: 0 auto;
           white-space: nowrap;
         }
 
