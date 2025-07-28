@@ -24,6 +24,7 @@ export default function HistoryPage() {
     const user = userService.getCurrentUser()
     const isAuth = userService.isAuthenticated()
     const anonymousId = userService.getAnonymousId()
+    const allLetters = JSON.parse(localStorage.getItem('letters') || '[]')
     
     return {
       用户服务状态: {
@@ -41,7 +42,14 @@ export default function HistoryPage() {
         user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}') : null,
         isAuthenticated: localStorage.getItem('isAuthenticated'),
         anonymous_id: localStorage.getItem('anonymous_id'),
-        letters数量: JSON.parse(localStorage.getItem('letters') || '[]').length
+        letters数量: allLetters.length,
+        letters详情: allLetters.map((letter: any) => ({
+          linkId: letter.link_id,
+          recipient: letter.recipient_name,
+          created: letter.created_at,
+          userId: letter.user_id,
+          anonymousId: letter.anonymous_id
+        }))
       },
       组件状态: {
         user: user,
@@ -381,6 +389,28 @@ export default function HistoryPage() {
               >
                 🧹 清除数据
               </button>
+              <button 
+                className="force-signout-btn"
+                onClick={() => {
+                  userService.forceSignOut()
+                  window.location.reload()
+                }}
+              >
+                🚪 强制退出
+              </button>
+              <button 
+                className="show-all-letters-btn"
+                onClick={() => {
+                  const allLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+                  console.log('📋 显示所有localStorage中的Letters:', allLetters.length)
+                  const sortedLetters = allLetters.sort((a: any, b: any) => 
+                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                  )
+                  setLetters(sortedLetters)
+                }}
+              >
+                📋 显示全部
+              </button>
             </div>
           </div>
         )}
@@ -631,7 +661,7 @@ export default function HistoryPage() {
           margin-top: 1rem;
         }
 
-        .sync-btn, .clear-btn {
+        .sync-btn, .clear-btn, .force-signout-btn, .show-all-letters-btn {
           padding: 6px 12px;
           border-radius: 4px;
           border: none;
@@ -656,6 +686,24 @@ export default function HistoryPage() {
 
         .clear-btn:hover {
           background: #c82333;
+        }
+        
+        .force-signout-btn {
+          background: #fd7e14;
+          color: white;
+        }
+
+        .force-signout-btn:hover {
+          background: #e8680e;
+        }
+        
+        .show-all-letters-btn {
+          background: #6f42c1;
+          color: white;
+        }
+
+        .show-all-letters-btn:hover {
+          background: #5a379c;
         }
 
         .modal-overlay {

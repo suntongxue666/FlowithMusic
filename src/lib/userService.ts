@@ -83,6 +83,45 @@ export class UserService {
     }
   }
 
+  // 强制清除所有用户登录状态（调试用）
+  forceSignOut(): void {
+    console.log('🚪 强制退出登录，清除所有用户数据...')
+    
+    if (typeof window !== 'undefined') {
+      // 清除所有用户相关的localStorage数据
+      localStorage.removeItem('user')
+      localStorage.removeItem('isAuthenticated')
+      localStorage.removeItem('anonymous_id')
+      localStorage.removeItem('supabase_auth_error')
+      localStorage.removeItem('letters_recovered')
+      
+      // 清除Supabase会话数据
+      const supabaseKeys = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('sb-')) {
+          supabaseKeys.push(key)
+        }
+      }
+      supabaseKeys.forEach(key => localStorage.removeItem(key))
+      
+      console.log('🧹 已清除localStorage中的用户数据')
+    }
+    
+    // 重置内存中的用户状态
+    this.currentUser = null
+    this.anonymousId = null
+    
+    // 如果有Supabase，也清除其会话
+    if (supabase) {
+      supabase.auth.signOut().catch(error => {
+        console.warn('Supabase signOut failed:', error)
+      })
+    }
+    
+    console.log('✅ 强制退出完成')
+  }
+
   // Google OAuth 登录
   async signInWithGoogle(): Promise<void> {
     // 清除认证错误标记，准备重新尝试
@@ -359,18 +398,41 @@ export class UserService {
 
   // 登出
   async signOut(): Promise<void> {
-    if (supabase) {
-      await supabase.auth.signOut()
+    console.log('🚪 开始用户登出...')
+    
+    try {
+      if (supabase) {
+        await supabase.auth.signOut()
+        console.log('✅ Supabase登出成功')
+      }
+    } catch (error) {
+      console.warn('⚠️ Supabase登出失败:', error)
     }
+    
+    // 重置内存状态
     this.currentUser = null
     
     // 清理localStorage
     if (typeof window !== 'undefined') {
       localStorage.removeItem('user')
       localStorage.removeItem('isAuthenticated')
+      localStorage.removeItem('supabase_auth_error')
+      
+      // 清除Supabase会话数据
+      const supabaseKeys = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('sb-')) {
+          supabaseKeys.push(key)
+        }
+      }
+      supabaseKeys.forEach(key => localStorage.removeItem(key))
+      
+      console.log('🧹 已清理用户登录状态')
     }
     
     // 保留匿名ID以便下次使用
+    console.log('✅ 用户登出完成')
   }
 
   // 获取当前用户
