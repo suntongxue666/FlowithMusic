@@ -166,13 +166,13 @@ export default function RecentPostsCarousel({
             newSet.delete(positionToUpdate)
             return newSet
           })
-        }, 250) // 进入动画时长的一半
+        }, 600) // 动画时长的一半
         
-      }, 250) // 退出动画时长的一半
+      }, 600) // 动画时长的一半
       
       // 更新轮换位置
       setCurrentRotationIndex(prev => (prev + 1) % 6)
-    }, 500) // 0.5秒切换一次
+    }, 1500) // 1.5秒切换一次，给动画足够时间
 
     return () => clearInterval(interval)
   }, [displayLetters.length, autoPlay, isHovered, currentRotationIndex])
@@ -215,14 +215,6 @@ export default function RecentPostsCarousel({
     >
       <div className="carousel-header">
         <h2>Recent Posts</h2>
-        {displayLetters.length > 6 && (
-          <div className="carousel-info">
-            <span className="carousel-status">
-              {displayLetters.length} letters • Auto-rotating every 0.5s • Next: Position {currentRotationIndex + 1}/6
-              {isHovered && ' (Paused)'}
-            </span>
-          </div>
-        )}
       </div>
       
       <div className="carousel-container">
@@ -247,25 +239,13 @@ export default function RecentPostsCarousel({
                   song={card.song}
                   linkId={card.linkId}
                 />
-                
-                {/* 位置指示器 */}
-                <div className="carousel-position-indicator">
-                  {index + 1}/6
-                </div>
               </div>
             )
           })}
         </div>
       </div>
 
-      {/* 轮播状态指示 */}
-      {displayLetters.length > 6 && (
-        <div className="carousel-progress">
-          <div className="progress-text">
-            Showing {displayLetters.length} letters in rotation
-          </div>
-        </div>
-      )}
+
     </section>
   )
 }

@@ -1,3 +1,4 @@
 {
+  "/api/supabase-proxy/route": "app/api/supabase-proxy/route.js",
   "/page": "app/page.js"
 }
