@@ -187,16 +187,31 @@ export default function Header({ currentPage }: HeaderProps) {
           </div>
         </nav>
 
-        {/* Mobile Menu Button */}
-        <button 
-          className="mobile-menu-btn"
-          onClick={toggleMobileMenu}
-          aria-label="Toggle menu"
-        >
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
+        {/* Mobile Menu Button and Avatar */}
+        <div className="mobile-controls">
+          {/* Mobile Avatar - 登录后显示在菜单按钮左侧 */}
+          {isAuthenticated && user && user.email && (
+            <button className="mobile-user-avatar-btn" onClick={toggleUserModal}>
+              {user.avatar_url ? (
+                <img src={user.avatar_url} alt="User Avatar" className="mobile-user-avatar" />
+              ) : (
+                <div className="mobile-avatar-placeholder">
+                  {user.display_name?.charAt(0) || user.email?.charAt(0) || 'U'}
+                </div>
+              )}
+            </button>
+          )}
+          
+          <button 
+            className="mobile-menu-btn"
+            onClick={toggleMobileMenu}
+            aria-label="Toggle menu"
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+        </div>
 
         {/* Mobile Navigation */}
         <nav className={`mobile-nav ${isMobileMenuOpen ? 'mobile-nav-open' : ''}`}>
@@ -209,22 +224,12 @@ export default function Header({ currentPage }: HeaderProps) {
           <div className="mobile-auth-section">
             {loading ? (
               <div className="loading-indicator">加载中...</div>
-            ) : isAuthenticated && user && user.email ? (
-              <button className="mobile-user-info" onClick={() => { toggleUserModal(); setIsMobileMenuOpen(false); }}>
-                {user.avatar_url ? (
-                  <img src={user.avatar_url} alt="User Avatar" className="user-avatar" />
-                ) : (
-                  <div className="avatar-placeholder-small">
-                    {user.display_name?.charAt(0) || user.email?.charAt(0) || 'U'}
-                  </div>
-                )}
-                <span>{user.display_name || user.email}</span>
-              </button>
-            ) : (
+            ) : !isAuthenticated ? (
               <button className="mobile-sign-in-btn" onClick={() => { handleSignIn(); setIsMobileMenuOpen(false); }} disabled={loading}>
                 {loading ? '登录中...' : 'Sign in'}
               </button>
-            )}
+            ) : null}
+            {/* 登录后不在菜单中显示用户信息，因为已经在顶部栏显示头像 */}
           </div>
         </nav>
       </header>
@@ -264,6 +269,48 @@ export default function Header({ currentPage }: HeaderProps) {
           display: flex;
           align-items: center;
           justify-content: center;
+        }
+
+        .mobile-controls {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .mobile-user-avatar-btn {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          border: none;
+          background: none;
+          cursor: pointer;
+          padding: 0;
+          overflow: hidden;
+          transition: opacity 0.2s ease;
+        }
+
+        .mobile-user-avatar-btn:hover {
+          opacity: 0.8;
+        }
+
+        .mobile-user-avatar {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 50%;
+        }
+
+        .mobile-avatar-placeholder {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          font-weight: bold;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
         }
 
         .sign-in-btn:hover:not(:disabled) {
@@ -367,9 +414,17 @@ export default function Header({ currentPage }: HeaderProps) {
           .auth-section {
             display: none;
           }
+          
+          .mobile-controls {
+            display: flex;
+          }
         }
 
         @media (min-width: 769px) {
+          .mobile-controls {
+            display: none;
+          }
+          
           .mobile-auth-section {
             display: none;
           }
