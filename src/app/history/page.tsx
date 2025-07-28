@@ -83,7 +83,14 @@ export default function HistoryPage() {
           
           console.log('👤 Anonymous user data:', {
             anonymousId,
-            totalLocalLetters: localLetters.length
+            totalLocalLetters: localLetters.length,
+            localLettersDetails: localLetters.map(l => ({
+              linkId: l.link_id,
+              anonymousId: l.anonymous_id,
+              userId: l.user_id,
+              recipient: l.recipient_name,
+              created: l.created_at
+            }))
           })
           
           // Filter by anonymous ID if available
@@ -92,6 +99,29 @@ export default function HistoryPage() {
               letter.anonymous_id === anonymousId
             )
             console.log(`👤 Filtered ${userLetters.length} letters for anonymous ID: ${anonymousId}`)
+            
+            // 如果当前匿名ID没有找到Letter，但localStorage中有Letter，可能是匿名ID变化了
+            if (userLetters.length === 0 && localLetters.length > 0) {
+              console.warn('⚠️ 匿名ID不匹配，检查是否有其他匿名Letter...')
+              const anonymousLetters = localLetters.filter((letter: any) => 
+                letter.anonymous_id && !letter.user_id
+              )
+              
+              if (anonymousLetters.length > 0) {
+                console.log('🔄 找到其他匿名Letter，显示所有匿名Letter以恢复数据')
+                userLetters = anonymousLetters
+                
+                // 更新这些Letter的匿名ID为当前ID，以便后续正常工作
+                const updatedLetters = localLetters.map((letter: any) => {
+                  if (letter.anonymous_id && !letter.user_id) {
+                    return { ...letter, anonymous_id: anonymousId }
+                  }
+                  return letter
+                })
+                localStorage.setItem('letters', JSON.stringify(updatedLetters))
+                console.log('✅ 已更新匿名Letter的ID为当前匿名ID')
+              }
+            }
           } else {
             // Show all local letters if no anonymous ID
             userLetters = localLetters
