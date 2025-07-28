@@ -242,26 +242,60 @@ export class LetterService {
     const user = userService.getCurrentUser()
     const anonymousId = userService.getAnonymousId()
     
-    // 生成缓存键
+    console.log('🔍 getUserLetters调用 - 详细状态检查:', {
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        display_name: user.display_name,
+        avatar_url: user.avatar_url
+      } : null,
+      anonymousId,
+      supabaseAvailable: !!supabase,
+      isAuthenticated: userService.isAuthenticated()
+    })
+    
+    // 如果用户状态异常（已认证但无用户信息），强制重新初始化
+    if (userService.isAuthenticated() && !user?.id) {
+      console.warn('⚠️ 检测到用户状态异常，强制重新初始化...')
+      try {
+        await userService.initializeUser()
+        const refreshedUser = userService.getCurrentUser()
+        console.log('🔄 重新初始化后的用户状态:', refreshedUser ? {
+          id: refreshedUser.id,
+          email: refreshedUser.email,
+          display_name: refreshedUser.display_name
+        } : null)
+      } catch (error) {
+        console.error('❌ 用户状态重新初始化失败:', error)
+      }
+    }
+    
+    // 重新获取用户状态
+    const finalUser = userService.getCurrentUser()
+    const finalAnonymousId = userService.getAnonymousId()
+    
+    // 生成缓存键 - 确保不使用undefined值
     const cacheKey = cacheManager.generateKey('user_letters', {
-      userId: user?.id || 'anonymous',
-      anonymousId: anonymousId || 'none',
+      userId: finalUser?.id || 'anonymous',
+      anonymousId: finalAnonymousId || 'none',
       limit,
       offset
     })
     
-    // 尝试从缓存获取
-    const cachedData = cacheManager.get(cacheKey)
-    if (cachedData) {
-      console.log('Using cached user letters:', cachedData.length)
-      return cachedData
+    // 尝试从缓存获取 - 但如果用户状态刚刚变化，跳过缓存
+    const shouldSkipCache = userService.isAuthenticated() && !finalUser?.id
+    if (!shouldSkipCache) {
+      const cachedData = cacheManager.get(cacheKey)
+      if (cachedData && cachedData.length > 0) {
+        console.log('✅ 使用有效缓存的用户Letters:', cachedData.length)
+        return cachedData
+      } else if (cachedData && cachedData.length === 0) {
+        console.warn('⚠️ 发现空缓存，清除并重新查询')
+        cacheManager.delete(cacheKey)
+      }
+    } else {
+      console.log('🔄 跳过缓存due to用户状态异常')
     }
-    
-    console.log('getUserLetters called with:', {
-      user: user?.id,
-      anonymousId,
-      supabaseAvailable: !!supabase
-    })
     
     let letters: Letter[] = []
     
@@ -269,27 +303,28 @@ export class LetterService {
     if (!supabase) {
       console.warn('Supabase not available, checking localStorage')
       const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-      console.log('Found letters in localStorage:', existingLetters.length)
+      console.log('📱 localStorage中发现Letters:', existingLetters.length)
       
-      // 过滤用户的Letters
+      // 过滤用户的Letters - 改进逻辑
       const userLetters = existingLetters.filter((letter: Letter) => {
-        if (user) {
+        if (finalUser?.id) {
           // 已登录用户：匹配user_id或anonymous_id
-          const anonymousIdForUser = userService.getAnonymousId()
-          return letter.user_id === user.id || (anonymousIdForUser && letter.anonymous_id === anonymousIdForUser)
+          return letter.user_id === finalUser.id || 
+                 (finalAnonymousId && letter.anonymous_id === finalAnonymousId) ||
+                 (!letter.user_id && letter.anonymous_id === finalAnonymousId)
         } else {
-          return letter.anonymous_id === anonymousId
+          return letter.anonymous_id === finalAnonymousId
         }
       })
       
-      console.log('Filtered user letters:', userLetters.length)
+      console.log('📋 过滤后的用户Letters:', userLetters.length)
       
       // 按时间排序并分页
       letters = userLetters
         .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(offset, offset + limit)
     } else {
-      if (!user?.id && !anonymousId) {
+      if (!finalUser?.id && !finalAnonymousId) {
         console.warn('No user or anonymous ID available')
         letters = []
       } else {
@@ -307,17 +342,16 @@ export class LetterService {
             .order('created_at', { ascending: false })
             .range(offset, offset + limit - 1)
 
-          if (user?.id) {
+          if (finalUser?.id) {
             // 已登录用户：查询user_id匹配的Letters，以及anonymous_id匹配的Letters（用于未迁移的情况）
-            const anonymousIdForUser = userService.getAnonymousId()
-            if (anonymousIdForUser) {
-              query = query.or(`user_id.eq.${user.id},anonymous_id.eq.${anonymousIdForUser}`)
+            if (finalAnonymousId) {
+              query = query.or(`user_id.eq.${finalUser.id},anonymous_id.eq.${finalAnonymousId}`)
             } else {
-              query = query.eq('user_id', user.id)
+              query = query.eq('user_id', finalUser.id)
             }
-          } else if (anonymousId) {
+          } else if (finalAnonymousId) {
             // 匿名用户：查询anonymous_id匹配
-            query = query.eq('anonymous_id', anonymousId)
+            query = query.eq('anonymous_id', finalAnonymousId)
           } else {
             // 无有效用户标识，返回空结果
             console.warn('No valid user ID or anonymous ID available for query')
@@ -325,7 +359,7 @@ export class LetterService {
           }
 
           // 只有在有有效查询条件时才执行查询
-          if (letters.length === 0 && (user?.id || anonymousId)) {
+          if (letters.length === 0 && (finalUser?.id || finalAnonymousId)) {
             const { data, error } = await query
 
             if (error) {
@@ -333,12 +367,13 @@ export class LetterService {
               // Fallback to localStorage
               const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
               const userLetters = existingLetters.filter((letter: Letter) => {
-                if (user?.id) {
+                if (finalUser?.id) {
                   // 已登录用户：匹配user_id或anonymous_id
-                  const anonymousIdForUser = userService.getAnonymousId()
-                  return letter.user_id === user.id || (anonymousIdForUser && letter.anonymous_id === anonymousIdForUser)
+                  return letter.user_id === finalUser.id || 
+                         (finalAnonymousId && letter.anonymous_id === finalAnonymousId) ||
+                         (!letter.user_id && letter.anonymous_id === finalAnonymousId)
                 } else {
-                  return letter.anonymous_id === anonymousId
+                  return letter.anonymous_id === finalAnonymousId
                 }
               })
               
@@ -353,12 +388,13 @@ export class LetterService {
           console.error('Network error, checking localStorage:', networkError)
           const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const userLetters = existingLetters.filter((letter: Letter) => {
-            if (user?.id) {
+            if (finalUser?.id) {
               // 已登录用户：匹配user_id或anonymous_id
-              const anonymousIdForUser = userService.getAnonymousId()
-              return letter.user_id === user.id || (anonymousIdForUser && letter.anonymous_id === anonymousIdForUser)
+              return letter.user_id === finalUser.id || 
+                     (finalAnonymousId && letter.anonymous_id === finalAnonymousId) ||
+                     (!letter.user_id && letter.anonymous_id === finalAnonymousId)
             } else {
-              return letter.anonymous_id === anonymousId
+              return letter.anonymous_id === finalAnonymousId
             }
           })
           
@@ -369,8 +405,20 @@ export class LetterService {
       }
     }
     
-    // 缓存结果（缓存3分钟）
-    cacheManager.set(cacheKey, letters, 3 * 60 * 1000)
+    console.log('📊 getUserLetters最终结果:', {
+      lettersCount: letters.length,
+      cacheKey,
+      finalUser: finalUser ? { id: finalUser.id, email: finalUser.email } : null,
+      finalAnonymousId
+    })
+    
+    // 缓存结果（缓存3分钟）- 但不要缓存空结果，除非确实没有数据
+    if (letters.length > 0 || (!finalUser?.id && !finalAnonymousId)) {
+      cacheManager.set(cacheKey, letters, 3 * 60 * 1000)
+      console.log('✅ 缓存Letters结果:', letters.length)
+    } else {
+      console.log('⏭️ 跳过缓存空结果，可能有数据但状态异常')
+    }
     
     return letters
   }

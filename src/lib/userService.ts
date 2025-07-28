@@ -263,8 +263,8 @@ export class UserService {
 
   // 迁移匿名Letters
   private async migrateAnonymousLetters(anonymousId: string | null, user: User): Promise<void> {
-    if (!anonymousId || !user.id) {
-      console.log('⏭️ UserService: 无需迁移Letter')
+    if (!anonymousId || !user?.id) {
+      console.log('⏭️ UserService: 无需迁移Letter - anonymousId或user.id为空:', { anonymousId, userId: user?.id })
       return
     }
 
