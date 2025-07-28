@@ -289,7 +289,7 @@ export class LetterService {
         .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(offset, offset + limit)
     } else {
-      if (!user && !anonymousId) {
+      if (!user?.id && !anonymousId) {
         console.warn('No user or anonymous ID available')
         letters = []
       } else {
@@ -307,7 +307,7 @@ export class LetterService {
             .order('created_at', { ascending: false })
             .range(offset, offset + limit - 1)
 
-          if (user) {
+          if (user?.id) {
             // 已登录用户：查询user_id匹配的Letters，以及anonymous_id匹配的Letters（用于未迁移的情况）
             const anonymousIdForUser = userService.getAnonymousId()
             if (anonymousIdForUser) {
@@ -315,38 +315,45 @@ export class LetterService {
             } else {
               query = query.eq('user_id', user.id)
             }
-          } else {
+          } else if (anonymousId) {
             // 匿名用户：查询anonymous_id匹配
             query = query.eq('anonymous_id', anonymousId)
+          } else {
+            // 无有效用户标识，返回空结果
+            console.warn('No valid user ID or anonymous ID available for query')
+            letters = []
           }
 
-          const { data, error } = await query
+          // 只有在有有效查询条件时才执行查询
+          if (letters.length === 0 && (user?.id || anonymousId)) {
+            const { data, error } = await query
 
-          if (error) {
-            console.error('Failed to get user letters:', error)
-            // Fallback to localStorage
-            const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-            const userLetters = existingLetters.filter((letter: Letter) => {
-              if (user) {
-                // 已登录用户：匹配user_id或anonymous_id
-                const anonymousIdForUser = userService.getAnonymousId()
-                return letter.user_id === user.id || (anonymousIdForUser && letter.anonymous_id === anonymousIdForUser)
-              } else {
-                return letter.anonymous_id === anonymousId
-              }
-            })
-            
-            letters = userLetters
-              .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-              .slice(offset, offset + limit)
-          } else {
-            letters = data || []
+            if (error) {
+              console.error('Failed to get user letters:', error)
+              // Fallback to localStorage
+              const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+              const userLetters = existingLetters.filter((letter: Letter) => {
+                if (user?.id) {
+                  // 已登录用户：匹配user_id或anonymous_id
+                  const anonymousIdForUser = userService.getAnonymousId()
+                  return letter.user_id === user.id || (anonymousIdForUser && letter.anonymous_id === anonymousIdForUser)
+                } else {
+                  return letter.anonymous_id === anonymousId
+                }
+              })
+              
+              letters = userLetters
+                .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .slice(offset, offset + limit)
+            } else {
+              letters = data || []
+            }
           }
         } catch (networkError) {
           console.error('Network error, checking localStorage:', networkError)
           const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const userLetters = existingLetters.filter((letter: Letter) => {
-            if (user) {
+            if (user?.id) {
               // 已登录用户：匹配user_id或anonymous_id
               const anonymousIdForUser = userService.getAnonymousId()
               return letter.user_id === user.id || (anonymousIdForUser && letter.anonymous_id === anonymousIdForUser)
