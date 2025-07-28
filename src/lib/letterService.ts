@@ -235,8 +235,13 @@ export class LetterService {
       // 清除认证错误标记，因为数据库操作成功了
       localStorage.removeItem('supabase_auth_error')
       
-      // 清除相关缓存，确保新数据能被其他用户看到
+      // 立即清除所有相关缓存，确保新数据能被其他用户看到
       this.clearPublicLettersCache()
+      this.clearUserLettersCache(user?.id, anonymousId)
+      
+      // 额外清除可能的缓存键
+      cacheManager.clear()
+      console.log('🗑️ 已清除所有缓存，确保新Letter立即可见')
     }
 
     // 尝试保存到fallback存储（用于跨用户访问）

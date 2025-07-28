@@ -88,6 +88,28 @@ export async function POST(request: NextRequest) {
         
         return addCorsHeaders(NextResponse.json({ data: selectData }))
       
+      case 'delete':
+        let deleteQuery = supabase.from(table).delete()
+        
+        if (filters) {
+          Object.entries(filters).forEach(([key, value]) => {
+            if (key === 'eq') {
+              Object.entries(value as any).forEach(([field, val]) => {
+                deleteQuery = deleteQuery.eq(field, val)
+              })
+            }
+          })
+        }
+        
+        const { data: deleteData, error: deleteError } = await deleteQuery
+        
+        if (deleteError) {
+          console.error('Delete error:', deleteError)
+          return addCorsHeaders(NextResponse.json({ error: deleteError }, { status: 400 }))
+        }
+        
+        return addCorsHeaders(NextResponse.json({ data: deleteData }))
+      
       default:
         return addCorsHeaders(NextResponse.json({ error: 'Invalid action' }, { status: 400 }))
     }
