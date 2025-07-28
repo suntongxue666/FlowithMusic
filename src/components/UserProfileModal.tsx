@@ -14,8 +14,22 @@ interface UserProfileModalProps {
   }
 }
 
+interface SocialMedia {
+  name: string
+  value: string
+  isEditing: boolean
+}
+
 export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: UserProfileModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
+  
+  const [socialMedias, setSocialMedias] = useState<SocialMedia[]>([
+    { name: 'WhatsApp', value: '', isEditing: false },
+    { name: 'TikTok', value: '', isEditing: false },
+    { name: 'Instagram', value: '', isEditing: false },
+    { name: 'Facebook', value: '', isEditing: false },
+    { name: 'X', value: '', isEditing: false }
+  ])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -38,10 +52,8 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
   const handleSignOut = async () => {
     try {
       if (onSignOut) {
-        // 使用传入的自定义登出函数
         onSignOut()
       } else {
-        // 使用默认的userService登出
         await userService.signOut()
         window.location.reload()
       }
@@ -49,6 +61,24 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
     } catch (error) {
       console.error('Sign out error:', error)
     }
+  }
+
+  const toggleEdit = (index: number) => {
+    setSocialMedias(prev => prev.map((media, i) => 
+      i === index ? { ...media, isEditing: !media.isEditing } : media
+    ))
+  }
+
+  const handleSave = (index: number, value: string) => {
+    setSocialMedias(prev => prev.map((media, i) => 
+      i === index ? { ...media, value, isEditing: false } : media
+    ))
+  }
+
+  const handleInputChange = (index: number, value: string) => {
+    setSocialMedias(prev => prev.map((media, i) => 
+      i === index ? { ...media, value } : media
+    ))
   }
 
   if (!isOpen) return null
@@ -75,22 +105,42 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
 
         {/* 社交媒体链接 */}
         <div className="social-links">
-          <div className="social-item">
-            <span className="social-label">WhatsApp:</span>
-            <span className="social-value">-</span>
-          </div>
-          <div className="social-item">
-            <span className="social-label">TikTok:</span>
-            <span className="social-value">-</span>
-          </div>
-          <div className="social-item">
-            <span className="social-label">Instagram:</span>
-            <span className="social-value">-</span>
-          </div>
-          <div className="social-item">
-            <span className="social-label">Facebook:</span>
-            <span className="social-value">-</span>
-          </div>
+          {socialMedias.map((media, index) => (
+            <div key={media.name} className="social-item">
+              <div className="social-row">
+                <span className="social-label">{media.name}:</span>
+                <button 
+                  className="edit-btn"
+                  onClick={() => media.isEditing ? handleSave(index, media.value) : toggleEdit(index)}
+                >
+                  {media.isEditing ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="20,6 9,17 4,12"></polyline>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="m18.5 2.5 3 3L10 17l-4 1 1-4z"></path>
+                    </svg>
+                  )}
+                </button>
+              </div>
+              <div className="social-input-row">
+                {media.isEditing ? (
+                  <input
+                    type="text"
+                    value={media.value}
+                    onChange={(e) => handleInputChange(index, e.target.value)}
+                    placeholder={`Enter your ${media.name} account`}
+                    className="social-input"
+                    autoFocus
+                  />
+                ) : (
+                  <span className="social-value">{media.value || '-'}</span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* 登出按钮 */}
@@ -114,8 +164,8 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
         }
 
         .user-modal {
-          width: 240px;
-          height: 600px;
+          width: 280px;
+          height: 650px;
           background-color: rgba(0, 0, 0, 0.8);
           color: white;
           padding: 24px;
@@ -183,26 +233,77 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
         .social-links {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 12px;
           flex: 1;
         }
 
         .social-item {
           display: flex;
+          flex-direction: column;
+          gap: 8px;
+          padding: 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          padding-bottom: 12px;
+        }
+
+        .social-row {
+          display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 12px 0;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .social-label {
           font-size: 14px;
           font-weight: 500;
+          color: white;
+        }
+
+        .edit-btn {
+          background: none;
+          border: none;
+          color: rgba(255, 255, 255, 0.7);
+          cursor: pointer;
+          padding: 4px;
+          border-radius: 4px;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .edit-btn:hover {
+          color: white;
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .social-input-row {
+          width: 100%;
+        }
+
+        .social-input {
+          width: 100%;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 4px;
+          padding: 8px 12px;
+          color: white;
+          font-size: 14px;
+          outline: none;
+        }
+
+        .social-input:focus {
+          border-color: rgba(255, 255, 255, 0.4);
+          background: rgba(255, 255, 255, 0.15);
+        }
+
+        .social-input::placeholder {
+          color: rgba(255, 255, 255, 0.5);
         }
 
         .social-value {
           font-size: 14px;
           color: rgba(255, 255, 255, 0.6);
+          word-break: break-all;
         }
 
         .sign-out-btn {
@@ -226,10 +327,40 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
 
         @media (max-width: 768px) {
           .user-modal {
-            width: 200px;
-            height: 500px;
+            width: 240px;
+            height: 600px;
             margin-right: 10px;
             padding: 20px;
+          }
+
+          .user-avatar-large {
+            width: 32px;
+            height: 32px;
+          }
+
+          .avatar-placeholder {
+            font-size: 16px;
+          }
+
+          .user-name {
+            font-size: 16px;
+          }
+
+          .user-email {
+            font-size: 12px;
+          }
+
+          .social-label {
+            font-size: 13px;
+          }
+
+          .social-input {
+            font-size: 13px;
+            padding: 6px 10px;
+          }
+
+          .social-value {
+            font-size: 13px;
           }
         }
       `}</style>

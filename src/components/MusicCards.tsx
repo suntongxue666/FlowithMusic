@@ -97,21 +97,20 @@ export default function MusicCards() {
         
         // 即使有公开Letters，也检查localStorage中是否有更新的Letters需要补充显示
         if (localStorage.getItem('supabase_auth_error')) {
-          console.log('📝 检测到认证错误，合并localStorage数据以确保最新Letters显示')
+          console.log('📝 检测到认证错误，合并localStorage数据以显示所有Letters')
           
           const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-          const recentLocalLetters = localLetters
+          const validLocalLetters = localLetters
             .filter((letter: Letter) => {
               const wordCount = letter.message.trim().split(/\s+/).length
-              const letterTime = new Date(letter.created_at).getTime()
-              const fiveMinutesAgo = Date.now() - 5 * 60 * 1000
-              return wordCount >= 12 && letterTime > fiveMinutesAgo // 只显示最近5分钟的新Letters
+              console.log(`📝 检查Letter ${letter.link_id}: 字数=${wordCount}, 符合条件=${wordCount >= 12}`)
+              return wordCount >= 12 // 移除时间限制，只要超过12个单词就显示
             })
           
-          if (recentLocalLetters.length > 0) {
-            console.log('📝 发现最近的本地Letters，优先显示:', recentLocalLetters.length)
-            // 合并本地最新letters和数据库letters，去重
-            const combinedLetters = [...recentLocalLetters, ...publicLetters]
+          if (validLocalLetters.length > 0) {
+            console.log('📝 发现符合条件的本地Letters，优先显示:', validLocalLetters.length)
+            // 合并本地letters和数据库letters，去重
+            const combinedLetters = [...validLocalLetters, ...publicLetters]
             const uniqueLetters = combinedLetters.filter((letter, index, self) => 
               index === self.findIndex(l => l.link_id === letter.link_id)
             )

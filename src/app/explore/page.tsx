@@ -24,7 +24,7 @@ export default function ExplorePage() {
       <Header currentPage="explore" />
       <div className="explore-container">
         <div className="explore-header">
-          <h1>Explore Music Letters</h1>
+          <h1>Songs carry your unsaid words</h1>
           <p>Discover heartfelt messages shared through music by our community</p>
         </div>
         
@@ -52,6 +52,115 @@ export default function ExplorePage() {
         <ExploreCards searchQuery={searchQuery} />
       </div>
       <Footer />
+      
+      <style jsx>{`
+        .explore-container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 2rem 1rem;
+          min-height: calc(100vh - 80px);
+        }
+
+        .explore-header {
+          text-align: center;
+          margin-bottom: 3rem;
+        }
+
+        .explore-header h1 {
+          font-size: 3rem;
+          font-weight: 700;
+          line-height: 1.2;
+          margin-bottom: 1rem;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .explore-header p {
+          font-size: 1.25rem;
+          color: #666;
+          margin: 0;
+        }
+
+        .search-container {
+          max-width: 800px;
+          margin: 0 auto 3rem auto;
+          display: flex;
+          justify-content: center;
+        }
+
+        .search-box {
+          display: flex;
+          width: 100%;
+          max-width: 600px;
+          gap: 0.5rem;
+        }
+
+        .search-input {
+          flex: 1;
+          padding: 12px 16px;
+          border: 2px solid #e1e5e9;
+          border-radius: 8px;
+          font-size: 16px;
+          outline: none;
+          transition: border-color 0.2s ease;
+        }
+
+        .search-input:focus {
+          border-color: #667eea;
+        }
+
+        .search-btn {
+          padding: 12px 24px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: transform 0.2s ease;
+          white-space: nowrap;
+        }
+
+        .search-btn:hover {
+          transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+          .explore-container {
+            padding: 1rem;
+          }
+
+          .explore-header h1 {
+            font-size: 2rem;
+          }
+
+          .explore-header p {
+            font-size: 1rem;
+          }
+
+          .search-container {
+            margin-bottom: 2rem;
+          }
+
+          .search-box {
+            max-width: none;
+            width: 100%;
+          }
+
+          .search-input {
+            font-size: 16px;
+            padding: 10px 14px;
+          }
+
+          .search-btn {
+            padding: 10px 20px;
+            font-size: 14px;
+          }
+        }
+      `}</style>
     </main>
   )
 }

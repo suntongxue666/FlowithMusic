@@ -12,7 +12,7 @@ export default function Hero() {
           💌 Send a Song
         </Link>
         <Link href="/explore" className="btn btn-secondary">
-          Explore Messages
+          🔍 Explore Letters
         </Link>
       </div>
     </section>
