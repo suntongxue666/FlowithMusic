@@ -423,6 +423,123 @@ export class LetterService {
     return letters
   }
 
+  // 紧急数据恢复 - 帮助用户找回所有可能的Letters
+  async emergencyRecoverLetters(): Promise<Letter[]> {
+    console.log('🚨 开始紧急Letter数据恢复...')
+    
+    try {
+      // 1. 从localStorage获取所有Letters
+      const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+      console.log('📱 localStorage中发现Letters:', localLetters.length)
+      
+      // 2. 如果Supabase可用，尝试从数据库获取所有相关Letters
+      let dbLetters: Letter[] = []
+      if (supabase) {
+        const user = userService.getCurrentUser()
+        const anonymousId = userService.getAnonymousId()
+        
+        console.log('🔍 尝试从数据库恢复，用户状态:', {
+          userId: user?.id,
+          email: user?.email,
+          anonymousId
+        })
+        
+        try {
+          // 如果有用户ID，获取该用户的所有Letters
+          if (user?.id) {
+            const { data: userLetters } = await supabase
+              .from('letters')
+              .select('*')
+              .eq('user_id', user.id)
+            
+            if (userLetters) {
+              dbLetters.push(...userLetters)
+              console.log(`📊 从数据库恢复用户Letters: ${userLetters.length}`)
+            }
+          }
+          
+          // 如果有匿名ID，获取匿名Letters
+          if (anonymousId) {
+            const { data: anonLetters } = await supabase
+              .from('letters')
+              .select('*')
+              .eq('anonymous_id', anonymousId)
+              .is('user_id', null)
+            
+            if (anonLetters) {
+              dbLetters.push(...anonLetters)
+              console.log(`📊 从数据库恢复匿名Letters: ${anonLetters.length}`)
+            }
+          }
+        } catch (dbError) {
+          console.warn('⚠️ 数据库恢复失败:', dbError)
+        }
+      }
+      
+      // 3. 合并去重
+      const allLetters = new Map<string, Letter>()
+      
+      // 优先使用数据库数据
+      dbLetters.forEach(letter => {
+        allLetters.set(letter.link_id, letter)
+      })
+      
+      // 补充localStorage数据
+      localLetters.forEach((letter: Letter) => {
+        if (!allLetters.has(letter.link_id)) {
+          allLetters.set(letter.link_id, letter)
+        }
+      })
+      
+      const recoveredLetters = Array.from(allLetters.values())
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      
+      console.log('✅ Letter恢复完成:', {
+        总数: recoveredLetters.length,
+        localStorage: localLetters.length,
+        数据库: dbLetters.length,
+        去重后: recoveredLetters.length
+      })
+      
+      // 4. 更新localStorage确保数据完整
+      localStorage.setItem('letters', JSON.stringify(recoveredLetters))
+      
+      // 5. 清除相关缓存
+      this.clearAllLetterCaches()
+      
+      return recoveredLetters
+      
+    } catch (error) {
+      console.error('💥 Letter恢复失败:', error)
+      return []
+    }
+  }
+  
+  // 清除所有Letter相关缓存
+  private clearAllLetterCaches(): void {
+    const user = userService.getCurrentUser()
+    const anonymousId = userService.getAnonymousId()
+    
+    // 清除各种可能的缓存键组合
+    const userIds = [user?.id, 'anonymous', 'undefined']
+    const anonIds = [anonymousId, 'none', 'undefined']
+    const limits = [10, 20, 50]
+    const offsets = [0]
+    
+    userIds.forEach(userId => {
+      anonIds.forEach(anonId => {
+        limits.forEach(limit => {
+          offsets.forEach(offset => {
+            const key = `user_letters_userId:${userId}|anonymousId:${anonId}|limit:${limit}|offset:${offset}`
+            cacheManager.delete(key)
+          })
+        })
+      })
+    })
+    
+    console.log('🧹 已清除所有Letter缓存')
+  }
+
   // 获取公开的Letters信息流
   async getPublicLetters(
     limit: number = 20,

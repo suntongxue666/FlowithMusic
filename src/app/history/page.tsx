@@ -15,6 +15,34 @@ export default function HistoryPage() {
   const [showToast, setShowToast] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false)
+  const [isRecovering, setIsRecovering] = useState(false)
+
+  // 紧急数据恢复
+  const handleEmergencyRecover = async () => {
+    setIsRecovering(true)
+    try {
+      console.log('🚨 用户触发紧急数据恢复...')
+      const recoveredLetters = await letterService.emergencyRecoverLetters()
+      setLetters(recoveredLetters)
+      
+      // 刷新用户状态
+      await userService.initializeUser()
+      const refreshedUser = userService.getCurrentUser()
+      const refreshedAuth = userService.isAuthenticated()
+      setUser(refreshedUser)
+      setIsAuthenticated(refreshedAuth)
+      
+      console.log('✅ 数据恢复完成，找回Letters:', recoveredLetters.length)
+      alert(`数据恢复完成！找回了 ${recoveredLetters.length} 个Letters`)
+      setShowRecoveryModal(false)
+    } catch (error) {
+      console.error('💥 数据恢复失败:', error)
+      alert('数据恢复失败，请刷新页面重试')
+    } finally {
+      setIsRecovering(false)
+    }
+  }
 
   useEffect(() => {
     const loadLettersAndUser = async () => {
@@ -286,6 +314,15 @@ export default function HistoryPage() {
 
         <div className="history-header">
           <h1>Your Message History</h1>
+          {letters.length === 0 && !loading && (
+            <button 
+              className="recovery-btn"
+              onClick={() => setShowRecoveryModal(true)}
+              title="如果您的Letters丢失，点击尝试恢复"
+            >
+              🔄 恢复数据
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -345,6 +382,42 @@ export default function HistoryPage() {
           isVisible={showToast}
           onClose={handleToastClose}
         />
+      )}
+
+      {/* 数据恢复模态框 */}
+      {showRecoveryModal && (
+        <div className="modal-overlay" onClick={() => setShowRecoveryModal(false)}>
+          <div className="recovery-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content">
+              <h3>🔄 数据恢复</h3>
+              <p>检测到您的Letters可能丢失了。我们可以尝试从数据库和本地存储中恢复您的数据。</p>
+              <p><strong>这个操作将：</strong></p>
+              <ul>
+                <li>从数据库中查找您的所有Letters</li>
+                <li>合并本地存储的数据</li>
+                <li>清除可能损坏的缓存</li>
+                <li>重新同步用户状态</li>
+              </ul>
+              
+              <div className="modal-buttons">
+                <button 
+                  className="cancel-btn"
+                  onClick={() => setShowRecoveryModal(false)}
+                  disabled={isRecovering}
+                >
+                  取消
+                </button>
+                <button 
+                  className="recover-btn"
+                  onClick={handleEmergencyRecover}
+                  disabled={isRecovering}
+                >
+                  {isRecovering ? '恢复中...' : '开始恢复'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <style jsx>{`
@@ -422,6 +495,9 @@ export default function HistoryPage() {
 
         .history-header {
           margin-bottom: 1rem;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
         }
 
         .history-header h1 {
@@ -429,6 +505,115 @@ export default function HistoryPage() {
           margin: 0;
           color: #333;
           font-weight: 600;
+        }
+
+        .recovery-btn {
+          background: #ff6b35;
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 6px;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .recovery-btn:hover {
+          background: #e55a2b;
+          transform: translateY(-1px);
+        }
+
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+
+        .recovery-modal {
+          background: white;
+          border-radius: 12px;
+          padding: 0;
+          max-width: 500px;
+          width: 90%;
+          max-height: 80vh;
+          overflow-y: auto;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-content {
+          padding: 2rem;
+        }
+
+        .modal-content h3 {
+          margin: 0 0 1rem 0;
+          color: #333;
+          font-size: 1.5rem;
+        }
+
+        .modal-content p {
+          margin: 0 0 1rem 0;
+          color: #666;
+          line-height: 1.5;
+        }
+
+        .modal-content ul {
+          margin: 0 0 1.5rem 0;
+          padding-left: 1.5rem;
+          color: #666;
+        }
+
+        .modal-content li {
+          margin-bottom: 0.5rem;
+        }
+
+        .modal-buttons {
+          display: flex;
+          gap: 1rem;
+          justify-content: flex-end;
+          margin-top: 2rem;
+        }
+
+        .cancel-btn, .recover-btn {
+          padding: 12px 24px;
+          border-radius: 6px;
+          font-size: 16px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border: none;
+        }
+
+        .cancel-btn {
+          background: #f8f9fa;
+          color: #666;
+        }
+
+        .cancel-btn:hover:not(:disabled) {
+          background: #e9ecef;
+        }
+
+        .recover-btn {
+          background: #ff6b35;
+          color: white;
+        }
+
+        .recover-btn:hover:not(:disabled) {
+          background: #e55a2b;
+        }
+
+        .cancel-btn:disabled, .recover-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
         .loading-container {
