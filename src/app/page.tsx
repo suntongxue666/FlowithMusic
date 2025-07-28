@@ -3,6 +3,7 @@ import Hero from '@/components/Hero'
 import Features from '@/components/Features'
 import MusicCards from '@/components/MusicCards'
 import RecentPostsCarousel from '@/components/RecentPostsCarousel'
+import ArtistLetters from '@/components/ArtistLetters'
 import Footer from '@/components/Footer'
 
 export default function Home() {
@@ -19,6 +20,9 @@ export default function Home() {
         autoPlay={true}
         showControls={true}
       />
+      
+      {/* Posts with Artist - 每个艺术家显示3个卡片，最多2个艺术家，每3小时更新 */}
+      <ArtistLetters />
       
       <Footer />
     </main>

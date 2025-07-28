@@ -138,9 +138,22 @@ export default function RecentPostsCarousel({
     is_public: true
   } as Letter))
 
+  // 检测是否为移动端
+  const [isMobile, setIsMobile] = useState(false)
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   // 单个卡片轮播 - 两阶段动画
   useEffect(() => {
-    if (!autoPlay || displayLetters.length <= 6 || isHovered) return
+    if (!autoPlay || displayLetters.length <= 6 || isHovered || isMobile) return
 
     const interval = setInterval(() => {
       const positionToUpdate = currentRotationIndex
