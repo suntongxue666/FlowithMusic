@@ -242,6 +242,14 @@ export class LetterService {
     const user = userService.getCurrentUser()
     const anonymousId = userService.getAnonymousId()
     
+    // 检查是否最近进行过数据恢复
+    const recoveryTimestamp = localStorage.getItem('letters_recovered')
+    const recentlyRecovered = recoveryTimestamp && (Date.now() - parseInt(recoveryTimestamp)) < 30 * 60 * 1000 // 30分钟内
+    
+    if (recentlyRecovered) {
+      console.log('🔄 检测到最近进行过数据恢复，优先使用localStorage数据')
+    }
+    
     console.log('🔍 getUserLetters调用 - 详细状态检查:', {
       user: user ? {
         id: user.id,
@@ -251,7 +259,8 @@ export class LetterService {
       } : null,
       anonymousId,
       supabaseAvailable: !!supabase,
-      isAuthenticated: userService.isAuthenticated()
+      isAuthenticated: userService.isAuthenticated(),
+      recentlyRecovered
     })
     
     // 如果用户状态异常（已认证但无用户信息），强制重新初始化
@@ -299,9 +308,9 @@ export class LetterService {
     
     let letters: Letter[] = []
     
-    // 如果Supabase不可用，从localStorage获取
-    if (!supabase) {
-      console.warn('Supabase not available, checking localStorage')
+    // 如果最近恢复过数据，优先使用localStorage，避免被数据库覆盖
+    if (recentlyRecovered || !supabase) {
+      console.log(recentlyRecovered ? '🔄 使用恢复的localStorage数据' : 'Supabase not available, checking localStorage')
       const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
       console.log('📱 localStorage中发现Letters:', existingLetters.length)
       
@@ -409,15 +418,27 @@ export class LetterService {
       lettersCount: letters.length,
       cacheKey,
       finalUser: finalUser ? { id: finalUser.id, email: finalUser.email } : null,
-      finalAnonymousId
+      finalAnonymousId,
+      recentlyRecovered
     })
     
-    // 缓存结果（缓存3分钟）- 但不要缓存空结果，除非确实没有数据
-    if (letters.length > 0 || (!finalUser?.id && !finalAnonymousId)) {
+    // 缓存结果（缓存3分钟）- 增强缓存逻辑
+    if (letters.length > 0) {
+      // 如果有数据，一定要缓存
       cacheManager.set(cacheKey, letters, 3 * 60 * 1000)
       console.log('✅ 缓存Letters结果:', letters.length)
+    } else if (!finalUser?.id && !finalAnonymousId) {
+      // 只有在完全没有用户标识时才缓存空结果
+      cacheManager.set(cacheKey, letters, 1 * 60 * 1000) // 空结果只缓存1分钟
+      console.log('✅ 缓存空结果（无用户标识）')
     } else {
-      console.log('⏭️ 跳过缓存空结果，可能有数据但状态异常')
+      console.log('⏭️ 跳过缓存空结果，保护已有数据')
+    }
+    
+    // 如果最近恢复过数据且有结果，延长恢复标记的有效期
+    if (recentlyRecovered && letters.length > 0) {
+      localStorage.setItem('letters_recovered', Date.now().toString())
+      console.log('🔄 延长数据恢复标记有效期')
     }
     
     return letters
@@ -501,11 +522,52 @@ export class LetterService {
         去重后: recoveredLetters.length
       })
       
-      // 4. 更新localStorage确保数据完整
-      localStorage.setItem('letters', JSON.stringify(recoveredLetters))
+      // 4. 强制更新localStorage确保数据完整和持久化
+      try {
+        localStorage.setItem('letters', JSON.stringify(recoveredLetters))
+        
+        // 验证保存是否成功
+        const savedLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+        console.log('💾 Letters数据保存验证:', {
+          保存成功: savedLetters.length === recoveredLetters.length,
+          保存数量: savedLetters.length,
+          恢复数量: recoveredLetters.length
+        })
+        
+        // 如果是已登录用户，还要确保用户数据关联正确
+        const user = userService.getCurrentUser()
+        if (user?.id) {
+          console.log('🔗 已登录用户Letter数据关联检查:', {
+            用户ID: user.id,
+            关联的Letters: recoveredLetters.filter(l => l.user_id === user.id).length,
+            匿名Letters: recoveredLetters.filter(l => !l.user_id).length
+          })
+          
+          // 为了确保数据关联，将未关联的Letters关联到当前用户
+          const anonymousId = userService.getAnonymousId()
+          const updatedLetters = recoveredLetters.map(letter => {
+            if (!letter.user_id && letter.anonymous_id === anonymousId) {
+              console.log('🔄 将匿名Letter关联到用户:', letter.link_id)
+              return { ...letter, user_id: user.id, anonymous_id: null }
+            }
+            return letter
+          })
+          
+          if (updatedLetters.some(l => l.user_id === user.id)) {
+            localStorage.setItem('letters', JSON.stringify(updatedLetters))
+            console.log('✅ 已更新Letter数据关联')
+          }
+        }
+        
+      } catch (saveError) {
+        console.error('❌ Letters数据保存失败:', saveError)
+      }
       
       // 5. 清除相关缓存
       this.clearAllLetterCaches()
+      
+      // 6. 设置一个标记，表示数据已经恢复过，避免重复恢复
+      localStorage.setItem('letters_recovered', Date.now().toString())
       
       return recoveredLetters
       

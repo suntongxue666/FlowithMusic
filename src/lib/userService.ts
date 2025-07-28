@@ -214,14 +214,35 @@ export class UserService {
       this.currentUser = finalUser
       this.anonymousId = finalUser.anonymous_id
       
-      // 保存到localStorage
+      // 强制保存到localStorage - 确保数据持久化
       if (typeof window !== 'undefined') {
-        localStorage.setItem('user', JSON.stringify(finalUser))
-        localStorage.setItem('isAuthenticated', 'true')
-        localStorage.setItem('anonymous_id', finalUser.anonymous_id)
+        try {
+          localStorage.setItem('user', JSON.stringify(finalUser))
+          localStorage.setItem('isAuthenticated', 'true')
+          localStorage.setItem('anonymous_id', finalUser.anonymous_id)
+          
+          // 验证保存是否成功
+          const savedUser = localStorage.getItem('user')
+          const savedAuth = localStorage.getItem('isAuthenticated')
+          
+          console.log('💾 用户数据保存验证:', {
+            saved: !!savedUser,
+            parsable: !!JSON.parse(savedUser || '{}'),
+            isAuthenticated: savedAuth === 'true',
+            userEmail: JSON.parse(savedUser || '{}').email
+          })
+        } catch (saveError) {
+          console.error('❌ UserService: localStorage保存失败:', saveError)
+        }
       }
       
-      console.log('✅ UserService: 用户处理完成:', finalUser)
+      console.log('✅ UserService: 用户处理完成:', {
+        id: finalUser.id,
+        email: finalUser.email,
+        display_name: finalUser.display_name,
+        avatar_url: finalUser.avatar_url,
+        anonymous_id: finalUser.anonymous_id
+      })
       return finalUser
       
     } catch (error) {
@@ -250,11 +271,23 @@ export class UserService {
     
     this.currentUser = fallbackUser
     
-    // 保存到localStorage
+    // 强制保存到localStorage - 确保fallback用户也能持久化
     if (typeof window !== 'undefined') {
-      localStorage.setItem('user', JSON.stringify(fallbackUser))
-      localStorage.setItem('isAuthenticated', 'true')
-      localStorage.setItem('anonymous_id', fallbackUser.anonymous_id)
+      try {
+        localStorage.setItem('user', JSON.stringify(fallbackUser))
+        localStorage.setItem('isAuthenticated', 'true')
+        localStorage.setItem('anonymous_id', fallbackUser.anonymous_id)
+        
+        // 验证保存是否成功
+        const savedUser = localStorage.getItem('user')
+        console.log('💾 Fallback用户数据保存验证:', {
+          saved: !!savedUser,
+          userEmail: JSON.parse(savedUser || '{}').email,
+          avatar: JSON.parse(savedUser || '{}').avatar_url
+        })
+      } catch (saveError) {
+        console.error('❌ UserService: Fallback用户保存失败:', saveError)
+      }
     }
     
     console.log('✅ UserService: Fallback用户创建成功')
@@ -336,7 +369,9 @@ export class UserService {
 
   // 获取当前用户
   getCurrentUser(): User | null {
+    // 首先检查内存中的用户状态
     if (this.currentUser) {
+      console.log('🎯 从内存获取用户:', this.currentUser.email)
       return this.currentUser
     }
     
@@ -344,13 +379,36 @@ export class UserService {
     if (typeof window !== 'undefined') {
       try {
         const userData = localStorage.getItem('user')
-        if (userData) {
+        const isAuth = localStorage.getItem('isAuthenticated')
+        
+        if (userData && isAuth === 'true') {
           const user = JSON.parse(userData)
-          this.currentUser = user
-          return user
+          
+          // 验证用户数据完整性
+          if (user && user.id && user.email) {
+            console.log('📱 从localStorage恢复用户:', {
+              email: user.email,
+              display_name: user.display_name,
+              avatar_url: user.avatar_url,
+              有头像: !!user.avatar_url
+            })
+            
+            this.currentUser = user
+            return user
+          } else {
+            console.warn('⚠️ localStorage中的用户数据不完整:', user)
+            // 清理损坏的数据
+            localStorage.removeItem('user')
+            localStorage.removeItem('isAuthenticated')
+          }
+        } else {
+          console.log('📱 localStorage中无有效用户数据')
         }
       } catch (error) {
-        console.error('Failed to parse user from localStorage:', error)
+        console.error('❌ 解析localStorage用户数据失败:', error)
+        // 清理损坏的数据
+        localStorage.removeItem('user')
+        localStorage.removeItem('isAuthenticated')
       }
     }
     
