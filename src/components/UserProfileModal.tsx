@@ -233,7 +233,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
         .social-links {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 3px; /* 减少间距到原来的25% (12px * 0.25 = 3px) */
           flex: 1;
         }
 
@@ -243,7 +243,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
           gap: 8px;
           padding: 0;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          padding-bottom: 12px;
+          padding-bottom: 3px; /* 减少底部间距到原来的25% (12px * 0.25 = 3px) */
         }
 
         .social-row {
@@ -263,7 +263,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
           border: none;
           color: rgba(255, 255, 255, 0.7);
           cursor: pointer;
-          padding: 4px;
+          padding: 2px; /* 改为2像素 */
           border-radius: 4px;
           transition: all 0.2s ease;
           display: flex;
@@ -283,7 +283,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
         .social-input {
           width: 100%;
           background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
+          border: none; /* 去掉边框 */
           border-radius: 4px;
           padding: 8px 12px;
           color: white;
@@ -292,7 +292,6 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
         }
 
         .social-input:focus {
-          border-color: rgba(255, 255, 255, 0.4);
           background: rgba(255, 255, 255, 0.15);
         }
 

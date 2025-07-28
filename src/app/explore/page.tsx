@@ -24,7 +24,7 @@ export default function ExplorePage() {
       <Header currentPage="explore" />
       <div className="explore-container">
         <div className="explore-header">
-          <h1>Songs carry your unsaid words</h1>
+          <h1>Explore Music Letters</h1>
           <p>Discover heartfelt messages shared through music by our community</p>
         </div>
         
@@ -67,14 +67,12 @@ export default function ExplorePage() {
         }
 
         .explore-header h1 {
-          font-size: 3rem;
-          font-weight: 700;
-          line-height: 1.2;
+          font-family: 'Nanum Pen Script', cursive;
+          font-size: 2.5rem;
+          font-weight: 400;
+          line-height: 1.4;
           margin-bottom: 1rem;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          color: #333;
         }
 
         .explore-header p {
@@ -108,24 +106,24 @@ export default function ExplorePage() {
         }
 
         .search-input:focus {
-          border-color: #667eea;
+          border-color: #333;
         }
 
         .search-btn {
           padding: 12px 24px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: #333;
           color: white;
           border: none;
           border-radius: 8px;
           font-size: 16px;
           font-weight: 500;
           cursor: pointer;
-          transition: transform 0.2s ease;
+          transition: background-color 0.2s ease;
           white-space: nowrap;
         }
 
         .search-btn:hover {
-          transform: translateY(-1px);
+          background: #555;
         }
 
         @media (max-width: 768px) {
