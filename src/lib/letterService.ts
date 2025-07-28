@@ -110,6 +110,11 @@ export class LetterService {
     // 尝试保存到数据库（重要：确保其他用户能看到）
     let dbSaveSuccess = false
     
+    // 测试代理连接状态
+    console.log('🔍 测试数据库连接状态...')
+    const proxyConnected = await supabaseProxy.testConnection()
+    console.log('📡 代理连接状态:', proxyConnected ? '✅ 可用' : '❌ 不可用')
+    
     // 首先尝试直接Supabase连接
     try {
       if (supabase) {
@@ -168,15 +173,33 @@ export class LetterService {
             localStorage.setItem('letters', JSON.stringify(updatedLetters))
           }
         } else {
-          console.warn('❌ 代理保存也失败')
+          console.warn('❌ 代理保存也失败:', proxyResult)
         }
       } catch (proxyError) {
-        console.warn('❌ 代理保存出错:', proxyError)
+        console.error('❌ 代理保存出错:', proxyError)
+        
+        // 最后尝试使用fallbackStorage
+        try {
+          console.log('📝 尝试使用备用存储...')
+          const fallbackResult = await fallbackStorage.saveLetter(localLetter)
+          if (fallbackResult) {
+            console.log('✅ Letter保存到备用存储成功')
+            dbSaveSuccess = true
+          }
+        } catch (fallbackError) {
+          console.error('❌ 备用存储也失败:', fallbackError)
+        }
       }
     }
     
+    // 最终检查和警告
     if (!dbSaveSuccess) {
-      console.error('🚨 重要：Letter未能保存到数据库，其他用户将看不到此Letter!')
+      console.error('🚨 重要警告：Letter未能保存到数据库！')
+      console.error('📍 影响：其他用户将无法在首页和Explore页面看到此Letter')
+      console.error('💡 建议：请检查网络连接或稍后重试')
+      console.error('🔧 技术信息：Letter已保存到localStorage，但未同步到服务器')
+    } else {
+      console.log('🎉 Letter成功保存到数据库，其他用户现在可以看到了！')
     }
 
     // 尝试保存到fallback存储（用于跨用户访问）

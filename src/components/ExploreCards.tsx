@@ -9,7 +9,7 @@ interface ExploreCardsProps {
   searchQuery?: string
 }
 
-export default function ExploreCards({ searchQuery }: ExploreCardsProps) {
+export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
   const [letters, setLetters] = useState<Letter[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
