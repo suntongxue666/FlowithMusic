@@ -24,6 +24,8 @@ export default function RecentPostsCarousel({
   const [isHovered, setIsHovered] = useState(false)
   const [currentRotationIndex, setCurrentRotationIndex] = useState(0) // 当前轮换到哪个位置
   const [animatingPositions, setAnimatingPositions] = useState<Set<number>>(new Set()) // 正在动画的位置
+  const [exitingPositions, setExitingPositions] = useState<Set<number>>(new Set()) // 正在退出的位置
+  const [enteringPositions, setEnteringPositions] = useState<Set<number>>(new Set()) // 正在进入的位置
 
   // 样例卡片数据（当没有真实数据时使用）
   const sampleCards = [
@@ -136,43 +138,50 @@ export default function RecentPostsCarousel({
     is_public: true
   } as Letter))
 
-  // 单个卡片轮播 - 每0.5秒替换1个卡片
+  // 单个卡片轮播 - 两阶段动画
   useEffect(() => {
     if (!autoPlay || displayLetters.length <= 6 || isHovered) return
 
     const interval = setInterval(() => {
       const positionToUpdate = currentRotationIndex
       
-      // 标记当前位置开始动画
-      setAnimatingPositions(prev => new Set(prev).add(positionToUpdate))
+      // 第一阶段：退出动画（1秒）
+      setExitingPositions(prev => new Set(prev).add(positionToUpdate))
       
-      // 延迟更新卡片内容，让退出动画先播放
       setTimeout(() => {
+        // 更新卡片内容
         setDisplayIndices(prev => {
           const newIndices = [...prev]
-          
-          // 计算下一个要显示的卡片索引
           const currentCardIndex = newIndices[positionToUpdate]
           const nextCardIndex = (currentCardIndex + 6) % displayLetters.length
-          
           newIndices[positionToUpdate] = nextCardIndex
           return newIndices
         })
         
-        // 动画完成后移除动画标记
+        // 清除退出状态，开始进入动画
+        setExitingPositions(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(positionToUpdate)
+          return newSet
+        })
+        
+        // 第二阶段：进入动画（1秒）
+        setEnteringPositions(prev => new Set(prev).add(positionToUpdate))
+        
         setTimeout(() => {
-          setAnimatingPositions(prev => {
+          // 清除进入状态
+          setEnteringPositions(prev => {
             const newSet = new Set(prev)
             newSet.delete(positionToUpdate)
             return newSet
           })
-        }, 600) // 动画时长的一半
+        }, 1000) // 进入动画1秒
         
-      }, 600) // 动画时长的一半
+      }, 1000) // 退出动画1秒
       
       // 更新轮换位置
       setCurrentRotationIndex(prev => (prev + 1) % 6)
-    }, 1500) // 1.5秒切换一次，给动画足够时间
+    }, 2500) // 2.5秒切换一次（1秒退出 + 1秒进入 + 0.5秒间隔）
 
     return () => clearInterval(interval)
   }, [displayLetters.length, autoPlay, isHovered, currentRotationIndex])
@@ -221,17 +230,17 @@ export default function RecentPostsCarousel({
         <div className="cards cards-6">
           {currentLetters.map((letter, index) => {
             const card = convertLetterToCard(letter)
-            const isAnimating = animatingPositions.has(index)
-            const isCurrentPosition = index === currentRotationIndex
+            const isExiting = exitingPositions.has(index)
+            const isEntering = enteringPositions.has(index)
+            
+            let animationClass = ''
+            if (isExiting) animationClass = 'card-exiting'
+            else if (isEntering) animationClass = 'card-entering'
             
             return (
               <div 
                 key={`${letter.link_id || letter.id}-${displayIndices[index]}`}
-                className={`card-wrapper ${isAnimating ? 'card-animating' : ''} ${isCurrentPosition ? 'card-current' : ''}`}
-                style={{
-                  transition: 'all 0.5s ease-in-out',
-                  animationDelay: `${index * 0.1}s`
-                }}
+                className={`card-wrapper ${animationClass}`}
               >
                 <MusicCard 
                   to={card.to}
