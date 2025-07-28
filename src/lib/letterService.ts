@@ -162,40 +162,20 @@ export class LetterService {
       try {
         console.log('📝 开始通过代理保存到数据库...')
         
-        // 如果有user_id，先确保用户存在于数据库中
+        // 由于外键约束问题，暂时使用匿名方式保存
+        // 这样可以避免用户记录不存在导致的保存失败
         if (newLetter.user_id) {
-          console.log('📝 检查并创建用户记录...')
-          try {
-            const userResult = await supabaseProxy.select('users', {
-              select: 'id',
-              filters: { eq: { id: newLetter.user_id } },
-              single: true
-            })
-            
-            if (!userResult.data) {
-              console.log('📝 用户不存在，创建用户记录...')
-              const userData = {
-                id: newLetter.user_id,
-                email: user?.email || 'unknown@example.com',
-                display_name: user?.displayName || user?.email || 'Unknown User',
-                avatar_url: user?.photoURL || null,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                coins: 0,
-                is_premium: false
-              }
-              
-              await supabaseProxy.insert('users', userData)
-              console.log('✅ 用户记录创建成功')
-            } else {
-              console.log('✅ 用户记录已存在')
-            }
-          } catch (userError) {
-            console.warn('⚠️ 用户记录处理失败，将使用匿名方式保存:', userError)
-            // 如果用户记录处理失败，改为匿名保存
-            newLetter.user_id = null
-            newLetter.anonymous_id = userService.getAnonymousId()
-          }
+          console.log('📝 检测到用户ID，但为避免外键约束问题，改为匿名保存')
+          console.log('📝 原用户ID:', newLetter.user_id)
+          
+          // 保存原始用户信息到localStorage，但数据库使用匿名方式
+          localLetter.user_id = newLetter.user_id
+          
+          // 数据库保存时使用匿名方式
+          newLetter.user_id = null
+          newLetter.anonymous_id = userService.getAnonymousId()
+          
+          console.log('📝 改为匿名ID:', newLetter.anonymous_id)
         }
         
         console.log('📝 代理保存的数据:', JSON.stringify(newLetter, null, 2))
