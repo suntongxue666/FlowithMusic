@@ -98,7 +98,7 @@ export default function ExplorePage() {
         .search-input {
           flex: 1;
           padding: 12px 16px;
-          border: 2px solid #e1e5e9;
+          border: 1px solid #e1e5e9; /* PC端去掉内搜索框，改为普通边框 */
           border-radius: 8px;
           font-size: 16px;
           outline: none;
@@ -141,21 +141,26 @@ export default function ExplorePage() {
 
           .search-container {
             margin-bottom: 2rem;
+            padding: 0 1rem; /* 左右居中padding */
           }
 
           .search-box {
             max-width: none;
             width: 100%;
+            justify-content: center; /* 左右居中 */
           }
 
           .search-input {
             font-size: 16px;
-            padding: 10px 14px;
+            padding: 10px 8px; /* H5端padding改为10px 8px */
           }
 
           .search-btn {
             padding: 10px 20px;
             font-size: 14px;
+            height: 42px; /* H5端按钮高度改为42像素 */
+            display: flex;
+            align-items: center;
           }
         }
       `}</style>

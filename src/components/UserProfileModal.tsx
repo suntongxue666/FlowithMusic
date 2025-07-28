@@ -131,7 +131,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
                     type="text"
                     value={media.value}
                     onChange={(e) => handleInputChange(index, e.target.value)}
-                    placeholder={`Enter your ${media.name} account`}
+                    placeholder={media.name === 'WhatsApp' ? 'Enter your phone No.' : 'Enter unique username'}
                     className="social-input"
                     autoFocus
                   />
@@ -181,7 +181,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 16px;
+          gap: 8px; /* 头像和用户名之间距离改为原来的50% (16px * 0.5 = 8px) */
           padding-bottom: 16px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
@@ -233,7 +233,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
         .social-links {
           display: flex;
           flex-direction: column;
-          gap: 3px; /* 减少间距到原来的25% (12px * 0.25 = 3px) */
+          gap: 1.5px; /* 邮箱下方白线与WhatsApp行距改为原来的50% (3px * 0.5 = 1.5px) */
           flex: 1;
         }
 
@@ -285,7 +285,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
           background: rgba(255, 255, 255, 0.1);
           border: none; /* 去掉边框 */
           border-radius: 4px;
-          padding: 8px 12px;
+          padding: 2px 4px; /* 输入文本提醒的Padding改为2px 4px */
           color: white;
           font-size: 14px;
           outline: none;
