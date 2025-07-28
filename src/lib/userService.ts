@@ -1,4 +1,4 @@
-import { supabaseClient as supabase, User, AnonymousSession } from './supabase-direct'
+import { supabase, User, AnonymousSession } from './supabase'
 import { ImprovedUserIdentity } from './improvedUserIdentity'
 
 // 生成匿名ID
@@ -130,14 +130,16 @@ export class UserService {
     console.log('👤 UserService: 用户信息:', { id: user.id, email: user.email })
     
     if (!supabase) {
-      throw new Error('数据库连接不可用')
+      console.warn('⚠️ UserService: Supabase不可用，使用fallback处理')
+      return this.createFallbackUser(user)
     }
 
+    // 获取当前匿名ID
     const anonymousId = this.anonymousId || localStorage.getItem('anonymous_id')
-    console.log('🔍 UserService: 匿名ID:', anonymousId)
+    console.log('🔍 UserService: 当前匿名ID:', anonymousId)
     
     try {
-      // 获取当前会话以确保我们有正确的认证
+      // 验证当前会话
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData.session) {
         console.error('❌ UserService: 无有效会话')
@@ -205,71 +207,114 @@ export class UserService {
         finalUser = newUser
       }
 
-      // 如果有匿名ID，尝试迁移Letters
-      if (anonymousId && finalUser.id) {
-        console.log('🔄 UserService: 开始迁移匿名Letters...')
+      // 处理匿名Letter的迁移
+      await this.migrateAnonymousLetters(anonymousId, finalUser)
+
+      // 更新本地状态
+      this.currentUser = finalUser
+      this.anonymousId = finalUser.anonymous_id
+      
+      // 保存到localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(finalUser))
+        localStorage.setItem('isAuthenticated', 'true')
+        localStorage.setItem('anonymous_id', finalUser.anonymous_id)
+      }
+      
+      console.log('✅ UserService: 用户处理完成:', finalUser)
+      return finalUser
+      
+    } catch (error) {
+      console.error('💥 UserService: 处理登录回调失败:', error)
+      console.log('🔄 UserService: 使用fallback处理')
+      return this.createFallbackUser(user)
+    }
+  }
+
+  // 创建fallback用户
+  private createFallbackUser(user: any): User {
+    console.log('🔄 UserService: 创建fallback用户')
+    const fallbackUser = {
+      id: user.id,
+      email: user.email,
+      google_id: user.id,
+      anonymous_id: this.anonymousId || generateAnonymousId(),
+      display_name: user.user_metadata?.full_name || user.email?.split('@')[0],
+      avatar_url: user.user_metadata?.avatar_url,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      coins: 100,
+      is_premium: false,
+      user_agent: getUserAgent()
+    }
+    
+    this.currentUser = fallbackUser
+    
+    // 保存到localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(fallbackUser))
+      localStorage.setItem('isAuthenticated', 'true')
+      localStorage.setItem('anonymous_id', fallbackUser.anonymous_id)
+    }
+    
+    console.log('✅ UserService: Fallback用户创建成功')
+    return fallbackUser
+  }
+
+  // 迁移匿名Letters
+  private async migrateAnonymousLetters(anonymousId: string | null, user: User): Promise<void> {
+    if (!anonymousId || !user.id) {
+      console.log('⏭️ UserService: 无需迁移Letter')
+      return
+    }
+
+    console.log('🔄 UserService: 开始迁移匿名Letters...')
+    
+    try {
+      // 1. 先从localStorage迁移
+      if (typeof window !== 'undefined') {
+        const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+        const anonymousLetters = localLetters.filter((letter: any) => 
+          letter.anonymous_id === anonymousId && !letter.user_id
+        )
         
+        if (anonymousLetters.length > 0) {
+          console.log(`🔄 UserService: 迁移${anonymousLetters.length}个localStorage中的匿名Letter`)
+          
+          // 更新localStorage中的Letter归属
+          const updatedLetters = localLetters.map((letter: any) => {
+            if (letter.anonymous_id === anonymousId && !letter.user_id) {
+              return { ...letter, user_id: user.id, anonymous_id: null }
+            }
+            return letter
+          })
+          
+          localStorage.setItem('letters', JSON.stringify(updatedLetters))
+          console.log('✅ UserService: localStorage中的Letter迁移完成')
+        }
+      }
+
+      // 2. 数据库迁移（如果可用）
+      if (supabase) {
         try {
-          // 调用数据库迁移函数
           const { data: migrationResult, error: migrationError } = await supabase
             .rpc('migrate_anonymous_letters_to_user', {
-              p_user_id: finalUser.id,
+              p_user_id: user.id,
               p_anonymous_id: anonymousId
             })
 
           if (migrationError) {
-            console.error('⚠️ UserService: Letter迁移失败:', migrationError)
-            // 迁移失败不应阻止登录流程
+            console.warn('⚠️ UserService: 数据库Letter迁移失败:', migrationError)
           } else {
-            console.log(`✅ UserService: 成功迁移 ${migrationResult || 0} 个Letters`)
+            console.log(`✅ UserService: 数据库成功迁移 ${migrationResult || 0} 个Letters`)
           }
         } catch (migrationError) {
-          console.error('⚠️ UserService: Letter迁移异常:', migrationError)
-          // 迁移失败不应阻止登录流程
+          console.warn('⚠️ UserService: 数据库迁移异常:', migrationError)
         }
       }
-
-      console.log('✅ UserService: 用户处理完成:', finalUser)
-
-      this.currentUser = finalUser
       
-      // 保存到localStorage以便跨组件访问
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('user', JSON.stringify(finalUser))
-        localStorage.setItem('isAuthenticated', 'true')
-      }
-      
-      console.log('🎉 UserService: 登录处理成功')
-      return finalUser
     } catch (error) {
-      console.error('💥 UserService: 处理登录回调失败:', error)
-      
-      // 即使出错，也尝试创建一个基本的用户对象
-      console.log('🔄 UserService: 创建基本用户对象作为fallback')
-      const fallbackUser = {
-        id: user.id,
-        email: user.email,
-        google_id: user.id,
-        anonymous_id: this.anonymousId || generateAnonymousId(),
-        display_name: user.user_metadata?.full_name || user.email?.split('@')[0],
-        avatar_url: user.user_metadata?.avatar_url,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        coins: 100,
-        is_premium: false,
-        user_agent: getUserAgent()
-      }
-      
-      this.currentUser = fallbackUser
-      
-      // 保存到localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('user', JSON.stringify(fallbackUser))
-        localStorage.setItem('isAuthenticated', 'true')
-      }
-      
-      console.log('✅ UserService: Fallback用户创建成功')
-      return fallbackUser
+      console.error('💥 UserService: Letter迁移失败:', error)
     }
   }
 

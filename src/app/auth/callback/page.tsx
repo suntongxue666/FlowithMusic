@@ -21,50 +21,73 @@ function AuthCallbackComponent() {
           throw new Error('Supabase客户端未初始化')
         }
 
-        // 处理OAuth回调 - 使用getSession来获取当前会话
-        console.log('🔍 AuthCallback: 当前URL:', window.location.href)
-        
-        // 首先检查URL中是否有认证信息
+        // 处理OAuth回调 - 首先检查URL中的认证参数
+        console.log('🔍 AuthCallback: 检查URL参数...')
         const hashParams = new URLSearchParams(window.location.hash.substring(1))
-        const accessToken = hashParams.get('access_token')
+        const urlParams = new URLSearchParams(window.location.search)
+        
+        const accessToken = hashParams.get('access_token') || urlParams.get('access_token')
+        const error = hashParams.get('error') || urlParams.get('error')
+        const errorDescription = hashParams.get('error_description') || urlParams.get('error_description')
+        
+        if (error) {
+          console.error('❌ AuthCallback: OAuth返回错误:', error, errorDescription)
+          throw new Error(`OAuth认证失败: ${errorDescription || error}`)
+        }
         
         if (accessToken) {
           console.log('✅ AuthCallback: 发现access_token，等待Supabase处理...')
-          // 等待一下让Supabase处理URL中的token
-          await new Promise(resolve => setTimeout(resolve, 1000))
+          // 给Supabase足够时间处理URL中的token
+          await new Promise(resolve => setTimeout(resolve, 2000))
         }
         
-        const { data, error: authError } = await supabase.auth.getSession()
+        // 尝试获取当前会话
+        console.log('🔍 AuthCallback: 获取当前会话...')
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
         
-        if (authError) {
-          console.error('❌ AuthCallback: 获取会话失败:', authError)
-          throw new Error(`认证失败: ${authError.message}`)
+        if (sessionError) {
+          console.error('❌ AuthCallback: 获取会话失败:', sessionError)
+          throw new Error(`认证失败: ${sessionError.message}`)
         }
 
         let user: any
+        let session = sessionData.session
         
-        if (!data.session) {
-          console.error('❌ AuthCallback: 没有有效会话')
-          console.log('🔄 AuthCallback: 尝试刷新会话...')
+        if (!session) {
+          console.warn('⚠️ AuthCallback: 没有有效会话，尝试其他方法...')
           
-          // 尝试刷新会话
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
-          
-          if (refreshError || !refreshData.session) {
+          // 如果有access_token但没有会话，尝试通过Supabase处理当前URL
+          if (accessToken) {
+            console.log('🔄 AuthCallback: 尝试通过URL处理认证...')
+            const { data: authData, error: authError } = await supabase.auth.getUser()
+            
+            if (authError) {
+              console.error('❌ AuthCallback: 通过URL获取用户失败:', authError)
+              throw new Error(`认证失败: ${authError.message}`)
+            }
+            
+            if (authData.user) {
+              console.log('✅ AuthCallback: 通过URL成功获取用户')
+              user = authData.user
+            } else {
+              throw new Error('无法获取用户信息，请重新登录')
+            }
+          } else {
             throw new Error('认证会话无效，请重新登录')
           }
-          
-          console.log('✅ AuthCallback: 会话刷新成功')
-          user = await userService.handleAuthCallback(refreshData.session.user)
         } else {
           console.log('✅ AuthCallback: 会话验证成功')
-          user = await userService.handleAuthCallback(data.session.user)
+          user = session.user
         }
         
+        // 调用userService处理用户数据和迁移
+        console.log('🔄 AuthCallback: 调用userService处理用户数据...')
+        const processedUser = await userService.handleAuthCallback(user)
+        
         console.log('✅ AuthCallback: 用户处理完成:', {
-          id: user.id,
-          email: user.email,
-          display_name: user.display_name
+          id: processedUser.id,
+          email: processedUser.email,
+          display_name: processedUser.display_name
         })
 
         console.log('🎉 AuthCallback: 登录成功，即将重定向...')
