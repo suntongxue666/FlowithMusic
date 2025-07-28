@@ -31,7 +31,21 @@ export default function HistoryPage() {
         console.log('History page - User state:', {
           isAuth,
           user: currentUser?.email,
+          userId: currentUser?.id,
           anonymousId: userService.getAnonymousId()
+        })
+        
+        // 添加localStorage调试信息
+        const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+        console.log('📝 LocalStorage letters debug:', {
+          totalLetters: localLetters.length,
+          letterIds: localLetters.map((l: any) => ({
+            linkId: l.link_id,
+            userId: l.user_id,
+            anonymousId: l.anonymous_id,
+            recipient: l.recipient_name,
+            created: l.created_at
+          }))
         })
         
         setUser(currentUser)
@@ -42,37 +56,53 @@ export default function HistoryPage() {
         
         if (isAuth && currentUser) {
           // Authenticated user - get from database and migrate if needed
+          console.log('🔐 Authenticated user detected, calling getUserLetters...')
           try {
             userLetters = await letterService.getUserLetters(50, 0)
-            console.log(`Loaded ${userLetters.length} letters for authenticated user`)
+            console.log(`✅ Loaded ${userLetters.length} letters for authenticated user:`, 
+              userLetters.map(l => ({
+                linkId: l.link_id,
+                recipient: l.recipient_name,
+                created: l.created_at
+              }))
+            )
           } catch (error) {
-            console.warn('Failed to load from database, falling back to localStorage:', error)
+            console.warn('❌ Failed to load from database, falling back to localStorage:', error)
             // Fallback to localStorage
             const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+            console.log('📱 Fallback: found letters in localStorage:', localLetters.length)
             userLetters = localLetters.sort((a: any, b: any) => 
               new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             )
           }
         } else {
           // Anonymous user - get from localStorage only
+          console.log('👤 Anonymous user detected, checking localStorage...')
           const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const anonymousId = userService.getAnonymousId()
+          
+          console.log('👤 Anonymous user data:', {
+            anonymousId,
+            totalLocalLetters: localLetters.length
+          })
           
           // Filter by anonymous ID if available
           if (anonymousId) {
             userLetters = localLetters.filter((letter: any) => 
               letter.anonymous_id === anonymousId
             )
+            console.log(`👤 Filtered ${userLetters.length} letters for anonymous ID: ${anonymousId}`)
           } else {
             // Show all local letters if no anonymous ID
             userLetters = localLetters
+            console.log('👤 No anonymous ID, showing all local letters:', userLetters.length)
           }
           
           userLetters = userLetters.sort((a: any, b: any) => 
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
           )
           
-          console.log(`Loaded ${userLetters.length} letters for anonymous user`)
+          console.log(`📋 Final anonymous user letters:`, userLetters.length)
         }
         
         setLetters(userLetters)
