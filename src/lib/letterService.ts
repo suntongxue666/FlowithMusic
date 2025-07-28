@@ -146,23 +146,33 @@ export class LetterService {
             localStorage.setItem('letters', JSON.stringify(updatedLetters))
           }
         } else {
-          console.warn('❌ 直接Supabase保存失败，尝试代理方式:', error)
+          console.warn('❌ 直接Supabase保存失败，错误详情:', error)
+          console.warn('📝 将尝试代理方式保存...')
         }
+      } else {
+        console.warn('❌ Supabase客户端未初始化，将尝试代理方式...')
       }
     } catch (dbError) {
-      console.warn('❌ 直接数据库连接失败，尝试代理方式:', dbError)
+      console.warn('❌ 直接数据库连接异常，错误详情:', dbError)
+      console.warn('📝 将尝试代理方式保存...')
     }
     
-    // 如果直接连接失败，尝试使用supabaseProxy
+    // 如果直接连接失败，强制尝试使用supabaseProxy
     if (!dbSaveSuccess) {
       try {
-        console.log('📝 尝试通过代理保存到数据库...')
-        const proxyResult = await supabaseProxy.insert('letters', newLetter)
+        console.log('📝 开始通过代理保存到数据库...')
+        console.log('📝 代理保存的数据:', JSON.stringify(newLetter, null, 2))
         
-        if (proxyResult.data) {
-          console.log('✅ Letter通过代理成功保存到数据库:', proxyResult.data.id || proxyResult.data.link_id)
-          // 由于代理返回的数据可能不包含user信息，使用基础Letter数据
-          createdLetter = { ...localLetter, ...proxyResult.data }
+        const proxyResult = await supabaseProxy.insert('letters', newLetter)
+        console.log('📝 代理保存结果:', JSON.stringify(proxyResult, null, 2))
+        
+        if (proxyResult && proxyResult.data) {
+          console.log('✅ Letter通过代理成功保存到数据库!')
+          console.log('📝 保存的Letter ID:', proxyResult.data.id)
+          console.log('📝 保存的Link ID:', proxyResult.data.link_id)
+          
+          // 使用代理返回的完整数据
+          createdLetter = proxyResult.data
           dbSaveSuccess = true
           
           // 更新localStorage中的数据
@@ -171,12 +181,14 @@ export class LetterService {
           if (index !== -1) {
             updatedLetters[index] = createdLetter
             localStorage.setItem('letters', JSON.stringify(updatedLetters))
+            console.log('✅ localStorage已更新为数据库版本')
           }
         } else {
-          console.warn('❌ 代理保存也失败:', proxyResult)
+          console.error('❌ 代理保存失败，返回数据为空:', proxyResult)
         }
       } catch (proxyError) {
-        console.error('❌ 代理保存出错:', proxyError)
+        console.error('❌ 代理保存异常:', proxyError)
+        console.error('❌ 错误详情:', JSON.stringify(proxyError, null, 2))
         
         // 最后尝试使用fallbackStorage
         try {
@@ -198,8 +210,17 @@ export class LetterService {
       console.error('📍 影响：其他用户将无法在首页和Explore页面看到此Letter')
       console.error('💡 建议：请检查网络连接或稍后重试')
       console.error('🔧 技术信息：Letter已保存到localStorage，但未同步到服务器')
+      
+      // 设置认证错误标记，让前端知道需要显示本地数据
+      localStorage.setItem('supabase_auth_error', 'true')
     } else {
       console.log('🎉 Letter成功保存到数据库，其他用户现在可以看到了！')
+      
+      // 清除认证错误标记，因为数据库操作成功了
+      localStorage.removeItem('supabase_auth_error')
+      
+      // 清除相关缓存，确保新数据能被其他用户看到
+      this.clearPublicLettersCache()
     }
 
     // 尝试保存到fallback存储（用于跨用户访问）
