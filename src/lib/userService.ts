@@ -370,9 +370,12 @@ export class UserService {
   // 获取当前用户
   getCurrentUser(): User | null {
     // 首先检查内存中的用户状态
-    if (this.currentUser) {
+    if (this.currentUser && this.currentUser.email) {
       console.log('🎯 从内存获取用户:', this.currentUser.email)
       return this.currentUser
+    } else if (this.currentUser && !this.currentUser.email) {
+      console.warn('⚠️ 内存中用户数据不完整，清除并重新获取')
+      this.currentUser = null
     }
     
     // 从localStorage获取
@@ -384,22 +387,30 @@ export class UserService {
         if (userData && isAuth === 'true') {
           const user = JSON.parse(userData)
           
-          // 验证用户数据完整性
-          if (user && user.id && user.email) {
+          // 验证用户数据完整性 - 更严格的检查
+          if (user && user.id && user.email && typeof user.email === 'string' && user.email.includes('@')) {
             console.log('📱 从localStorage恢复用户:', {
               email: user.email,
               display_name: user.display_name,
               avatar_url: user.avatar_url,
-              有头像: !!user.avatar_url
+              有头像: !!user.avatar_url,
+              用户ID: user.id
             })
             
             this.currentUser = user
             return user
           } else {
-            console.warn('⚠️ localStorage中的用户数据不完整:', user)
+            console.warn('⚠️ localStorage中的用户数据不完整或损坏:', {
+              hasId: !!user?.id,
+              hasEmail: !!user?.email,
+              emailValid: user?.email && typeof user.email === 'string' && user.email.includes('@'),
+              user: user
+            })
+            
             // 清理损坏的数据
             localStorage.removeItem('user')
             localStorage.removeItem('isAuthenticated')
+            this.currentUser = null
           }
         } else {
           console.log('📱 localStorage中无有效用户数据')
@@ -409,6 +420,7 @@ export class UserService {
         // 清理损坏的数据
         localStorage.removeItem('user')
         localStorage.removeItem('isAuthenticated')
+        this.currentUser = null
       }
     }
     
@@ -422,15 +434,20 @@ export class UserService {
 
   // 检查是否已登录
   isAuthenticated(): boolean {
-    if (this.currentUser !== null) {
+    // 首先检查是否有有效的用户数据
+    const currentUser = this.getCurrentUser()
+    if (currentUser && currentUser.email) {
       return true
     }
     
-    // 从localStorage检查
+    // 如果没有有效用户但localStorage标记为已认证，清理状态
     if (typeof window !== 'undefined') {
       const isAuth = localStorage.getItem('isAuthenticated')
-      const userData = localStorage.getItem('user')
-      return isAuth === 'true' && userData !== null
+      if (isAuth === 'true' && !currentUser) {
+        console.warn('⚠️ 认证状态不一致，清理状态')
+        localStorage.removeItem('isAuthenticated')
+        localStorage.removeItem('user')
+      }
     }
     
     return false

@@ -17,6 +17,39 @@ export default function HistoryPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [showRecoveryModal, setShowRecoveryModal] = useState(false)
   const [isRecovering, setIsRecovering] = useState(false)
+  const [showDebugInfo, setShowDebugInfo] = useState(false)
+
+  // 调试信息收集
+  const getDebugInfo = () => {
+    const user = userService.getCurrentUser()
+    const isAuth = userService.isAuthenticated()
+    const anonymousId = userService.getAnonymousId()
+    
+    return {
+      用户服务状态: {
+        当前用户: user ? {
+          id: user.id,
+          email: user.email,
+          display_name: user.display_name,
+          avatar_url: user.avatar_url,
+          anonymous_id: user.anonymous_id
+        } : null,
+        认证状态: isAuth,
+        匿名ID: anonymousId
+      },
+      localStorage数据: {
+        user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}') : null,
+        isAuthenticated: localStorage.getItem('isAuthenticated'),
+        anonymous_id: localStorage.getItem('anonymous_id'),
+        letters数量: JSON.parse(localStorage.getItem('letters') || '[]').length
+      },
+      组件状态: {
+        user: user,
+        isAuthenticated: isAuthenticated,
+        letters数量: letters.length
+      }
+    }
+  }
 
   // 紧急数据恢复
   const handleEmergencyRecover = async () => {
@@ -314,16 +347,60 @@ export default function HistoryPage() {
 
         <div className="history-header">
           <h1>Your Message History</h1>
-          {letters.length === 0 && !loading && (
+          <div className="header-actions">
+            {letters.length === 0 && !loading && (
+              <button 
+                className="recovery-btn"
+                onClick={() => setShowRecoveryModal(true)}
+                title="如果您的Letters丢失，点击尝试恢复"
+              >
+                🔄 恢复数据
+              </button>
+            )}
             <button 
-              className="recovery-btn"
-              onClick={() => setShowRecoveryModal(true)}
-              title="如果您的Letters丢失，点击尝试恢复"
+              className="debug-btn"
+              onClick={() => setShowDebugInfo(!showDebugInfo)}
+              title="显示调试信息"
             >
-              🔄 恢复数据
+              🔍 调试
             </button>
-          )}
+          </div>
         </div>
+
+        {showDebugInfo && (
+          <div className="debug-panel">
+            <h3>🔍 状态调试信息</h3>
+            <pre>{JSON.stringify(getDebugInfo(), null, 2)}</pre>
+            <div className="debug-actions">
+              <button 
+                className="sync-btn"
+                onClick={async () => {
+                  console.log('🔄 手动同步用户状态...')
+                  await userService.initializeUser()
+                  const refreshedUser = userService.getCurrentUser()
+                  const refreshedAuth = userService.isAuthenticated()
+                  setUser(refreshedUser)
+                  setIsAuthenticated(refreshedAuth)
+                  console.log('✅ 状态同步完成')
+                }}
+              >
+                🔄 同步状态
+              </button>
+              <button 
+                className="clear-btn"
+                onClick={() => {
+                  localStorage.removeItem('user')
+                  localStorage.removeItem('isAuthenticated')
+                  localStorage.removeItem('anonymous_id')
+                  console.log('🧹 已清除用户数据')
+                  window.location.reload()
+                }}
+              >
+                🧹 清除数据
+              </button>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="loading-container">
@@ -507,7 +584,13 @@ export default function HistoryPage() {
           font-weight: 600;
         }
 
-        .recovery-btn {
+        .header-actions {
+          display: flex;
+          gap: 0.5rem;
+          align-items: center;
+        }
+
+        .recovery-btn, .debug-btn {
           background: #ff6b35;
           color: white;
           border: none;
@@ -521,9 +604,75 @@ export default function HistoryPage() {
           gap: 0.5rem;
         }
 
+        .debug-btn {
+          background: #6c757d;
+        }
+
         .recovery-btn:hover {
           background: #e55a2b;
           transform: translateY(-1px);
+        }
+
+        .debug-btn:hover {
+          background: #5a6268;
+          transform: translateY(-1px);
+        }
+
+        .debug-panel {
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 8px;
+          padding: 1rem;
+          margin-bottom: 1rem;
+          font-family: monospace;
+        }
+
+        .debug-panel h3 {
+          margin: 0 0 1rem 0;
+          color: #495057;
+        }
+
+        .debug-panel pre {
+          background: white;
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          padding: 1rem;
+          overflow-x: auto;
+          font-size: 12px;
+          max-height: 300px;
+        }
+
+        .debug-actions {
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 1rem;
+        }
+
+        .sync-btn, .clear-btn {
+          padding: 6px 12px;
+          border-radius: 4px;
+          border: none;
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .sync-btn {
+          background: #28a745;
+          color: white;
+        }
+
+        .sync-btn:hover {
+          background: #218838;
+        }
+
+        .clear-btn {
+          background: #dc3545;
+          color: white;
+        }
+
+        .clear-btn:hover {
+          background: #c82333;
         }
 
         .modal-overlay {
