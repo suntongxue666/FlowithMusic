@@ -52,6 +52,14 @@ export default function ExploreCards({ searchQuery }: ExploreCardsProps) {
 
       // 如果没有足够的Letters，尝试从localStorage获取
       if (fetchedLetters.length === 0 && pageNum === 0) {
+        console.log('📝 Explore: 数据库无Letters，检查localStorage和认证状态...')
+        
+        // 检查是否有认证错误
+        const hasAuthError = localStorage.getItem('supabase_auth_error')
+        if (hasAuthError) {
+          console.log('📝 Explore: 检测到认证错误，使用localStorage作为主要数据源')
+        }
+        
         if (typeof window !== 'undefined') {
           const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const validLocalLetters = localLetters

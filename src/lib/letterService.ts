@@ -237,6 +237,31 @@ export class LetterService {
     }
   }
 
+  // 从localStorage获取Letters的辅助方法
+  private getLettersFromLocalStorage(user: any, anonymousId: string | null, limit: number, offset: number): Letter[] {
+    const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+    console.log('📱 localStorage中发现Letters:', existingLetters.length)
+    
+    // 过滤用户的Letters
+    const userLetters = existingLetters.filter((letter: Letter) => {
+      if (user?.id) {
+        // 已登录用户：匹配user_id或anonymous_id
+        return letter.user_id === user.id || 
+               (anonymousId && letter.anonymous_id === anonymousId) ||
+               (!letter.user_id && letter.anonymous_id === anonymousId)
+      } else {
+        return letter.anonymous_id === anonymousId
+      }
+    })
+    
+    console.log('📋 过滤后的用户Letters:', userLetters.length)
+    
+    // 按时间排序并分页
+    return userLetters
+      .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(offset, offset + limit)
+  }
+
   // 获取用户的Letters
   async getUserLetters(limit: number = 10, offset: number = 0): Promise<Letter[]> {
     const user = userService.getCurrentUser()
@@ -248,6 +273,13 @@ export class LetterService {
     
     if (recentlyRecovered) {
       console.log('🔄 检测到最近进行过数据恢复，优先使用localStorage数据')
+    }
+    
+    // 如果有Supabase认证错误，优先使用localStorage避免403错误
+    const hasAuthError = localStorage.getItem('supabase_auth_error')
+    if (hasAuthError) {
+      console.log('🔄 检测到认证错误，优先使用localStorage数据')
+      return this.getLettersFromLocalStorage(user, anonymousId, limit, offset)
     }
     
     console.log('🔍 getUserLetters调用 - 详细状态检查:', {

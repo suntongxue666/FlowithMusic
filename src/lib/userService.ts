@@ -85,6 +85,12 @@ export class UserService {
 
   // Google OAuth 登录
   async signInWithGoogle(): Promise<void> {
+    // 清除认证错误标记，准备重新尝试
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('supabase_auth_error')
+      console.log('🔑 开始Google登录，已清除认证错误标记')
+    }
+    
     if (!supabase) {
       throw new Error('登录功能暂时不可用')
     }

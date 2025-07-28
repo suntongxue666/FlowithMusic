@@ -77,6 +77,24 @@ export default function MusicCards() {
         const publicLetters = await letterService.getPublicLetters(20, 0, 'created_at')
         console.log('📝 获取到的公开Letters:', publicLetters.length)
         
+        // 如果数据库返回空结果且检测到认证错误，尝试从localStorage获取
+        if (publicLetters.length === 0 && localStorage.getItem('supabase_auth_error')) {
+          console.log('📝 检测到认证错误且无公开Letters，从localStorage获取用户Letters作为fallback...')
+          
+          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+          const validLocalLetters = localLetters
+            .filter((letter: Letter) => {
+              const wordCount = letter.message.trim().split(/\s+/).length
+              return wordCount >= 12
+            })
+            .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .slice(0, 6)
+          
+          console.log('📝 从localStorage获取的Letters作为Home展示:', validLocalLetters.length)
+          setLetters(validLocalLetters)
+          return
+        }
+        
         // 过滤出消息超过12个单词的Letters，并显示调试信息
         const filteredLetters = publicLetters.filter(letter => {
           const wordCount = letter.message.trim().split(/\s+/).length

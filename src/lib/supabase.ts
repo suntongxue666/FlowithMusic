@@ -89,6 +89,15 @@ export const supabase = supabaseUrl && supabaseAnonKey
                 statusText: response.statusText,
                 url: urlString
               })
+              
+              // 如果是认证错误，标记以便其他地方处理
+              if (response.status === 403 || response.status === 401) {
+                localStorage.setItem('supabase_auth_error', Date.now().toString())
+                console.warn('🔐 检测到认证错误，已标记使用本地存储')
+              }
+            } else {
+              // 请求成功，清除认证错误标记
+              localStorage.removeItem('supabase_auth_error')
             }
             return response
           }).catch(error => {
@@ -121,7 +130,7 @@ export const testSupabaseConnection = async () => {
   }
   
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('letters')
       .select('count')
       .limit(1)
