@@ -1,5 +1,13 @@
 import { supabase } from './supabase'
 
+// 检查supabase客户端是否可用
+const checkSupabaseClient = () => {
+  if (!supabase) {
+    throw new Error('Supabase client is not initialized')
+  }
+  return supabase
+}
+
 export interface SocialMediaAccount {
   id?: string
   user_id: string
@@ -22,7 +30,8 @@ export const socialMediaService = {
   // 获取用户的所有社交媒体账号
   async getUserSocialMedia(userId: string): Promise<SocialMediaAccount[]> {
     try {
-      const { data, error } = await supabase
+      const client = checkSupabaseClient()
+      const { data, error } = await client
         .from('user_social_media')
         .select('*')
         .eq('user_id', userId)
@@ -60,6 +69,7 @@ export const socialMediaService = {
   // 保存或更新用户的社交媒体账号
   async saveSocialMediaData(userId: string, data: SocialMediaData): Promise<void> {
     try {
+      const client = checkSupabaseClient()
       const platforms: Array<keyof SocialMediaData> = ['instagram', 'twitter', 'tiktok', 'youtube', 'spotify']
       
       for (const platform of platforms) {
@@ -70,7 +80,7 @@ export const socialMediaService = {
           const url = this.generatePlatformUrl(platform, username.trim())
           
           // 使用upsert来插入或更新
-          const { error } = await supabase
+          const { error } = await client
             .from('user_social_media')
             .upsert({
               user_id: userId,
@@ -87,7 +97,7 @@ export const socialMediaService = {
           }
         } else {
           // 如果用户名为空，删除该平台的记录
-          const { error } = await supabase
+          const { error } = await client
             .from('user_social_media')
             .delete()
             .eq('user_id', userId)
@@ -128,7 +138,8 @@ export const socialMediaService = {
   // 删除特定平台的账号
   async deleteSocialMediaAccount(userId: string, platform: string): Promise<void> {
     try {
-      const { error } = await supabase
+      const client = checkSupabaseClient()
+      const { error } = await client
         .from('user_social_media')
         .delete()
         .eq('user_id', userId)
