@@ -9,7 +9,6 @@ import Toast from '@/components/Toast'
 import { SpotifyTrack } from '@/lib/spotify'
 import { letterService } from '@/lib/letterService'
 import { userService } from '@/lib/userService'
-import { socialMediaService, SocialMediaData } from '@/lib/socialMediaService'
 
 export default function SendPage() {
   const router = useRouter()
@@ -24,9 +23,6 @@ export default function SendPage() {
   const [userInitialized, setUserInitialized] = useState(false)
   const [showRecipientHint, setShowRecipientHint] = useState(false)
   const [showMessageHint, setShowMessageHint] = useState(false)
-  const [socialMedia, setSocialMedia] = useState<SocialMediaData>({})
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   // 检测中文字符
   const hasChinese = (text: string) => {
@@ -44,28 +40,13 @@ export default function SendPage() {
     }
   }
 
-  // 初始化用户和加载社交媒体数据
+  // 初始化用户
   useEffect(() => {
     const initUser = async () => {
       try {
         const anonymousId = await userService.initializeUser()
         console.log('User initialized with ID:', anonymousId)
         setUserInitialized(true)
-        
-        // 检查用户是否已登录
-        const user = await userService.getCurrentUser()
-        if (user) {
-          setIsLoggedIn(true)
-          setCurrentUserId(user.id)
-          
-          // 加载用户的社交媒体数据
-          try {
-            const socialMediaData = await socialMediaService.getUserSocialMediaData(user.id)
-            setSocialMedia(socialMediaData)
-          } catch (error) {
-            console.error('Failed to load social media data:', error)
-          }
-        }
       } catch (error) {
         console.error('Failed to initialize user:', error)
         setErrorMessage('Failed to initialize user session. Please refresh the page.')
@@ -78,26 +59,6 @@ export default function SendPage() {
 
   const handleTrackSelect = (track: SpotifyTrack) => {
     setSelectedTrack(track)
-  }
-
-  // 处理社交媒体输入变化
-  const handleSocialMediaChange = (platform: keyof SocialMediaData, value: string) => {
-    setSocialMedia(prev => ({
-      ...prev,
-      [platform]: value
-    }))
-  }
-
-  // 保存社交媒体数据
-  const saveSocialMediaData = async () => {
-    if (!isLoggedIn || !currentUserId) return
-    
-    try {
-      await socialMediaService.saveSocialMediaData(currentUserId, socialMedia)
-      console.log('Social media data saved successfully')
-    } catch (error) {
-      console.error('Failed to save social media data:', error)
-    }
   }
 
   const handleSubmit = async () => {
@@ -175,15 +136,6 @@ export default function SendPage() {
           }
         })
         console.log('✅ Cleared all caches for fresh data loading')
-      }
-
-      // 保存社交媒体数据（如果用户已登录）
-      if (isLoggedIn && currentUserId) {
-        try {
-          await saveSocialMediaData()
-        } catch (error) {
-          console.error('Failed to save social media data, but letter was created successfully:', error)
-        }
       }
 
       // Show toast
@@ -287,74 +239,6 @@ export default function SendPage() {
           {selectedTrack && (
             <div className="form-section">
               <SpotifyEmbedPlayer track={selectedTrack} />
-            </div>
-          )}
-
-          {/* 社交媒体账号输入 - 仅登录用户显示 */}
-          {isLoggedIn && (
-            <div className="form-section">
-              <label>Social Media (Optional)</label>
-              <div className="social-media-inputs">
-                <div className="social-input-group">
-                  <label htmlFor="instagram">Instagram</label>
-                  <input
-                    type="text"
-                    id="instagram"
-                    placeholder="@username"
-                    className="form-input"
-                    value={socialMedia.instagram || ''}
-                    onChange={(e) => handleSocialMediaChange('instagram', e.target.value)}
-                  />
-                </div>
-                
-                <div className="social-input-group">
-                  <label htmlFor="twitter">X (Twitter)</label>
-                  <input
-                    type="text"
-                    id="twitter"
-                    placeholder="@username"
-                    className="form-input"
-                    value={socialMedia.twitter || ''}
-                    onChange={(e) => handleSocialMediaChange('twitter', e.target.value)}
-                  />
-                </div>
-                
-                <div className="social-input-group">
-                  <label htmlFor="tiktok">TikTok</label>
-                  <input
-                    type="text"
-                    id="tiktok"
-                    placeholder="@username"
-                    className="form-input"
-                    value={socialMedia.tiktok || ''}
-                    onChange={(e) => handleSocialMediaChange('tiktok', e.target.value)}
-                  />
-                </div>
-                
-                <div className="social-input-group">
-                  <label htmlFor="youtube">YouTube</label>
-                  <input
-                    type="text"
-                    id="youtube"
-                    placeholder="@username"
-                    className="form-input"
-                    value={socialMedia.youtube || ''}
-                    onChange={(e) => handleSocialMediaChange('youtube', e.target.value)}
-                  />
-                </div>
-                
-                <div className="social-input-group">
-                  <label htmlFor="spotify">Spotify</label>
-                  <input
-                    type="text"
-                    id="spotify"
-                    placeholder="username"
-                    className="form-input"
-                    value={socialMedia.spotify || ''}
-                    onChange={(e) => handleSocialMediaChange('spotify', e.target.value)}
-                  />
-                </div>
-              </div>
             </div>
           )}
 
