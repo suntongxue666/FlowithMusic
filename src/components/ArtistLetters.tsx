@@ -94,6 +94,10 @@ export default function ArtistLetters() {
 
   // 检测是否为移动端
   const [isMobile, setIsMobile] = useState(false)
+  const [mobileCardIndices, setMobileCardIndices] = useState<{[key: string]: number}>({}) // 每个艺术家的当前卡片索引
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [touchEnd, setTouchEnd] = useState<number | null>(null)
+  const [currentTouchArtist, setCurrentTouchArtist] = useState<string | null>(null)
   
   useEffect(() => {
     const checkMobile = () => {
@@ -104,6 +108,56 @@ export default function ArtistLetters() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // 初始化移动端卡片索引
+  useEffect(() => {
+    if (isMobile && artistSections.length > 0) {
+      const initialIndices: {[key: string]: number} = {}
+      artistSections.forEach(section => {
+        initialIndices[section.artist] = 0
+      })
+      setMobileCardIndices(initialIndices)
+    }
+  }, [isMobile, artistSections])
+
+  // H5端手势滑动处理
+  const handleTouchStart = (e: React.TouchEvent, artist: string) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+    setCurrentTouchArtist(artist)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd || !currentTouchArtist) return
+    
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > 50
+    const isRightSwipe = distance < -50
+    
+    const section = artistSections.find(s => s.artist === currentTouchArtist)
+    if (!section) return
+
+    if (isLeftSwipe) {
+      // 左滑，显示下一个卡片
+      setMobileCardIndices(prev => ({
+        ...prev,
+        [currentTouchArtist]: (prev[currentTouchArtist] + 1) % section.letters.length
+      }))
+    }
+    if (isRightSwipe) {
+      // 右滑，显示上一个卡片
+      setMobileCardIndices(prev => ({
+        ...prev,
+        [currentTouchArtist]: (prev[currentTouchArtist] - 1 + section.letters.length) % section.letters.length
+      }))
+    }
+    
+    setCurrentTouchArtist(null)
+  }
 
   // 艺术家卡片轮播逻辑
   useEffect(() => {
@@ -208,6 +262,54 @@ export default function ArtistLetters() {
     return null // 如果没有符合条件的艺术家，不显示这个区域
   }
 
+  // H5端渲染
+  if (isMobile) {
+    return (
+      <section className="artist-letters mobile-artist-letters">
+        {artistSections.map((section, sectionIndex) => {
+          const currentCardIndex = mobileCardIndices[section.artist] || 0
+          const currentLetter = section.letters[currentCardIndex]
+          if (!currentLetter) return null
+          
+          const card = convertLetterToCard(currentLetter)
+          
+          return (
+            <div key={section.artist} className="artist-section mobile-artist-section">
+              <div className="artist-header">
+                <h2>Posts with {section.artist}</h2>
+                <div className="mobile-carousel-indicator">
+                  {currentCardIndex + 1} / {section.letters.length}
+                </div>
+              </div>
+              
+              <div 
+                className="mobile-carousel-container"
+                onTouchStart={(e) => handleTouchStart(e, section.artist)}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              >
+                <div className="mobile-card-wrapper">
+                  <MusicCard 
+                    to={card.to}
+                    message={card.message}
+                    song={card.song}
+                    linkId={card.linkId}
+                  />
+                </div>
+                
+                {/* 滑动提示 */}
+                <div className="swipe-hint">
+                  ← Swipe to browse cards →
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </section>
+    )
+  }
+
+  // PC端渲染
   return (
     <section className="artist-letters">
       {artistSections.map((section, sectionIndex) => (

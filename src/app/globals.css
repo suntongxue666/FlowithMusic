@@ -3151,4 +3151,97 @@ edia Inputs Styles */
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
+}/* H5端
+轮播样式 */
+.mobile-carousel {
+  padding: 0 1rem;
+}
+
+.mobile-carousel-container {
+  position: relative;
+  touch-action: pan-x;
+  user-select: none;
+}
+
+.mobile-card-wrapper {
+  max-width: 360px;
+  margin: 0 auto;
+  transition: transform 0.3s ease;
+}
+
+.mobile-carousel-indicator {
+  font-size: 0.9rem;
+  color: #666;
+  background: #f8f9fa;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  border: 1px solid #e9ecef;
+  display: inline-block;
+}
+
+.swipe-hint {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  font-style: italic;
+}
+
+/* H5端艺术家轮播样式 */
+.mobile-artist-letters {
+  padding: 0 1rem;
+}
+
+.mobile-artist-section {
+  margin-bottom: 3rem;
+}
+
+.mobile-artist-section:last-child {
+  margin-bottom: 0;
+}
+
+.mobile-artist-section .artist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.mobile-artist-section .artist-header h2 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+/* 优化H5端的卡片显示 */
+@media (max-width: 768px) {
+  .recent-posts-carousel.mobile-carousel .carousel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .recent-posts-carousel.mobile-carousel .carousel-header h2 {
+    font-size: 1.5rem;
+    margin: 0;
+  }
+  
+  /* 隐藏PC端的动画效果 */
+  .mobile-carousel .card-exiting,
+  .mobile-carousel .card-entering,
+  .mobile-artist-letters .card-exiting,
+  .mobile-artist-letters .card-entering {
+    animation: none !important;
+  }
+  
+  /* 确保卡片在移动端完整显示 */
+  .mobile-card-wrapper .card {
+    width: 100%;
+    max-width: 360px;
+    height: auto;
+    min-height: 270px;
+  }
 }
