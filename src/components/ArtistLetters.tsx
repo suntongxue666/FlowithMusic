@@ -277,8 +277,8 @@ export default function ArtistLetters() {
             <div key={section.artist} className="artist-section mobile-artist-section">
               <div className="artist-header">
                 <h2>Posts with {section.artist}</h2>
-                <div className="mobile-carousel-indicator">
-                  {currentCardIndex + 1} / {section.letters.length}
+                <div className="mobile-gesture-indicator">
+                  ←👆→
                 </div>
               </div>
               
@@ -295,11 +295,6 @@ export default function ArtistLetters() {
                     song={card.song}
                     linkId={card.linkId}
                   />
-                </div>
-                
-                {/* 滑动提示 */}
-                <div className="swipe-hint">
-                  ← Swipe to browse cards →
                 </div>
               </div>
             </div>

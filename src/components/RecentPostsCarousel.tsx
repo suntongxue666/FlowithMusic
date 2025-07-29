@@ -268,8 +268,8 @@ export default function RecentPostsCarousel({
       <section className="recent-posts-carousel mobile-carousel">
         <div className="carousel-header">
           <h2>Recent Posts</h2>
-          <div className="mobile-carousel-indicator">
-            {currentCardIndex + 1} / {displayLetters.length}
+          <div className="mobile-gesture-indicator">
+            ←👆→
           </div>
         </div>
         
@@ -286,11 +286,6 @@ export default function RecentPostsCarousel({
               song={card.song}
               linkId={card.linkId}
             />
-          </div>
-          
-          {/* 滑动提示 */}
-          <div className="swipe-hint">
-            ← Swipe to browse cards →
           </div>
         </div>
       </section>

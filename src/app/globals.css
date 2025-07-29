@@ -18,6 +18,17 @@ body {
   padding-top: 80px; /* 为固定header留出空间 */
 }
 
+/* H5端优化 */
+@media (max-width: 768px) {
+  body {
+    padding-top: 60px; /* H5端减少顶部padding */
+  }
+  
+  header {
+    padding: 0.75rem 1rem; /* H5端减少header内边距 */
+  }
+}
+
 /* Header Styles */
 header {
   display: flex;
@@ -3169,25 +3180,11 @@ edia Inputs Styles */
   transition: transform 0.3s ease;
 }
 
-.mobile-carousel-indicator {
-  font-size: 0.9rem;
+.mobile-gesture-indicator {
+  font-size: 1.2rem;
   color: #666;
-  background: #f8f9fa;
-  padding: 0.25rem 0.75rem;
-  border-radius: 15px;
-  border: 1px solid #e9ecef;
   display: inline-block;
-}
-
-.swipe-hint {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #999;
-  margin-top: 1rem;
-  padding: 0.5rem;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 20px;
-  font-style: italic;
+  user-select: none;
 }
 
 /* H5端艺术家轮播样式 */
