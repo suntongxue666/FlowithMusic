@@ -21,11 +21,12 @@ body {
 /* H5端优化 */
 @media (max-width: 768px) {
   body {
-    padding-top: 60px; /* H5端减少顶部padding */
+    padding-top: 0; /* H5端完全移除顶部padding */
   }
   
   header {
     padding: 0.75rem 1rem; /* H5端减少header内边距 */
+    position: relative; /* H5端header不固定 */
   }
 }
 
@@ -3094,6 +3095,13 @@ art Spotify Player Styles */
   max-width: 1200px;
   margin: 2rem auto;
   padding: 0 2rem;
+}
+
+/* H5端Recent Posts margin优化 */
+@media (max-width: 768px) {
+  .recent-posts-carousel {
+    margin: 1rem auto; /* H5端从2rem改为1rem */
+  }
 }
 
 .carousel-header {
