@@ -235,7 +235,7 @@ export default function LetterPage() {
             )}
           </div>
           
-          <div className="letter-message">
+          <div className="letter-message" style={{ marginTop: '-16px' }}>
             {letter.message ? (
               <div className={`message-content handwritten large-text ${hasChinese(letter.message) ? 'chinese-text' : ''}`}>
                 {letter.message}

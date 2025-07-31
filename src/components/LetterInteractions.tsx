@@ -60,13 +60,6 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
                       </span>
                     ))}
                   </div>
-                  <div className="celebration-effects">
-                    <div className="confetti confetti-1">🎊</div>
-                    <div className="confetti confetti-2">🎊</div>
-                    <div className="sparkles sparkles-1">✨</div>
-                    <div className="sparkles sparkles-2">✨</div>
-                    <div className="sparkles sparkles-3">✨</div>
-                  </div>
                 </>
               )}
             </div>
@@ -80,6 +73,23 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
         ))}
       </div>
 
+      {/* 全屏庆祝效果 */}
+      {animatingIndex !== null && (
+        <div className="fullscreen-celebration">
+          <div className="celebration-effects">
+            <div className="confetti confetti-1">🎊</div>
+            <div className="confetti confetti-2">🎊</div>
+            <div className="confetti confetti-3">🎊</div>
+            <div className="confetti confetti-4">🎊</div>
+            <div className="sparkles sparkles-1">✨</div>
+            <div className="sparkles sparkles-2">✨</div>
+            <div className="sparkles sparkles-3">✨</div>
+            <div className="sparkles sparkles-4">✨</div>
+            <div className="sparkles sparkles-5">✨</div>
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
         .letter-interactions {
           padding: 12px;
@@ -87,6 +97,17 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           border-radius: 16px;
           backdrop-filter: blur(10px);
           border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .fullscreen-celebration {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          pointer-events: none;
+          z-index: 9999;
+          overflow: hidden;
         }
 
         .interactions-container {
@@ -101,7 +122,7 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 0.5rem;
+          gap: 0.25rem;
           padding: 1rem;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -150,9 +171,9 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
 
         .particle {
           position: absolute;
-          font-size: 1rem;
+          font-size: 2.5rem;
           opacity: 0;
-          animation: particleFloat 1.2s ease-out forwards;
+          animation: particleFloat 2s ease-out forwards;
         }
 
         .particle-1 {
@@ -183,11 +204,15 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
         @keyframes particleFloat {
           0% {
             opacity: 1;
-            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0px) scale(0.5);
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0px) scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-120px) scale(0.8);
           }
           100% {
             opacity: 0;
-            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-60px) scale(0.2);
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-200px) scale(0.3);
           }
         }
 
@@ -203,75 +228,115 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
 
         .confetti {
           position: absolute;
-          font-size: 1.2rem;
+          font-size: 3rem;
           opacity: 0;
-          animation: confettiRise 1.5s ease-out forwards;
+          animation: confettiRise 2.5s ease-out forwards;
         }
 
         .confetti-1 {
-          bottom: -10px;
-          left: 30%;
+          bottom: 10%;
+          left: 10%;
           animation-delay: 0.1s;
         }
 
         .confetti-2 {
-          bottom: -8px;
-          left: 70%;
+          bottom: 15%;
+          left: 80%;
           animation-delay: 0.3s;
+        }
+
+        .confetti-3 {
+          bottom: 20%;
+          left: 50%;
+          animation-delay: 0.5s;
+        }
+
+        .confetti-4 {
+          bottom: 25%;
+          left: 25%;
+          animation-delay: 0.7s;
         }
 
         .sparkles {
           position: absolute;
-          font-size: 0.8rem;
+          font-size: 2rem;
           opacity: 0;
-          animation: sparkleSpread 1.2s ease-out forwards;
+          animation: sparkleSpread 2s ease-out forwards;
         }
 
         .sparkles-1 {
-          bottom: -5px;
-          right: -5px;
+          top: 20%;
+          right: 15%;
           animation-delay: 0.2s;
         }
 
         .sparkles-2 {
-          bottom: -3px;
-          left: -3px;
+          top: 30%;
+          left: 10%;
           animation-delay: 0.4s;
         }
 
         .sparkles-3 {
-          top: -5px;
-          right: 5px;
+          top: 15%;
+          left: 70%;
           animation-delay: 0.6s;
+        }
+
+        .sparkles-4 {
+          top: 40%;
+          right: 30%;
+          animation-delay: 0.8s;
+        }
+
+        .sparkles-5 {
+          top: 25%;
+          left: 50%;
+          animation-delay: 1s;
         }
 
         @keyframes confettiRise {
           0% {
             opacity: 1;
-            transform: translateX(-50%) translateY(0px) scale(0.5);
+            transform: translateY(0px) scale(0.3) rotate(0deg);
+          }
+          25% {
+            opacity: 1;
+            transform: translateY(-100px) scale(1) rotate(90deg);
           }
           50% {
             opacity: 1;
-            transform: translateX(-50%) translateY(-30px) scale(1);
+            transform: translateY(-200px) scale(1.2) rotate(180deg);
+          }
+          75% {
+            opacity: 0.8;
+            transform: translateY(-300px) scale(0.8) rotate(270deg);
           }
           100% {
             opacity: 0;
-            transform: translateX(-50%) translateY(-50px) scale(0.8);
+            transform: translateY(-400px) scale(0.3) rotate(360deg);
           }
         }
 
         @keyframes sparkleSpread {
           0% {
             opacity: 1;
-            transform: scale(0.5) rotate(0deg);
+            transform: scale(0.3) rotate(0deg);
+          }
+          25% {
+            opacity: 1;
+            transform: scale(1.5) rotate(90deg);
           }
           50% {
             opacity: 1;
-            transform: scale(1.2) rotate(180deg);
+            transform: scale(2) rotate(180deg);
+          }
+          75% {
+            opacity: 0.8;
+            transform: scale(1.2) rotate(270deg);
           }
           100% {
             opacity: 0;
-            transform: scale(0.8) rotate(360deg);
+            transform: scale(0.5) rotate(360deg);
           }
         }
 
