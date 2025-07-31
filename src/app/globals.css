@@ -1919,6 +1919,10 @@ nav {
   line-height: 1.2;
   text-align: center;
   /* 左右居中 */
+  display: block;
+  /* 确保不受flex布局影响 */
+  width: 100%;
+  /* 确保占满宽度以便居中 */
 }
 
 /* 中文内容使用STXingkai字体 */
@@ -1941,6 +1945,8 @@ nav {
   .message-content.handwritten {
     font-size: 1.4rem;
     line-height: 1.4;
+    text-align: center;
+    /* 确保移动端也居中 */
   }
 }
 

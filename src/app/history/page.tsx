@@ -914,6 +914,12 @@ export default function HistoryPage() {
           cursor: pointer;
         }
 
+        @media (min-width: 769px) {
+          .letter-content {
+            margin-right: 32px;
+          }
+        }
+
         .album-cover {
           width: 60px;
           height: 60px;
