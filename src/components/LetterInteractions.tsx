@@ -128,6 +128,7 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           transition: all 0.2s ease;
           background: transparent;
           min-width: 60px;
+          z-index: 1;
         }
 
         .interaction-item:hover {
@@ -167,13 +168,16 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           left: 50%;
           transform: translate(-50%, -50%);
           pointer-events: none;
+          z-index: 10000;
         }
 
         .particle {
           position: absolute;
-          font-size: 5rem;
+          font-size: 0.5rem;
           opacity: 0;
           animation: particleFloat 3s ease-out forwards;
+          left: 50%;
+          top: 50%;
         }
 
         .particle-1 {
@@ -204,15 +208,28 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
         @keyframes particleFloat {
           0% {
             opacity: 1;
-            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0px) scale(1);
+            font-size: 0.5rem;
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0px);
+          }
+          20% {
+            opacity: 1;
+            font-size: 2rem;
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-100px);
           }
           50% {
             opacity: 1;
-            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-100px) scale(0.8);
+            font-size: 4rem;
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-250px);
+          }
+          80% {
+            opacity: 0.8;
+            font-size: 5rem;
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-400px);
           }
           100% {
             opacity: 0;
-            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-200px) scale(0.3);
+            font-size: 5rem;
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-500px);
           }
         }
 
