@@ -285,9 +285,9 @@ export default function LetterPage() {
           />
           <span>  Log in to Spotify in your browser to listen to the full song.</span>
         </div>
+        
+        <LetterQRCode />
       </div>
-      
-      <LetterQRCode />
     </main>
   )
 }

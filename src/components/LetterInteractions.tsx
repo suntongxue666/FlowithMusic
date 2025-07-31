@@ -175,7 +175,7 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           position: absolute;
           font-size: 0.5rem;
           opacity: 0;
-          animation: particleFloat 3s ease-out forwards;
+          animation: particleFloat 6s ease-out forwards;
           left: 50%;
           top: 50%;
         }
@@ -211,25 +211,25 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
             font-size: 0.5rem;
             transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0px);
           }
-          20% {
+          15% {
             opacity: 1;
             font-size: 2rem;
-            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-100px);
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-150px);
           }
-          50% {
+          40% {
             opacity: 1;
             font-size: 4rem;
-            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-250px);
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-375px);
           }
-          80% {
+          70% {
             opacity: 0.8;
             font-size: 5rem;
-            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-400px);
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-600px);
           }
           100% {
             opacity: 0;
             font-size: 5rem;
-            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-500px);
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-750px);
           }
         }
 
