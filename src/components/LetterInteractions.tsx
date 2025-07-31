@@ -171,9 +171,9 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
 
         .particle {
           position: absolute;
-          font-size: 2.5rem;
+          font-size: 5rem;
           opacity: 0;
-          animation: particleFloat 2s ease-out forwards;
+          animation: particleFloat 3s ease-out forwards;
         }
 
         .particle-1 {
@@ -208,7 +208,7 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           }
           50% {
             opacity: 1;
-            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-120px) scale(0.8);
+            transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-100px) scale(0.8);
           }
           100% {
             opacity: 0;

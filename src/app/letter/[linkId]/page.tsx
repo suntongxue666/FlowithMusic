@@ -267,7 +267,7 @@ export default function LetterPage() {
 
           <LetterInteractions letterId={letter.link_id} />
           
-          <div className="letter-footer">
+          <div className="letter-footer" style={{ marginTop: '4px' }}>
             <p>Want to send a song to a friend?</p>
             <a href="/send" className="send-button black-button">
               💌 Send a song
