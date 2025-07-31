@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Header from '@/components/Header'
 import ColorfulSpotifyPlayer from '@/components/ColorfulSpotifyPlayer'
+import LetterInteractions from '@/components/LetterInteractions'
 import { letterService } from '@/lib/letterService'
 import type { Letter } from '@/lib/supabase'
 
@@ -180,7 +181,7 @@ export default function LetterPage() {
           <div className="letter-header">
             <h2 className="handwritten-greeting">Hello, {letter.recipient_name}</h2>
             <p className="letter-subtitle">
-              Someone picked the song just for you :)
+              A handwritten letter just for you — with a handpicked song and private words.
             </p>
           </div>
           
@@ -235,7 +236,6 @@ export default function LetterPage() {
           </div>
           
           <div className="letter-message">
-            <h3 className="message-title">A few words the sender wanted only you to see:</h3>
             {letter.message ? (
               <div className={`message-content handwritten large-text ${hasChinese(letter.message) ? 'chinese-text' : ''}`}>
                 {letter.message}
@@ -264,6 +264,8 @@ export default function LetterPage() {
               })}
             </div>
           </div>
+
+          <LetterInteractions letterId={letter.link_id} />
           
           <div className="letter-footer">
             <p>Want to send a song to a friend?</p>
