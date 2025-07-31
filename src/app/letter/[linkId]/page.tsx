@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { letterService } from '@/lib/letterService'
+import { supabase } from '@/lib/supabase'
 import type { Letter } from '@/lib/supabase'
 import LetterPageClient from './LetterPageClient'
 
@@ -12,16 +13,35 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { linkId } = await params
   
   try {
-    // 尝试获取letter数据
+    // 尝试获取letter数据 - 直接使用API更可靠
     let letter: Letter | null = null
     
     try {
+      // 先尝试letterService
       letter = await letterService.getLetterByLinkId(linkId)
+      
+      // 如果letterService失败，直接从supabase获取
+      if (!letter && supabase) {
+        console.log('Trying direct supabase fetch for metadata...')
+        const { data, error } = await supabase
+          .from('letters')
+          .select('*')
+          .eq('link_id', linkId)
+          .single()
+        
+        if (data && !error) {
+          letter = data
+          console.log('Successfully fetched letter from supabase for metadata:', letter?.song_title)
+        } else if (error) {
+          console.error('Supabase error for metadata:', error)
+        }
+      }
     } catch (error) {
       console.error('Failed to fetch letter for metadata:', error)
     }
     
-    if (!letter) {
+    if (!letter || !letter.song_title || !letter.song_artist) {
+      console.log('No letter data found for metadata, using fallback')
       return {
         title: 'Personal Music Letter | FlowithMusic',
         description: 'Discover a handwritten letter paired with music. React with emojis, express your feelings, and connect with friends who share your musical vibe.',
@@ -45,17 +65,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       }
     }
 
-    const songTitle = letter.song_title || 'Unknown Song'
-    const artistName = letter.song_artist || 'Unknown Artist'
+    const songTitle = letter.song_title
+    const artistName = letter.song_artist
+
+    console.log('Generating metadata for:', { songTitle, artistName })
 
     // Title模板 (60字符以内)
     const title = `Send the Song: Letter with "${songTitle}" by ${artistName} | FlowithMusic`
     
-    // Description模板 (155字符以内)
-    const description = `Receive a handwritten letter paired with "${songTitle}" by ${artistName}. 免费试听${artistName}的${songTitle}歌曲. React with emojis and connect with friends who share your musical vibe.`
+    // Description模板 (155字符以内) - 修改为英文
+    const description = `Receive a handwritten letter paired with "${songTitle}" by ${artistName}. Listen to ${songTitle} by ${artistName} for free. React with emojis and connect with friends who share your musical vibe.`
     
     // Keywords
-    const keywords = `send the song, sendthesong, send the song ${songTitle}, musical messages, handwritten letter, send a song to a friend, emotional music sharing, vibe music letter, letter with song, emoji letter reaction, react to music, music connection, ${artistName}, ${songTitle}`
+    const keywords = `send the song, sendthesong, send the song ${songTitle}, musical messages, handwritten letter, send a song to a friend, emotional music sharing, vibe music letter, letter with song, emoji letter reaction, react to music, music connection, ${artistName}, ${songTitle}, listen to ${songTitle} free, ${artistName} songs`
 
     return {
       title,
