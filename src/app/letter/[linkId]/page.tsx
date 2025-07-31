@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
+import Head from 'next/head'
 import Header from '@/components/Header'
 import ColorfulSpotifyPlayer from '@/components/ColorfulSpotifyPlayer'
 import LetterInteractions from '@/components/LetterInteractions'
 import LetterQRCode from '@/components/LetterQRCode'
 import { letterService } from '@/lib/letterService'
+import { ImprovedUserIdentity } from '@/lib/improvedUserIdentity'
 import type { Letter } from '@/lib/supabase'
 
 export default function LetterPage() {
@@ -14,9 +16,61 @@ export default function LetterPage() {
   const [letter, setLetter] = useState<Letter | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // 生成动态SEO元数据
+  const generateSEOData = (letter: Letter | null) => {
+    if (!letter) {
+      return {
+        title: 'Personal Music Letter | FlowithMusic',
+        description: 'Discover a handwritten letter paired with music. React with emojis, express your feelings, and connect with friends who share your musical vibe.',
+        keywords: 'send the song, musical messages, handwritten letter, music sharing, emoji reactions'
+      }
+    }
+
+    const songTitle = letter.song_title || 'Unknown Song'
+    const artistName = letter.song_artist || 'Unknown Artist'
+    const recipientName = letter.recipient_name || 'Someone Special'
+
+    // Title模板 (60字符以内)
+    const title = `Send the Song: Letter with "${songTitle}" by ${artistName} | FlowithMusic`
+    
+    // Description模板 (155字符以内)
+    const description = `Receive a handwritten letter paired with "${songTitle}" by ${artistName}. 免费试听${artistName}的${songTitle}歌曲. React with emojis and connect with friends who share your musical vibe.`
+    
+    // Keywords
+    const keywords = `send the song, sendthesong, send the song ${songTitle}, musical messages, handwritten letter, send a song to a friend, emotional music sharing, vibe music letter, letter with song, emoji letter reaction, react to music, music connection, ${artistName}, ${songTitle}`
+
+    return { title, description, keywords }
+  }
+
   // 检测文本是否包含中文字符
   const hasChinese = (text: string) => {
     return /[\u4e00-\u9fff]/.test(text)
+  }
+
+  // 记录浏览
+  const recordView = async (linkId: string) => {
+    try {
+      // 获取用户身份
+      const userIdentity = ImprovedUserIdentity.getOrCreateIdentity()
+      
+      // 设置cookie，以便API可以识别用户
+      document.cookie = `anonymous_id=${encodeURIComponent(userIdentity.id)}; path=/; max-age=31536000; SameSite=Lax`
+      
+      const response = await fetch(`/api/letters/${linkId}/views`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      if (response.ok) {
+        console.log('📊 浏览记录已上报')
+      } else {
+        console.warn('⚠️ 浏览记录上报失败')
+      }
+    } catch (error) {
+      console.error('💥 浏览记录上报错误:', error)
+    }
   }
 
   useEffect(() => {
@@ -41,6 +95,9 @@ export default function LetterPage() {
                 setLetter(apiLetter)
                 setLoading(false)
                 console.log('✅ Letter data is complete and valid')
+                
+                // 记录浏览
+                recordView(linkId)
                 return
               } else {
                 console.warn('⚠️ Letter data incomplete from API:', {
@@ -68,6 +125,9 @@ export default function LetterPage() {
               foundLetter = databaseLetter
               setLetter(databaseLetter)
               setLoading(false)
+              
+              // 记录浏览
+              recordView(linkId)
               return
             } else if (databaseLetter) {
               console.warn('⚠️ Letter found but incomplete in database:', {
@@ -89,6 +149,9 @@ export default function LetterPage() {
             foundLetter = localLetter
             setLetter(localLetter)
             setLoading(false)
+            
+            // 记录浏览
+            recordView(linkId)
             return
           } else if (localLetter) {
             console.warn('⚠️ Letter found but incomplete in localStorage:', {
@@ -121,61 +184,129 @@ export default function LetterPage() {
 
   if (loading) {
     return (
-      <main>
-        <Header />
-        <div className="letter-container">
-          <div className="loading">Loading...</div>
-        </div>
-      </main>
+      <>
+        <Head>
+          <title>Loading Letter | FlowithMusic</title>
+          <meta name="description" content="Loading your personal music letter..." />
+        </Head>
+        <main>
+          <Header />
+          <div className="letter-container">
+            <div className="loading">Loading...</div>
+          </div>
+        </main>
+      </>
     )
   }
 
   if (!letter) {
     return (
-      <main>
-        <Header />
-        <div className="letter-container">
-          <div className="letter-content">
-            <div className="letter-header">
-              <h2 className="handwritten-greeting">🔍 Hmm, we can't find this letter...</h2>
-              <p className="message-content handwritten" style={{ color: '#666', marginBottom: '2rem', fontSize: '1.2rem' }}>
-                Something's not quite right here. This could be because:
-              </p>
-              <div className="message-content handwritten" style={{ textAlign: 'left', color: '#666', marginBottom: '2rem', fontSize: '1.1rem' }}>
-                <p>• Maybe the link got a little mixed up?</p>
-                <p>• We might be having some behind-the-scenes hiccups</p>
-                <p>• The letter might have gotten lost in the digital mail</p>
-              </div>
-              <p className="message-content handwritten" style={{ color: '#666', marginBottom: '2rem', fontSize: '1.2rem' }}>
-                Could you ask your friend to double-check the link? Or maybe they could send you a fresh one?
-              </p>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <a href="/send" className="send-button black-button">
-                  💌 Send a New Message
-                </a>
-                <button 
-                  onClick={() => window.location.reload()} 
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: 'transparent',
-                    border: '1px solid #ddd',
-                    borderRadius: '25px',
-                    cursor: 'pointer',
-                    fontSize: '1rem'
-                  }}
-                >
-                  🔄 Try Again
-                </button>
+      <>
+        <Head>
+          <title>Letter Not Found | FlowithMusic</title>
+          <meta name="description" content="We couldn't find this letter. Send a new musical message to your friends." />
+          <meta name="keywords" content="send the song, musical messages, handwritten letter, music sharing" />
+        </Head>
+        <main>
+          <Header />
+          <div className="letter-container">
+            <div className="letter-content">
+              <div className="letter-header">
+                <h2 className="handwritten-greeting">🔍 Hmm, we can't find this letter...</h2>
+                <p className="message-content handwritten" style={{ color: '#666', marginBottom: '2rem', fontSize: '1.2rem' }}>
+                  Something's not quite right here. This could be because:
+                </p>
+                <div className="message-content handwritten" style={{ textAlign: 'left', color: '#666', marginBottom: '2rem', fontSize: '1.1rem' }}>
+                  <p>• Maybe the link got a little mixed up?</p>
+                  <p>• We might be having some behind-the-scenes hiccups</p>
+                  <p>• The letter might have gotten lost in the digital mail</p>
+                </div>
+                <p className="message-content handwritten" style={{ color: '#666', marginBottom: '2rem', fontSize: '1.2rem' }}>
+                  Could you ask your friend to double-check the link? Or maybe they could send you a fresh one?
+                </p>
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <a href="/send" className="send-button black-button">
+                    💌 Send a New Message
+                  </a>
+                  <button 
+                    onClick={() => window.location.reload()} 
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      background: 'transparent',
+                      border: '1px solid #ddd',
+                      borderRadius: '25px',
+                      cursor: 'pointer',
+                      fontSize: '1rem'
+                    }}
+                  >
+                    🔄 Try Again
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </>
     )
   }
 
+  const seoData = generateSEOData(letter)
+
   return (
-    <main>
+    <>
+      <Head>
+        <title>{seoData.title}</title>
+        <meta name="description" content={seoData.description} />
+        <meta name="keywords" content={seoData.keywords} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={seoData.title} />
+        <meta property="og:description" content={seoData.description} />
+        <meta property="og:image" content={letter.song_album_cover || '/og-image.jpg'} />
+        <meta property="og:url" content={`https://flowithmusic.com/letter/${linkId}`} />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoData.title} />
+        <meta name="twitter:description" content={seoData.description} />
+        <meta name="twitter:image" content={letter.song_album_cover || '/og-image.jpg'} />
+        
+        {/* Additional SEO */}
+        <meta name="author" content="FlowithMusic" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={`https://flowithmusic.com/letter/${linkId}`} />
+        
+        {/* Schema.org structured data */}
+        <script 
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "CreativeWork",
+              "name": seoData.title,
+              "description": seoData.description,
+              "author": {
+                "@type": "Organization",
+                "name": "FlowithMusic"
+              },
+              "image": letter.song_album_cover,
+              "url": `https://flowithmusic.com/letter/${linkId}`,
+              "dateCreated": letter.created_at,
+              "genre": "Musical Message",
+              "associatedMedia": {
+                "@type": "MusicRecording",
+                "name": letter.song_title,
+                "byArtist": {
+                  "@type": "MusicGroup",
+                  "name": letter.song_artist
+                }
+              }
+            })
+          }}
+        />
+      </Head>
+      <main>
       <Header />
       <div className="letter-container">
         <div className="letter-content">
@@ -289,5 +420,6 @@ export default function LetterPage() {
         <LetterQRCode />
       </div>
     </main>
+    </>
   )
 }
