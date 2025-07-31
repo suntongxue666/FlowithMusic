@@ -1,6 +1,6 @@
 'use client'
 
-import { QRCode } from 'react-qrcode-logo'
+import { QRCodeSVG } from 'qrcode.react'
 
 export default function LetterQRCode() {
   const url = typeof window !== "undefined" ? window.location.href : ""
@@ -8,17 +8,13 @@ export default function LetterQRCode() {
   return (
     <div className="letter-qr-code">
       <p className="qr-text">View / share on 📱</p>
-      <QRCode
+      <QRCodeSVG
         value={url}
         size={96}
-        logoImage="/favicon.png"
-        logoWidth={24}
-        logoHeight={24}
-        quietZone={0}
-        qrStyle="squares"
-        ecLevel="H"
+        level="H"
         fgColor="#000000"
         bgColor="#ffffff"
+        includeMargin={true}
       />
       
       <style jsx>{`
