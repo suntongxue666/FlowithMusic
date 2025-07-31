@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Header from '@/components/Header'
 import ColorfulSpotifyPlayer from '@/components/ColorfulSpotifyPlayer'
 import LetterInteractions from '@/components/LetterInteractions'
+import LetterQRCode from '@/components/LetterQRCode'
 import { letterService } from '@/lib/letterService'
 import type { Letter } from '@/lib/supabase'
 
@@ -285,6 +286,8 @@ export default function LetterPage() {
           <span>  Log in to Spotify in your browser to listen to the full song.</span>
         </div>
       </div>
+      
+      <LetterQRCode />
     </main>
   )
 }
