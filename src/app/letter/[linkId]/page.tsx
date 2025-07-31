@@ -180,7 +180,7 @@ export default function LetterPage() {
         <div className="letter-content">
           <div className="letter-header">
             <h2 className="handwritten-greeting">Hello, {letter.recipient_name}</h2>
-            <p className="letter-subtitle">
+            <p className="letter-subtitle" style={{ fontSize: '12px' }}>
               A handwritten letter just for you — with a handpicked song and private words.
             </p>
           </div>
@@ -253,7 +253,7 @@ export default function LetterPage() {
                 </p>
               </div>
             )}
-            <div className="letter-date centered-date">
+            <div className="letter-date centered-date" style={{ fontSize: '12px' }}>
               Sent on {new Date(letter.created_at).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long', 

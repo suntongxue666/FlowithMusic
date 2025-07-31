@@ -54,15 +54,18 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
               {animatingIndex === index && (
                 <>
                   <div className="particle-container">
-                    {[...Array(4)].map((_, i) => (
+                    {[...Array(5)].map((_, i) => (
                       <span key={i} className={`particle particle-${i + 1}`}>
                         {interaction.emoji}
                       </span>
                     ))}
                   </div>
                   <div className="celebration-effects">
-                    <div className="confetti">🎊</div>
-                    <div className="sparkles">✨</div>
+                    <div className="confetti confetti-1">🎊</div>
+                    <div className="confetti confetti-2">🎊</div>
+                    <div className="sparkles sparkles-1">✨</div>
+                    <div className="sparkles sparkles-2">✨</div>
+                    <div className="sparkles sparkles-3">✨</div>
                   </div>
                 </>
               )}
@@ -79,8 +82,7 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
 
       <style jsx>{`
         .letter-interactions {
-          margin: 2rem 0;
-          padding: 1.5rem;
+          padding: 12px;
           background: rgba(255, 255, 255, 0.8);
           border-radius: 16px;
           backdrop-filter: blur(10px);
@@ -101,18 +103,15 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           align-items: center;
           gap: 0.5rem;
           padding: 1rem;
-          border-radius: 12px;
           cursor: pointer;
           transition: all 0.2s ease;
-          background: rgba(255, 255, 255, 0.5);
-          border: 1px solid rgba(0, 0, 0, 0.1);
-          min-width: 80px;
+          background: transparent;
+          min-width: 60px;
         }
 
         .interaction-item:hover {
-          background: rgba(255, 255, 255, 0.8);
+          background: transparent;
           transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .emoji-container {
@@ -120,12 +119,12 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 40px;
-          height: 40px;
+          width: 24px;
+          height: 24px;
         }
 
         .main-emoji {
-          font-size: 2rem;
+          font-size: 1.5rem;
           transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
           display: block;
         }
@@ -176,6 +175,11 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           --angle: 15deg;
         }
 
+        .particle-5 {
+          animation-delay: 0.5s;
+          --angle: -15deg;
+        }
+
         @keyframes particleFloat {
           0% {
             opacity: 1;
@@ -199,21 +203,46 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
 
         .confetti {
           position: absolute;
-          bottom: -10px;
-          left: 50%;
-          transform: translateX(-50%);
-          font-size: 1.5rem;
+          font-size: 1.2rem;
           opacity: 0;
           animation: confettiRise 1.5s ease-out forwards;
         }
 
+        .confetti-1 {
+          bottom: -10px;
+          left: 30%;
+          animation-delay: 0.1s;
+        }
+
+        .confetti-2 {
+          bottom: -8px;
+          left: 70%;
+          animation-delay: 0.3s;
+        }
+
         .sparkles {
           position: absolute;
-          bottom: -5px;
-          right: -5px;
-          font-size: 1rem;
+          font-size: 0.8rem;
           opacity: 0;
           animation: sparkleSpread 1.2s ease-out forwards;
+        }
+
+        .sparkles-1 {
+          bottom: -5px;
+          right: -5px;
+          animation-delay: 0.2s;
+        }
+
+        .sparkles-2 {
+          bottom: -3px;
+          left: -3px;
+          animation-delay: 0.4s;
+        }
+
+        .sparkles-3 {
+          top: -5px;
+          right: 5px;
+          animation-delay: 0.6s;
         }
 
         @keyframes confettiRise {
@@ -247,7 +276,7 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
         }
 
         .interaction-label {
-          font-size: 0.8rem;
+          font-size: 10px;
           font-weight: 500;
           color: #666;
           text-align: center;
@@ -283,8 +312,7 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
         /* 移动端优化 */
         @media (max-width: 768px) {
           .letter-interactions {
-            margin: 1.5rem 0;
-            padding: 1rem;
+            padding: 8px;
           }
 
           .interactions-container {
@@ -292,16 +320,21 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           }
 
           .interaction-item {
-            min-width: 60px;
-            padding: 0.75rem 0.5rem;
+            min-width: 50px;
+            padding: 0.5rem 0.25rem;
+          }
+
+          .emoji-container {
+            width: 20px;
+            height: 20px;
           }
 
           .main-emoji {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
           }
 
           .interaction-label {
-            font-size: 0.7rem;
+            font-size: 9px;
           }
         }
       `}</style>
