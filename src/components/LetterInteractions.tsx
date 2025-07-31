@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { ImprovedUserIdentity } from '@/lib/improvedUserIdentity'
 
 interface InteractionData {
   emoji: string
@@ -22,56 +23,135 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
   ])
 
   const [animatingIndex, setAnimatingIndex] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const handleInteraction = (index: number) => {
+  // 加载现有的互动数据
+  useEffect(() => {
+    const loadInteractionStats = async () => {
+      try {
+        const response = await fetch(`/api/letters/${letterId}/interactions`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.stats) {
+            // 更新现有的互动数据
+            setInteractions(prev => prev.map(item => {
+              const stat = data.stats.find((s: any) => s.emoji === item.emoji)
+              return stat ? { ...item, count: stat.count } : item
+            }))
+          }
+        }
+      } catch (error) {
+        console.error('💥 加载互动统计失败:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (letterId) {
+      loadInteractionStats()
+    }
+  }, [letterId])
+
+  const handleInteraction = async (index: number) => {
     // 防止重复点击
     if (animatingIndex !== null) return
 
     setAnimatingIndex(index)
     
-    // 更新计数
+    const interaction = interactions[index]
+    
+    // 获取用户身份
+    const userIdentity = ImprovedUserIdentity.getOrCreateIdentity()
+    
+    // 设置cookie，以便API可以识别用户
+    document.cookie = `anonymous_id=${encodeURIComponent(userIdentity.id)}; path=/; max-age=31536000; SameSite=Lax`
+    
+    // 立即更新本地计数 (乐观更新)
     setInteractions(prev => prev.map((item, i) => 
       i === index ? { ...item, count: item.count + 1 } : item
     ))
+    
+    // 上报互动数据
+    try {
+      const response = await fetch(`/api/letters/${letterId}/interactions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          emoji: interaction.emoji,
+          label: interaction.label
+        })
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('💝 互动记录已上报:', result)
+        
+        // 使用服务器返回的真实计数更新本地状态
+        if (result.totalCount !== undefined) {
+          setInteractions(prev => prev.map((item, i) => 
+            i === index ? { ...item, count: result.totalCount } : item
+          ))
+        }
+      } else {
+        console.warn('⚠️ 互动记录上报失败')
+        // 乐观更新已经完成，保持本地状态
+      }
+    } catch (error) {
+      console.error('💥 互动记录上报错误:', error)
+      // 乐观更新已经完成，保持本地状态
+    }
 
     // 重置动画状态
     setTimeout(() => {
       setAnimatingIndex(null)
-    }, 1500)
+    }, 6000) // 匹配6秒动画时长
   }
 
   return (
     <div className="letter-interactions">
-      <div className="interactions-container">
-        {interactions.map((interaction, index) => (
-          <div 
-            key={index}
-            className={`interaction-item ${animatingIndex === index ? 'animating' : ''}`}
-            onClick={() => handleInteraction(index)}
-          >
-            <div className="emoji-container">
-              <span className="main-emoji">{interaction.emoji}</span>
-              {animatingIndex === index && (
-                <>
-                  <div className="particle-container">
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i} className={`particle particle-${i + 1}`}>
-                        {interaction.emoji}
-                      </span>
-                    ))}
-                  </div>
-                </>
+      {loading ? (
+        <div className="interactions-loading">
+          <div className="loading-dots">
+            <span>Loading</span>
+            <span>.</span>
+            <span>.</span>
+            <span>.</span>
+          </div>
+        </div>
+      ) : (
+        <div className="interactions-container">
+          {interactions.map((interaction, index) => (
+            <div 
+              key={index}
+              className={`interaction-item ${animatingIndex === index ? 'animating' : ''}`}
+              onClick={() => handleInteraction(index)}
+            >
+              <div className="emoji-container">
+                <span className="main-emoji">{interaction.emoji}</span>
+                {animatingIndex === index && (
+                  <>
+                    <div className="particle-container">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} className={`particle particle-${i + 1}`}>
+                          {interaction.emoji}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              <span className="interaction-label">{interaction.label}</span>
+              {interaction.count > 0 && (
+                <span className={`count-badge ${animatingIndex === index ? 'count-animating' : ''}`}>
+                  +{interaction.count}
+                </span>
               )}
             </div>
-            <span className="interaction-label">{interaction.label}</span>
-            {interaction.count > 0 && (
-              <span className={`count-badge ${animatingIndex === index ? 'count-animating' : ''}`}>
-                +{interaction.count}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* 全屏庆祝效果 */}
       {animatingIndex !== null && (
@@ -97,6 +177,44 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           border-radius: 16px;
           backdrop-filter: blur(10px);
           border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .interactions-loading {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 2rem;
+        }
+
+        .loading-dots {
+          display: flex;
+          align-items: center;
+          gap: 2px;
+          color: #666;
+          font-size: 14px;
+        }
+
+        .loading-dots span:nth-child(2),
+        .loading-dots span:nth-child(3),
+        .loading-dots span:nth-child(4) {
+          animation: loadingDots 1.5s infinite;
+        }
+
+        .loading-dots span:nth-child(3) {
+          animation-delay: 0.2s;
+        }
+
+        .loading-dots span:nth-child(4) {
+          animation-delay: 0.4s;
+        }
+
+        @keyframes loadingDots {
+          0%, 80%, 100% {
+            opacity: 0.3;
+          }
+          40% {
+            opacity: 1;
+          }
         }
 
         .fullscreen-celebration {

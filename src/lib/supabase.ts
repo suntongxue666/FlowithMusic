@@ -191,3 +191,28 @@ export interface AnonymousSession {
   created_at: string
   linked_user_id?: string
 }
+
+export interface LetterView {
+  id: string
+  letter_link_id: string
+  viewer_user_id?: string
+  viewer_anonymous_id?: string
+  viewer_display_name: string
+  viewer_avatar_url?: string
+  user_agent: string
+  ip_address: string
+  viewed_at: string
+}
+
+export interface LetterInteraction {
+  id: string
+  letter_link_id: string
+  user_id?: string
+  anonymous_id?: string
+  user_display_name: string
+  user_avatar_url?: string
+  emoji: string
+  emoji_label: string
+  user_agent: string
+  created_at: string
+}
