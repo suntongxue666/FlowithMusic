@@ -13,28 +13,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { linkId } = await params
   
   try {
-    // 尝试获取letter数据 - 直接使用API更可靠
+    // 直接使用supabase获取letter数据 - 绕过letterService的复杂逻辑
     let letter: Letter | null = null
     
     try {
-      // 先尝试letterService
-      letter = await letterService.getLetterByLinkId(linkId)
-      
-      // 如果letterService失败，直接从supabase获取
-      if (!letter && supabase) {
-        console.log('Trying direct supabase fetch for metadata...')
+      if (supabase) {
+        console.log('Direct supabase fetch for metadata, linkId:', linkId)
         const { data, error } = await supabase
           .from('letters')
-          .select('*')
+          .select('song_title, song_artist, song_album_cover, created_at')
           .eq('link_id', linkId)
+          .eq('is_public', true)
           .single()
         
         if (data && !error) {
-          letter = data
-          console.log('Successfully fetched letter from supabase for metadata:', letter?.song_title)
+          letter = data as Letter
+          console.log('Successfully fetched letter from supabase for metadata:', letter?.song_title, letter?.song_artist)
         } else if (error) {
           console.error('Supabase error for metadata:', error)
         }
+      } else {
+        console.error('Supabase client not available for metadata')
       }
     } catch (error) {
       console.error('Failed to fetch letter for metadata:', error)
