@@ -58,16 +58,17 @@ export async function GET(request: NextRequest) {
     
     console.log('原始数据:', JSON.stringify(data, null, 2))
     
-    // 检查数据有效性
-    const hasValidSongData = data && 
-      data.song_title && 
-      data.song_artist && 
-      data.song_title.trim() !== '' && 
-      data.song_artist.trim() !== ''
+    // 检查数据有效性 - 处理可能的数组结构
+    const letterData = Array.isArray(data) ? data[0] : data
+    const hasValidSongData = letterData && 
+      letterData.song_title && 
+      letterData.song_artist && 
+      letterData.song_title.trim() !== '' && 
+      letterData.song_artist.trim() !== ''
     
     let title
     if (hasValidSongData) {
-      title = `Send the Song: Handwritten Letter with "${data.song_title}" by ${data.song_artist} | FlowithMusic`
+      title = `Send the Song: Handwritten Letter with "${letterData.song_title}" by ${letterData.song_artist} | FlowithMusic`
     } else {
       title = 'Personal Music Letter | FlowithMusic'
     }
@@ -75,26 +76,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        song_title: data.song_title,
-        song_artist: data.song_artist,
-        song_album_cover: data.song_album_cover,
+        song_title: letterData?.song_title,
+        song_artist: letterData?.song_artist,
+        song_album_cover: letterData?.song_album_cover,
         hasValidSongData,
         generatedTitle: title,
         // 详细的数据分析
         dataAnalysis: {
-          song_title_type: typeof data.song_title,
-          song_title_value: data.song_title,
-          song_title_length: data.song_title?.length,
-          song_artist_type: typeof data.song_artist,
-          song_artist_value: data.song_artist,
-          song_artist_length: data.song_artist?.length,
+          isArray: Array.isArray(data),
+          song_title_type: typeof letterData?.song_title,
+          song_title_value: letterData?.song_title,
+          song_title_length: letterData?.song_title?.length,
+          song_artist_type: typeof letterData?.song_artist,
+          song_artist_value: letterData?.song_artist,
+          song_artist_length: letterData?.song_artist?.length,
           raw_data: data
         }
       },
       debug: {
         linkId,
-        isPublic: data.is_public,
-        createdAt: data.created_at
+        isPublic: letterData?.is_public,
+        createdAt: letterData?.created_at
       }
     })
     
