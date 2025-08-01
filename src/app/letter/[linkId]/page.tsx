@@ -122,8 +122,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       }
     }
 
-    const songTitle = letter.song_title
-    const artistName = letter.song_artist
+    const songTitle = letter!.song_title
+    const artistName = letter!.song_artist
 
     console.log('Generating metadata for:', { songTitle, artistName })
 
@@ -149,7 +149,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         url: `https://www.flowithmusic.com/letter/${linkId}`,
         images: [
           {
-            url: letter.song_album_cover || '/og-image.jpg',
+            url: letter!.song_album_cover || '/og-image.jpg',
             width: 1200,
             height: 630,
           },
@@ -159,7 +159,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: 'summary_large_image',
         title,
         description,
-        images: [letter.song_album_cover || '/og-image.jpg'],
+        images: [letter!.song_album_cover || '/og-image.jpg'],
       },
       alternates: {
         canonical: `https://www.flowithmusic.com/letter/${linkId}`,
@@ -175,16 +175,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             "@type": "Organization",
             "name": "FlowithMusic"
           },
-          "image": letter.song_album_cover,
+          "image": letter!.song_album_cover,
           "url": `https://www.flowithmusic.com/letter/${linkId}`,
-          "dateCreated": letter.created_at,
+          "dateCreated": letter!.created_at,
           "genre": "Musical Message",
           "associatedMedia": {
             "@type": "MusicRecording",
-            "name": letter.song_title,
+            "name": letter!.song_title,
             "byArtist": {
               "@type": "MusicGroup",
-              "name": letter.song_artist
+              "name": letter!.song_artist
             }
           }
         })
