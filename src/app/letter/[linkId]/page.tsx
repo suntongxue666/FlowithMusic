@@ -71,13 +71,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     console.log('Generating metadata for:', { songTitle, artistName })
 
     // Title模板 (60字符以内)
-    const title = `Send the Song: Letter with "${songTitle}" by ${artistName} | FlowithMusic`
+    const title = `Send the Song: Handwritten Letter with "${songTitle}" by ${artistName} | FlowithMusic`
     
     // Description模板 (155字符以内) - 修改为英文
-    const description = `Receive a handwritten letter paired with "${songTitle}" by ${artistName}. Listen to ${songTitle} by ${artistName} for free. React with emojis and connect with friends who share your musical vibe.`
+    const description = `Receive a handwritten letter paired with "${songTitle}" by ${artistName}. React with emojis, express your feelings, and find people who vibe to the same tune.`
     
     // Keywords
-    const keywords = `send the song, sendthesong, send the song ${songTitle}, musical messages, handwritten letter, send a song to a friend, emotional music sharing, vibe music letter, letter with song, emoji letter reaction, react to music, music connection, ${artistName}, ${songTitle}, listen to ${songTitle} free, ${artistName} songs`
+    const keywords = `send the song, sendthesong, send the song ${songTitle}, musical messages, handwritten letter, send a song to a friend, emotional music sharing, vibe music letter, letter with song, emoji letter reaction, react to music, music connection, free play ${artistName}'s ${songTitle} music`
 
     return {
       title,
