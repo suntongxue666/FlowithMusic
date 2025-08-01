@@ -66,13 +66,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         console.log('Final query result:', queryResult)
         
         if (queryResult && queryResult.data && !queryResult.error) {
-          letter = queryResult.data as Letter
+          // 处理可能返回数组的情况
+          const letterData = Array.isArray(queryResult.data) ? queryResult.data[0] : queryResult.data
+          letter = letterData as Letter
           console.log('Successfully fetched letter from supabase for metadata:', {
             song_title: letter?.song_title,
             song_artist: letter?.song_artist,
             is_public: letter?.is_public,
             linkId: linkId,
-            method: queryResult.method
+            method: queryResult.method,
+            isArray: Array.isArray(queryResult.data)
           })
         } else {
           console.error('All query methods failed')
