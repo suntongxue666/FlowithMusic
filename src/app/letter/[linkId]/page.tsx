@@ -17,27 +17,65 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     let letter: Letter | null = null
     
     try {
+      console.log('=== 元数据生成开始 ===')
+      console.log('Environment check:', {
+        isServer: typeof window === 'undefined',
+        hasSupabase: !!supabase
+      })
+      
       if (supabase) {
         console.log('Direct supabase fetch for metadata, linkId:', linkId)
-        const { data, error } = await supabase
-          .from('letters')
-          .select('song_title, song_artist, song_album_cover, created_at, is_public')
-          .eq('link_id', linkId)
-          .single()
         
-        console.log('Supabase query result:', { data, error })
+        // 尝试多种查询方式
+        let queryResult = null
         
-        if (data && !error) {
-          // 即使不是公开的也生成个性化标题，因为用户有直接链接
-          letter = data as Letter
+        // 方式1: 标准查询
+        try {
+          const { data, error } = await supabase
+            .from('letters')
+            .select('song_title, song_artist, song_album_cover, created_at, is_public')
+            .eq('link_id', linkId)
+            .single()
+          
+          if (data && !error) {
+            queryResult = { data, error, method: 'standard' }
+          } else {
+            console.log('Standard query failed, trying alternative...')
+          }
+        } catch (err) {
+          console.log('Standard query error:', err)
+        }
+        
+        // 方式2: 如果标准查询失败，尝试不加single()
+        if (!queryResult) {
+          try {
+            const { data, error } = await supabase
+              .from('letters')
+              .select('song_title, song_artist, song_album_cover, created_at, is_public')
+              .eq('link_id', linkId)
+              .limit(1)
+            
+            if (data && data.length > 0 && !error) {
+              queryResult = { data: data[0], error, method: 'array_first' }
+            }
+          } catch (err) {
+            console.log('Array query error:', err)
+          }
+        }
+        
+        console.log('Final query result:', queryResult)
+        
+        if (queryResult && queryResult.data && !queryResult.error) {
+          letter = queryResult.data as Letter
           console.log('Successfully fetched letter from supabase for metadata:', {
             song_title: letter?.song_title,
             song_artist: letter?.song_artist,
             is_public: letter?.is_public,
-            linkId: linkId
+            linkId: linkId,
+            method: queryResult.method
           })
-        } else if (error) {
-          console.error('Supabase error for metadata:', error)
+        } else {
+          console.error('All query methods failed')
         }
       } else {
         console.error('Supabase client not available for metadata')
@@ -46,11 +84,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       console.error('Failed to fetch letter for metadata:', error)
     }
     
-    if (!letter || !letter.song_title || !letter.song_artist) {
-      console.log('No letter data found for metadata, using fallback. Letter data:', {
+    // 更严格的条件检查，确保字段不为空字符串
+    const hasValidSongData = letter && 
+      letter.song_title && 
+      letter.song_artist && 
+      letter.song_title.trim() !== '' && 
+      letter.song_artist.trim() !== ''
+    
+    if (!hasValidSongData) {
+      console.log('No valid letter data found for metadata, using fallback. Letter data:', {
         letter: !!letter,
         song_title: letter?.song_title,
-        song_artist: letter?.song_artist
+        song_artist: letter?.song_artist,
+        song_title_length: letter?.song_title?.length,
+        song_artist_length: letter?.song_artist?.length
       })
       return {
         title: 'Personal Music Letter | FlowithMusic',
