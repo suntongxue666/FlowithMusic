@@ -21,14 +21,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         console.log('Direct supabase fetch for metadata, linkId:', linkId)
         const { data, error } = await supabase
           .from('letters')
-          .select('song_title, song_artist, song_album_cover, created_at')
+          .select('song_title, song_artist, song_album_cover, created_at, is_public')
           .eq('link_id', linkId)
-          .eq('is_public', true)
           .single()
         
+        console.log('Supabase query result:', { data, error })
+        
         if (data && !error) {
+          // 即使不是公开的也生成个性化标题，因为用户有直接链接
           letter = data as Letter
-          console.log('Successfully fetched letter from supabase for metadata:', letter?.song_title, letter?.song_artist)
+          console.log('Successfully fetched letter from supabase for metadata:', {
+            song_title: letter?.song_title,
+            song_artist: letter?.song_artist,
+            is_public: letter?.is_public,
+            linkId: linkId
+          })
         } else if (error) {
           console.error('Supabase error for metadata:', error)
         }
@@ -40,7 +47,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
     
     if (!letter || !letter.song_title || !letter.song_artist) {
-      console.log('No letter data found for metadata, using fallback')
+      console.log('No letter data found for metadata, using fallback. Letter data:', {
+        letter: !!letter,
+        song_title: letter?.song_title,
+        song_artist: letter?.song_artist
+      })
       return {
         title: 'Personal Music Letter | FlowithMusic',
         description: 'Discover a handwritten letter paired with music. React with emojis, express your feelings, and connect with friends who share your musical vibe.',
@@ -71,6 +82,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     // Title模板 (60字符以内)
     const title = `Send the Song: Handwritten Letter with "${songTitle}" by ${artistName} | FlowithMusic`
+    
+    console.log('✅ Generated personalized title:', title)
     
     // Description模板 (155字符以内) - 修改为英文
     const description = `Receive a handwritten letter paired with "${songTitle}" by ${artistName}. React with emojis, express your feelings, and find people who vibe to the same tune.`
