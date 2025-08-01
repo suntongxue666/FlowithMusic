@@ -12,6 +12,8 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { linkId } = await params
   
+  console.log('=== 元数据生成开始 ===', new Date().toISOString())
+  
   try {
     // 直接使用supabase获取letter数据 - 绕过letterService的复杂逻辑
     let letter: Letter | null = null
@@ -145,6 +147,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       keywords,
+      // 添加缓存控制
+      other: {
+        'cache-control': 'no-cache, no-store, must-revalidate',
+      },
       openGraph: {
         title,
         description,
