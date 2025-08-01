@@ -67,8 +67,19 @@ export async function GET(request: NextRequest) {
       data: {
         song_title: data.song_title,
         song_artist: data.song_artist,
+        song_album_cover: data.song_album_cover,
         hasValidSongData,
-        generatedTitle: title
+        generatedTitle: title,
+        // 详细的数据分析
+        dataAnalysis: {
+          song_title_type: typeof data.song_title,
+          song_title_value: data.song_title,
+          song_title_length: data.song_title?.length,
+          song_artist_type: typeof data.song_artist,
+          song_artist_value: data.song_artist,
+          song_artist_length: data.song_artist?.length,
+          raw_data: data
+        }
       },
       debug: {
         linkId,
