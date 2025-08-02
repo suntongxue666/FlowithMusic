@@ -41,39 +41,90 @@ function AuthCallbackComponent() {
           await new Promise(resolve => setTimeout(resolve, 2000))
         }
         
-        // 尝试获取当前会话
+        // 尝试获取当前会话 - 增加超时处理
         console.log('🔍 AuthCallback: 获取当前会话...')
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+        
+        let sessionData, sessionError
+        try {
+          // 设置超时，避免无限等待
+          const sessionPromise = supabase.auth.getSession()
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Session获取超时')), 10000)
+          )
+          
+          const result = await Promise.race([sessionPromise, timeoutPromise])
+          sessionData = result.data
+          sessionError = result.error
+        } catch (timeoutError) {
+          console.warn('⚠️ AuthCallback: Session获取超时，尝试备用方法')
+          sessionError = timeoutError
+        }
         
         if (sessionError) {
           console.error('❌ AuthCallback: 获取会话失败:', sessionError)
-          throw new Error(`认证失败: ${sessionError.message}`)
+          // 不要立即抛错，尝试备用方法
         }
 
         let user: any
-        let session = sessionData.session
+        let session = sessionData?.session
         
-        if (!session) {
-          console.warn('⚠️ AuthCallback: 没有有效会话，尝试其他方法...')
+        if (!session || sessionError) {
+          console.warn('⚠️ AuthCallback: 没有有效会话或会话获取失败，尝试其他方法...')
           
-          // 如果有access_token但没有会话，尝试通过Supabase处理当前URL
+          // 如果有access_token，尝试备用认证方法
           if (accessToken) {
-            console.log('🔄 AuthCallback: 尝试通过URL处理认证...')
-            const { data: authData, error: authError } = await supabase.auth.getUser()
+            console.log('🔄 AuthCallback: 尝试通过access_token直接获取用户...')
             
-            if (authError) {
-              console.error('❌ AuthCallback: 通过URL获取用户失败:', authError)
-              throw new Error(`认证失败: ${authError.message}`)
-            }
-            
-            if (authData.user) {
-              console.log('✅ AuthCallback: 通过URL成功获取用户')
-              user = authData.user
-            } else {
-              throw new Error('无法获取用户信息，请重新登录')
+            try {
+              // 方法1: 尝试通过getUser获取
+              const userPromise = supabase.auth.getUser()
+              const userTimeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('GetUser获取超时')), 8000)
+              )
+              
+              const userResult = await Promise.race([userPromise, userTimeoutPromise])
+              
+              if (userResult.data?.user && !userResult.error) {
+                console.log('✅ AuthCallback: 通过getUser成功获取用户')
+                user = userResult.data.user
+              } else {
+                throw new Error(userResult.error?.message || '获取用户信息失败')
+              }
+            } catch (getUserError) {
+              console.warn('⚠️ AuthCallback: getUser方法失败，尝试手动解析token')
+              
+              // 方法2: 手动解析access_token (兜底方案)
+              try {
+                // 解析JWT token获取用户信息
+                const tokenParts = accessToken.split('.')
+                if (tokenParts.length === 3) {
+                  const payload = JSON.parse(atob(tokenParts[1]))
+                  console.log('🔍 AuthCallback: 从token解析到用户信息:', payload)
+                  
+                  if (payload.sub && payload.email) {
+                    user = {
+                      id: payload.sub,
+                      email: payload.email,
+                      user_metadata: {
+                        full_name: payload.user_metadata?.full_name || payload.name,
+                        avatar_url: payload.user_metadata?.avatar_url || payload.picture,
+                        email: payload.email
+                      }
+                    }
+                    console.log('✅ AuthCallback: 手动解析token成功')
+                  } else {
+                    throw new Error('Token中缺少必要的用户信息')
+                  }
+                } else {
+                  throw new Error('Token格式无效')
+                }
+              } catch (parseError) {
+                console.error('❌ AuthCallback: 手动解析token失败:', parseError)
+                throw new Error('无法获取用户信息，所有方法都失败了')
+              }
             }
           } else {
-            throw new Error('认证会话无效，请重新登录')
+            throw new Error('认证会话无效且无access_token，请重新登录')
           }
         } else {
           console.log('✅ AuthCallback: 会话验证成功')
