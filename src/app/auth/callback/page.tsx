@@ -82,15 +82,15 @@ function AuthCallbackComponent() {
           }
         }
         
-        // 尝试获取当前会话 - 增加超时处理
+        // 尝试获取当前会话 - 减少超时时间
         console.log('🔍 AuthCallback: 获取当前会话...')
         
         let sessionData, sessionError
         try {
-          // 设置超时，避免无限等待
+          // 减少超时时间到5秒，提高响应速度
           const sessionPromise = supabase.auth.getSession()
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Session获取超时')), 10000)
+            setTimeout(() => reject(new Error('Session获取超时')), 5000)
           )
           
           const result = await Promise.race([sessionPromise, timeoutPromise]) as any
@@ -120,7 +120,7 @@ function AuthCallbackComponent() {
               // 方法1: 尝试通过getUser获取
               const userPromise = supabase.auth.getUser()
               const userTimeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('GetUser获取超时')), 8000)
+                setTimeout(() => reject(new Error('GetUser获取超时')), 5000)
               )
               
               const userResult = await Promise.race([userPromise, userTimeoutPromise]) as any
@@ -200,8 +200,8 @@ function AuthCallbackComponent() {
       }
     }
 
-    // 延迟执行以显示加载状态
-    const timeoutId = setTimeout(handleAuthCallback, 500)
+    // 减少延迟到200ms，加快响应
+    const timeoutId = setTimeout(handleAuthCallback, 200)
     
     return () => clearTimeout(timeoutId)
   }, [router, searchParams])
