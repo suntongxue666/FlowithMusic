@@ -147,10 +147,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       keywords,
-      // 添加缓存控制
-      other: {
-        'cache-control': 'no-cache, no-store, must-revalidate',
-      },
       openGraph: {
         title,
         description,
@@ -174,6 +170,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         canonical: `https://www.flowithmusic.com/letter/${linkId}`,
       },
       other: {
+        // 缓存控制
+        'cache-control': 'no-cache, no-store, must-revalidate',
         // Schema.org structured data
         'application/ld+json': JSON.stringify({
           "@context": "https://schema.org",
