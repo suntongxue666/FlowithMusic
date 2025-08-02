@@ -36,9 +36,50 @@ function AuthCallbackComponent() {
         }
         
         if (accessToken) {
-          console.log('✅ AuthCallback: 发现access_token，等待Supabase处理...')
-          // 给Supabase足够时间处理URL中的token
-          await new Promise(resolve => setTimeout(resolve, 2000))
+          console.log('✅ AuthCallback: 发现access_token，直接解析用户信息')
+          
+          // 直接从token解析用户信息，跳过Supabase会话处理
+          try {
+            const tokenParts = accessToken.split('.')
+            if (tokenParts.length === 3) {
+              const payload = JSON.parse(atob(tokenParts[1]))
+              console.log('🔍 AuthCallback: 解析到的用户信息:', {
+                sub: payload.sub,
+                email: payload.email,
+                name: payload.user_metadata?.full_name || payload.name
+              })
+              
+              if (payload.sub && payload.email) {
+                const user = {
+                  id: payload.sub,
+                  email: payload.email,
+                  user_metadata: {
+                    full_name: payload.user_metadata?.full_name || payload.name,
+                    avatar_url: payload.user_metadata?.avatar_url || payload.picture,
+                    email: payload.email
+                  }
+                }
+                
+                console.log('✅ AuthCallback: 直接解析成功，跳过Supabase会话检查')
+                
+                // 直接调用userService处理用户数据
+                console.log('🔄 AuthCallback: 调用userService处理用户数据...')
+                const processedUser = await userService.handleAuthCallback(user)
+                
+                console.log('✅ AuthCallback: 用户处理完成:', {
+                  id: processedUser.id,
+                  email: processedUser.email,
+                  display_name: processedUser.display_name
+                })
+
+                console.log('🎉 AuthCallback: 登录成功，即将重定向...')
+                router.push('/history?login=success')
+                return
+              }
+            }
+          } catch (parseError) {
+            console.warn('⚠️ 直接解析失败，使用原有流程:', parseError)
+          }
         }
         
         // 尝试获取当前会话 - 增加超时处理
