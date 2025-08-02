@@ -54,10 +54,7 @@ export async function POST(
     const realIp = request.headers.get('x-real-ip')
     const ipAddress = forwardedFor?.split(',')[0] || realIp || 'unknown'
     
-    // 获取referer信息
-    const referer = request.headers.get('referer') || ''
-    
-    // 准备互动记录数据
+    // 准备互动记录数据 - 只使用现有数据库字段
     const interactionData = {
       letter_link_id: linkId,
       user_id: currentUser?.id || null,
@@ -67,9 +64,6 @@ export async function POST(
       emoji: emoji,
       emoji_label: label,
       user_agent: userAgent,
-      ip_address: ipAddress,
-      referer_url: referer,
-      interaction_timestamp: new Date().toISOString(),
       created_at: new Date().toISOString()
     }
     
@@ -97,9 +91,20 @@ export async function POST(
       .insert(interactionData)
     
     if (interactionError) {
-      console.error('❌ 插入互动记录失败:', interactionError)
+      console.error('❌ 插入互动记录失败:', {
+        error: interactionError,
+        code: interactionError.code,
+        message: interactionError.message,
+        details: interactionError.details,
+        hint: interactionError.hint,
+        data: interactionData
+      })
       return NextResponse.json(
-        { error: 'Failed to record interaction' },
+        { 
+          error: 'Failed to record interaction',
+          details: interactionError.message,
+          code: interactionError.code
+        },
         { status: 500 }
       )
     }
