@@ -524,8 +524,8 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
 
         .count-number {
           position: absolute;
-          top: -4px;
-          right: -6px;
+          top: 4px;
+          right: -22px;
           color: #333;
           font-size: 10px;
           font-weight: 500;
@@ -576,8 +576,8 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           }
 
           .count-number {
-            top: -2px;
-            right: -4px;
+            top: 2px;
+            right: -20px;
             font-size: 9px;
           }
         }
