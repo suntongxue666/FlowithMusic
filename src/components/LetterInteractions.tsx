@@ -39,13 +39,20 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           
           if (data.success && data.stats) {
             console.log('✅ 统计数据有效，开始更新计数')
+            console.log('原始stats数据:', data.stats)
+            console.log('当前interactions状态:', interactions)
+            
             // 更新现有的互动数据
-            setInteractions(prev => prev.map(item => {
-              const stat = data.stats.find((s: any) => s.emoji === item.emoji)
-              const newCount = stat ? stat.count : 0
-              console.log(`${item.emoji} ${item.label}: ${newCount} 次互动`)
-              return stat ? { ...item, count: stat.count } : item
-            }))
+            setInteractions(prev => {
+              const updated = prev.map(item => {
+                const stat = data.stats.find((s: any) => s.emoji === item.emoji)
+                const newCount = stat ? stat.count : 0
+                console.log(`${item.emoji} ${item.label}: ${item.count} -> ${newCount}`)
+                return stat ? { ...item, count: stat.count } : item
+              })
+              console.log('更新后的interactions:', updated)
+              return updated
+            })
           } else {
             console.warn('⚠️ 统计数据格式不正确:', data)
           }
@@ -496,8 +503,8 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
 
         .count-number {
           position: absolute;
-          top: -8px;
-          right: -8px;
+          top: -4px;
+          right: -4px;
           color: #333;
           font-size: 10px;
           font-weight: 500;
@@ -548,8 +555,8 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           }
 
           .count-number {
-            top: -6px;
-            right: -6px;
+            top: -2px;
+            right: -2px;
             font-size: 9px;
           }
         }
