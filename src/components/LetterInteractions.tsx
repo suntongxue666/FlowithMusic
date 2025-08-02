@@ -163,7 +163,6 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           userInfo: userInfo
         })
       })
-      })
       
       if (response.ok) {
         const result = await response.json()
