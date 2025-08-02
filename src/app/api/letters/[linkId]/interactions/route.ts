@@ -54,7 +54,7 @@ export async function POST(
     const realIp = request.headers.get('x-real-ip')
     const ipAddress = forwardedFor?.split(',')[0] || realIp || 'unknown'
     
-    // 准备互动记录数据 - 只使用现有数据库字段
+    // 准备互动记录数据 - 使用最基本的字段
     const interactionData = {
       letter_link_id: linkId,
       user_id: currentUser?.id || null,
@@ -63,7 +63,7 @@ export async function POST(
       user_avatar_url: currentUser?.avatar_url || null,
       emoji: emoji,
       emoji_label: label,
-      user_agent: userAgent,
+      user_agent: userAgent.substring(0, 500), // 限制长度
       created_at: new Date().toISOString()
     }
     
