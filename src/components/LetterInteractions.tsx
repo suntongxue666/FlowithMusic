@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { ImprovedUserIdentity } from '@/lib/improvedUserIdentity'
+import { useUser } from '@/contexts/UserContext'
 
 interface InteractionData {
   emoji: string
@@ -15,6 +16,9 @@ interface LetterInteractionsProps {
 
 export default function LetterInteractions({ letterId }: LetterInteractionsProps) {
   console.log('🎭 LetterInteractions组件渲染，letterId:', letterId)
+  
+  // 获取当前用户信息（登录状态）
+  const { user, isAuthenticated } = useUser()
   
   const [interactions, setInteractions] = useState<InteractionData[]>([
     { emoji: '🩵', label: 'Feel', count: 0 },
@@ -100,11 +104,45 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
     
     const interaction = interactions[index]
     
-    // 获取用户身份
-    const userIdentity = ImprovedUserIdentity.getOrCreateIdentity()
+    console.log('🎯 处理互动点击:', {
+      emoji: interaction.emoji,
+      isAuthenticated,
+      userId: user?.id,
+      userDisplayName: user?.display_name,
+      userEmail: user?.email
+    })
     
-    // 设置cookie，以便API可以识别用户
-    document.cookie = `anonymous_id=${encodeURIComponent(userIdentity.id)}; path=/; max-age=31536000; SameSite=Lax`
+    // 优先使用登录用户信息，否则使用匿名身份
+    let userInfo
+    if (isAuthenticated && user) {
+      // 已登录用户
+      userInfo = {
+        user_id: user.id,
+        user_display_name: user.display_name || user.email?.split('@')[0] || 'User',
+        user_avatar_url: user.avatar_url,
+        anonymous_id: user.anonymous_id
+      }
+      
+      // 设置登录用户的cookie，确保API能识别
+      document.cookie = `user=${encodeURIComponent(JSON.stringify(user))}; path=/; max-age=31536000; SameSite=Lax`
+      if (user.anonymous_id) {
+        document.cookie = `anonymous_id=${encodeURIComponent(user.anonymous_id)}; path=/; max-age=31536000; SameSite=Lax`
+      }
+    } else {
+      // 匿名用户
+      const userIdentity = ImprovedUserIdentity.getOrCreateIdentity()
+      userInfo = {
+        user_id: null,
+        user_display_name: 'Anonymous',
+        user_avatar_url: null,
+        anonymous_id: userIdentity.id
+      }
+      
+      // 设置匿名用户cookie
+      document.cookie = `anonymous_id=${encodeURIComponent(userIdentity.id)}; path=/; max-age=31536000; SameSite=Lax`
+    }
+    
+    console.log('👤 使用的用户信息:', userInfo)
     
     // 立即更新本地计数 (乐观更新)
     setInteractions(prev => prev.map((item, i) => 
@@ -120,8 +158,11 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
         },
         body: JSON.stringify({
           emoji: interaction.emoji,
-          label: interaction.label
+          label: interaction.label,
+          // 在请求体中也传递用户信息以确保准确性
+          userInfo: userInfo
         })
+      })
       })
       
       if (response.ok) {

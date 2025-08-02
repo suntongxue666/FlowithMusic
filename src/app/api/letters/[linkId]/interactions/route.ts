@@ -8,7 +8,7 @@ export async function POST(
   try {
     const { linkId } = await context.params
     const body = await request.json()
-    const { emoji, label } = body
+    const { emoji, label, userInfo } = body
     
     if (!emoji || !label) {
       return NextResponse.json(
@@ -17,47 +17,74 @@ export async function POST(
       )
     }
     
-    // 获取当前用户信息（从请求头或cookie中）
-    const userCookie = request.headers.get('cookie')
+    console.log('📨 收到互动请求:', { emoji, label, userInfo })
     
-    // 简化的用户信息获取（在服务端环境中）
+    // 获取用户信息 - 优先使用请求体中的userInfo，然后从cookie获取
     let currentUser = null
     let anonymousId = null
+    let userDisplayName = 'Anonymous'
+    let userAvatarUrl = null
     
-    try {
-      // 尝试从cookie中解析用户信息
-      if (userCookie) {
-        const userMatch = userCookie.match(/user=([^;]+)/)
-        const anonymousMatch = userCookie.match(/anonymous_id=([^;]+)/)
-        
-        if (userMatch) {
-          currentUser = JSON.parse(decodeURIComponent(userMatch[1]))
+    // 方法1: 优先使用请求体中的用户信息（最准确）
+    if (userInfo) {
+      console.log('✅ 使用请求体中的用户信息')
+      currentUser = userInfo.user_id ? { 
+        id: userInfo.user_id,
+        display_name: userInfo.user_display_name,
+        avatar_url: userInfo.user_avatar_url 
+      } : null
+      anonymousId = userInfo.anonymous_id
+      userDisplayName = userInfo.user_display_name || 'Anonymous'
+      userAvatarUrl = userInfo.user_avatar_url
+    } else {
+      // 方法2: 从cookie获取（兜底方案）
+      console.log('🔄 从cookie获取用户信息')
+      const userCookie = request.headers.get('cookie')
+      
+      try {
+        if (userCookie) {
+          const userMatch = userCookie.match(/user=([^;]+)/)
+          const anonymousMatch = userCookie.match(/anonymous_id=([^;]+)/)
+          
+          if (userMatch) {
+            currentUser = JSON.parse(decodeURIComponent(userMatch[1]))
+            userDisplayName = currentUser?.display_name || currentUser?.email?.split('@')[0] || 'User'
+            userAvatarUrl = currentUser?.avatar_url
+            console.log('👤 从cookie解析到登录用户:', userDisplayName)
+          }
+          if (anonymousMatch) {
+            anonymousId = decodeURIComponent(anonymousMatch[1])
+          }
         }
-        if (anonymousMatch) {
-          anonymousId = decodeURIComponent(anonymousMatch[1])
-        }
+      } catch (error) {
+        console.warn('⚠️ 解析cookie用户信息失败:', error)
       }
       
       // 如果没有匿名ID，生成一个临时的
       if (!anonymousId) {
         anonymousId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+        console.log('🔄 生成临时匿名ID:', anonymousId)
       }
-    } catch (error) {
-      console.warn('解析用户信息失败:', error)
-      // 生成临时匿名ID
-      anonymousId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
     }
+    
+    console.log('🎯 最终使用的用户信息:', {
+      isLoggedIn: !!currentUser,
+      userId: currentUser?.id,
+      displayName: userDisplayName,
+      hasAvatar: !!userAvatarUrl,
+      anonymousId: anonymousId
+    })
     
     // 获取用户代理信息
     const userAgent = request.headers.get('user-agent') || ''
     
-    // 简化互动记录数据 - 只使用数据库中实际存在的字段
+    // 简化互动记录数据 - 使用处理后的用户信息
     const interactionData = {
       letter_link_id: linkId,
       user_id: currentUser?.id || null,
       anonymous_id: anonymousId,
-      user_display_name: currentUser?.display_name || 'Anonymous',
-      user_avatar_url: currentUser?.avatar_url || null,
+      user_display_name: userDisplayName,
+      user_avatar_url: userAvatarUrl,
       emoji: emoji,
       emoji_label: label,
       user_agent: userAgent.substring(0, 500) // 限制长度
