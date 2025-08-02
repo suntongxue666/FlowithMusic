@@ -29,16 +29,28 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
   useEffect(() => {
     const loadInteractionStats = async () => {
       try {
+        console.log('🔄 开始加载互动统计，letterId:', letterId)
         const response = await fetch(`/api/letters/${letterId}/interactions`)
+        console.log('📡 API响应状态:', response.status, response.ok)
+        
         if (response.ok) {
           const data = await response.json()
+          console.log('📊 获取到的统计数据:', data)
+          
           if (data.success && data.stats) {
+            console.log('✅ 统计数据有效，开始更新计数')
             // 更新现有的互动数据
             setInteractions(prev => prev.map(item => {
               const stat = data.stats.find((s: any) => s.emoji === item.emoji)
+              const newCount = stat ? stat.count : 0
+              console.log(`${item.emoji} ${item.label}: ${newCount} 次互动`)
               return stat ? { ...item, count: stat.count } : item
             }))
+          } else {
+            console.warn('⚠️ 统计数据格式不正确:', data)
           }
+        } else {
+          console.error('❌ API请求失败:', response.status)
         }
       } catch (error) {
         console.error('💥 加载互动统计失败:', error)
