@@ -199,8 +199,16 @@ export interface LetterView {
   viewer_anonymous_id?: string
   viewer_display_name: string
   viewer_avatar_url?: string
+  session_id?: string
+  view_start_time?: string
+  view_end_time?: string
+  view_duration_seconds?: number
+  page_visible_time_seconds?: number
+  scroll_depth_percentage?: number
+  interaction_count?: number
   user_agent: string
   ip_address: string
+  referer_url?: string
   viewed_at: string
 }
 
@@ -214,5 +222,8 @@ export interface LetterInteraction {
   emoji: string
   emoji_label: string
   user_agent: string
+  ip_address?: string
+  referer_url?: string
+  interaction_timestamp?: string
   created_at: string
 }

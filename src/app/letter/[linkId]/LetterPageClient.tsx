@@ -5,6 +5,7 @@ import Header from '@/components/Header'
 import ColorfulSpotifyPlayer from '@/components/ColorfulSpotifyPlayer'
 import LetterInteractions from '@/components/LetterInteractions'
 import LetterQRCode from '@/components/LetterQRCode'
+import ViewTracker from '@/components/ViewTracker'
 import { letterService } from '@/lib/letterService'
 import { ImprovedUserIdentity } from '@/lib/improvedUserIdentity'
 import type { Letter } from '@/lib/supabase'
@@ -215,6 +216,8 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
   return (
     <main>
       <Header />
+      {/* 浏览追踪组件 */}
+      <ViewTracker letterId={linkId} />
       <div className="letter-container">
         <div className="letter-content">
           <div className="letter-header">

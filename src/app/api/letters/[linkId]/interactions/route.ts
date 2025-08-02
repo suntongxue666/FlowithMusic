@@ -48,8 +48,14 @@ export async function POST(
       anonymousId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
     }
     
-    // 获取用户代理信息
+    // 获取用户代理信息和IP地址
     const userAgent = request.headers.get('user-agent') || ''
+    const forwardedFor = request.headers.get('x-forwarded-for')
+    const realIp = request.headers.get('x-real-ip')
+    const ipAddress = forwardedFor?.split(',')[0] || realIp || 'unknown'
+    
+    // 获取referer信息
+    const referer = request.headers.get('referer') || ''
     
     // 准备互动记录数据
     const interactionData = {
@@ -61,6 +67,9 @@ export async function POST(
       emoji: emoji,
       emoji_label: label,
       user_agent: userAgent,
+      ip_address: ipAddress,
+      referer_url: referer,
+      interaction_timestamp: new Date().toISOString(),
       created_at: new Date().toISOString()
     }
     
