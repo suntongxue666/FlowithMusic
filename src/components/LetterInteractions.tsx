@@ -156,8 +156,8 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
               </div>
               <span className="interaction-label">{interaction.label}</span>
               {interaction.count > 0 && (
-                <span className={`count-badge ${animatingIndex === index ? 'count-animating' : ''}`}>
-                  +{interaction.count}
+                <span className={`count-number ${animatingIndex === index ? 'count-pop' : ''}`}>
+                  {interaction.count}
                 </span>
               )}
             </div>
@@ -494,30 +494,28 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           text-align: center;
         }
 
-        .count-badge {
+        .count-number {
           position: absolute;
-          top: -5px;
-          right: -5px;
-          background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
-          color: white;
-          font-size: 0.7rem;
-          font-weight: bold;
-          padding: 2px 6px;
-          border-radius: 10px;
-          min-width: 18px;
+          top: -8px;
+          right: -8px;
+          color: #333;
+          font-size: 10px;
+          font-weight: 500;
+          min-width: 12px;
           text-align: center;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-          transform: scale(1);
-          transition: all 0.3s ease;
+          line-height: 1;
+          pointer-events: none;
+          z-index: 2;
+          transition: transform 0.2s ease;
         }
 
-        .count-badge.count-animating {
-          animation: countPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        .count-number.count-pop {
+          animation: numberPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
 
-        @keyframes countPop {
+        @keyframes numberPop {
           0% { transform: scale(1); }
-          50% { transform: scale(1.3); }
+          50% { transform: scale(1.4); }
           100% { transform: scale(1); }
         }
 
@@ -546,6 +544,12 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           }
 
           .interaction-label {
+            font-size: 9px;
+          }
+
+          .count-number {
+            top: -6px;
+            right: -6px;
             font-size: 9px;
           }
         }
