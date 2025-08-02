@@ -30,8 +30,12 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
     const loadInteractionStats = async () => {
       try {
         console.log('🔄 开始加载互动统计，letterId:', letterId)
-        const response = await fetch(`/api/letters/${letterId}/interactions`)
+        const url = `/api/letters/${letterId}/interactions`
+        console.log('📡 请求URL:', url)
+        
+        const response = await fetch(url)
         console.log('📡 API响应状态:', response.status, response.ok)
+        console.log('📡 响应headers:', Object.fromEntries(response.headers.entries()))
         
         if (response.ok) {
           const data = await response.json()
@@ -57,7 +61,14 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
             console.warn('⚠️ 统计数据格式不正确:', data)
           }
         } else {
-          console.error('❌ API请求失败:', response.status)
+          console.error('❌ API请求失败:', response.status, response.statusText)
+          // 尝试读取错误响应
+          try {
+            const errorText = await response.text()
+            console.error('错误响应内容:', errorText)
+          } catch (e) {
+            console.error('无法读取错误响应')
+          }
         }
       } catch (error) {
         console.error('💥 加载互动统计失败:', error)
