@@ -14,6 +14,8 @@ interface LetterInteractionsProps {
 }
 
 export default function LetterInteractions({ letterId }: LetterInteractionsProps) {
+  console.log('🎭 LetterInteractions组件渲染，letterId:', letterId)
+  
   const [interactions, setInteractions] = useState<InteractionData[]>([
     { emoji: '🩵', label: 'Feel', count: 0 },
     { emoji: '🥺', label: 'Tear', count: 0 },
