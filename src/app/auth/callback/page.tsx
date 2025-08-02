@@ -52,7 +52,7 @@ function AuthCallbackComponent() {
             setTimeout(() => reject(new Error('Session获取超时')), 10000)
           )
           
-          const result = await Promise.race([sessionPromise, timeoutPromise])
+          const result = await Promise.race([sessionPromise, timeoutPromise]) as any
           sessionData = result.data
           sessionError = result.error
         } catch (timeoutError) {
@@ -82,7 +82,7 @@ function AuthCallbackComponent() {
                 setTimeout(() => reject(new Error('GetUser获取超时')), 8000)
               )
               
-              const userResult = await Promise.race([userPromise, userTimeoutPromise])
+              const userResult = await Promise.race([userPromise, userTimeoutPromise]) as any
               
               if (userResult.data?.user && !userResult.error) {
                 console.log('✅ AuthCallback: 通过getUser成功获取用户')
