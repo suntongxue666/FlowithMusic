@@ -184,72 +184,123 @@ export class UserService {
     console.log('🔍 UserService: 当前匿名ID:', anonymousId)
     
     try {
-      // 验证当前会话
-      const { data: sessionData } = await supabase.auth.getSession()
-      if (!sessionData.session) {
-        console.error('❌ UserService: 无有效会话')
-        throw new Error('无有效认证会话')
+      // 验证当前会话 - 添加超时处理
+      console.log('🔍 UserService: 验证会话...')
+      let sessionData
+      try {
+        const sessionPromise = supabase.auth.getSession()
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session验证超时')), 5000)
+        )
+        
+        const result = await Promise.race([sessionPromise, timeoutPromise]) as any
+        sessionData = result.data
+        
+        if (!sessionData?.session) {
+          console.warn('⚠️ UserService: 无有效会话，跳过会话验证')
+          // 不要抛错，直接继续处理
+        } else {
+          console.log('✅ UserService: 有效会话已确认')
+        }
+      } catch (sessionError) {
+        console.warn('⚠️ UserService: 会话验证失败，继续处理:', sessionError)
+        // 不要抛错，直接继续处理
       }
       
-      console.log('✅ UserService: 有效会话已确认')
-      
-      // 检查用户是否已存在
-      const { data: existingUser, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('google_id', user.id)
-        .single()
+      // 检查用户是否已存在 - 添加超时处理
+      console.log('🔍 UserService: 查询现有用户...')
+      let existingUser, fetchError
+      try {
+        const fetchPromise = supabase
+          .from('users')
+          .select('*')
+          .eq('google_id', user.id)
+          .single()
+        
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('用户查询超时')), 8000)
+        )
+        
+        const result = await Promise.race([fetchPromise, timeoutPromise]) as any
+        existingUser = result.data
+        fetchError = result.error
+      } catch (queryError) {
+        console.warn('⚠️ UserService: 用户查询失败，使用fallback处理:', queryError)
+        return this.createFallbackUser(user)
+      }
 
       let finalUser: User
 
       if (existingUser) {
         console.log('✅ UserService: 用户已存在，更新信息')
         
-        // 更新现有用户信息
-        const { data: updatedUser, error: updateError } = await supabase
-          .from('users')
-          .update({
-            email: user.email,
-            display_name: user.user_metadata?.full_name || user.email?.split('@')[0],
-            avatar_url: user.user_metadata?.avatar_url,
-            updated_at: new Date().toISOString(),
-            user_agent: getUserAgent()
-          })
-          .eq('google_id', user.id)
-          .select()
-          .single()
+        // 更新现有用户信息 - 添加超时处理
+        try {
+          const updatePromise = supabase
+            .from('users')
+            .update({
+              email: user.email,
+              display_name: user.user_metadata?.full_name || user.email?.split('@')[0],
+              avatar_url: user.user_metadata?.avatar_url,
+              updated_at: new Date().toISOString(),
+              user_agent: getUserAgent()
+            })
+            .eq('google_id', user.id)
+            .select()
+            .single()
 
-        if (updateError) {
-          console.error('❌ UserService: 更新用户失败:', updateError)
-          throw new Error(`更新用户信息失败: ${updateError.message}`)
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('用户更新超时')), 8000)
+          )
+
+          const result = await Promise.race([updatePromise, timeoutPromise]) as any
+          
+          if (result.error) {
+            console.error('❌ UserService: 更新用户失败:', result.error)
+            throw new Error(`更新用户信息失败: ${result.error.message}`)
+          }
+
+          finalUser = result.data
+        } catch (updateError) {
+          console.warn('⚠️ UserService: 用户更新失败，使用fallback处理:', updateError)
+          return this.createFallbackUser(user)
         }
-
-        finalUser = updatedUser
       } else {
         console.log('🆕 UserService: 创建新用户')
         
-        // 创建新用户
-        const { data: newUser, error: createError } = await supabase
-          .from('users')
-          .insert({
-            email: user.email,
-            google_id: user.id,
-            anonymous_id: anonymousId || generateAnonymousId(),
-            display_name: user.user_metadata?.full_name || user.email?.split('@')[0],
-            avatar_url: user.user_metadata?.avatar_url,
-            user_agent: getUserAgent(),
-            coins: 100,
-            is_premium: false
-          })
-          .select()
-          .single()
+        // 创建新用户 - 添加超时处理
+        try {
+          const createPromise = supabase
+            .from('users')
+            .insert({
+              email: user.email,
+              google_id: user.id,
+              anonymous_id: anonymousId || generateAnonymousId(),
+              display_name: user.user_metadata?.full_name || user.email?.split('@')[0],
+              avatar_url: user.user_metadata?.avatar_url,
+              user_agent: getUserAgent(),
+              coins: 100,
+              is_premium: false
+            })
+            .select()
+            .single()
 
-        if (createError) {
-          console.error('❌ UserService: 创建用户失败:', createError)
-          throw new Error(`创建用户失败: ${createError.message}`)
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('用户创建超时')), 8000)
+          )
+
+          const result = await Promise.race([createPromise, timeoutPromise]) as any
+
+          if (result.error) {
+            console.error('❌ UserService: 创建用户失败:', result.error)
+            throw new Error(`创建用户失败: ${result.error.message}`)
+          }
+
+          finalUser = result.data
+        } catch (createError) {
+          console.warn('⚠️ UserService: 用户创建失败，使用fallback处理:', createError)
+          return this.createFallbackUser(user)
         }
-
-        finalUser = newUser
       }
 
       // 处理匿名Letter的迁移
