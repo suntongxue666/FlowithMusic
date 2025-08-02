@@ -151,6 +151,26 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
 
   return (
     <div className="letter-interactions">
+      {/* 调试按钮 */}
+      {process.env.NODE_ENV === 'development' && (
+        <button 
+          onClick={async () => {
+            console.log('🔧 手动测试GET请求')
+            try {
+              const response = await fetch(`/api/letters/${letterId}/interactions`)
+              console.log('🔧 手动请求状态:', response.status)
+              const data = await response.json()
+              console.log('🔧 手动请求数据:', data)
+            } catch (error) {
+              console.log('🔧 手动请求错误:', error)
+            }
+          }}
+          style={{ margin: '10px', padding: '5px', fontSize: '12px' }}
+        >
+          手动测试GET
+        </button>
+      )}
+      
       {loading ? (
         <div className="interactions-loading">
           <div className="loading-dots">
@@ -525,7 +545,7 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
         .count-number {
           position: absolute;
           top: 4px;
-          right: -22px;
+          right: 6px;
           color: #333;
           font-size: 10px;
           font-weight: 500;
@@ -577,7 +597,7 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
 
           .count-number {
             top: 2px;
-            right: -20px;
+            right: 4px;
             font-size: 9px;
           }
         }
