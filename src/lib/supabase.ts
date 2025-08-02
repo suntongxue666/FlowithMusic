@@ -222,8 +222,5 @@ export interface LetterInteraction {
   emoji: string
   emoji_label: string
   user_agent: string
-  ip_address?: string
-  referer_url?: string
-  interaction_timestamp?: string
   created_at: string
 }

@@ -48,13 +48,10 @@ export async function POST(
       anonymousId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
     }
     
-    // 获取用户代理信息和IP地址
+    // 获取用户代理信息
     const userAgent = request.headers.get('user-agent') || ''
-    const forwardedFor = request.headers.get('x-forwarded-for')
-    const realIp = request.headers.get('x-real-ip')
-    const ipAddress = forwardedFor?.split(',')[0] || realIp || 'unknown'
     
-    // 准备互动记录数据 - 使用最基本的字段
+    // 简化互动记录数据 - 只使用数据库中实际存在的字段
     const interactionData = {
       letter_link_id: linkId,
       user_id: currentUser?.id || null,
@@ -63,8 +60,8 @@ export async function POST(
       user_avatar_url: currentUser?.avatar_url || null,
       emoji: emoji,
       emoji_label: label,
-      user_agent: userAgent.substring(0, 500), // 限制长度
-      created_at: new Date().toISOString()
+      user_agent: userAgent.substring(0, 500) // 限制长度
+      // created_at 由数据库自动生成，不需要显式设置
     }
     
     console.log('💝 记录Emoji互动:', {
@@ -152,7 +149,7 @@ export async function GET(
       )
     }
     
-    // 获取互动统计
+    // 获取互动统计 - 只查询实际存在的字段
     const { data: interactions, error } = await supabase
       .from('letter_interactions')
       .select('emoji, emoji_label, user_display_name, user_avatar_url, created_at')
