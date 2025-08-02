@@ -141,6 +141,8 @@ export async function GET(
   try {
     const { linkId } = await context.params
     
+    console.log('🔍 GET 互动统计 - linkId:', linkId)
+    
     // 检查supabase连接
     if (!supabase) {
       console.error('❌ Supabase client not initialized')
@@ -158,10 +160,20 @@ export async function GET(
       .order('created_at', { ascending: false })
       .limit(50)
     
+    console.log('📊 原始查询结果:', { 
+      count: interactions?.length, 
+      error, 
+      sampleData: interactions?.slice(0, 3) 
+    })
+    
     if (error) {
       console.error('❌ 获取互动统计失败:', error)
       return NextResponse.json(
-        { error: 'Failed to get interactions' },
+        { 
+          error: 'Failed to get interactions',
+          details: error.message,
+          linkId 
+        },
         { status: 500 }
       )
     }
@@ -188,10 +200,17 @@ export async function GET(
       return acc
     }, {})
     
+    console.log('📈 最终统计结果:', Object.values(stats || {}))
+    
     return NextResponse.json({
       success: true,
       stats: Object.values(stats || {}),
-      totalInteractions: interactions?.length || 0
+      totalInteractions: interactions?.length || 0,
+      debug: {
+        linkId,
+        rawCount: interactions?.length || 0,
+        statsCount: Object.keys(stats || {}).length
+      }
     })
     
   } catch (error) {
