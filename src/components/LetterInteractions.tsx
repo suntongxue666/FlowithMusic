@@ -29,7 +29,10 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
 
   // 加载现有的互动数据
   useEffect(() => {
+    console.log('🔥 useEffect 触发 - letterId:', letterId, 'loading:', loading)
+    
     const loadInteractionStats = async () => {
+      console.log('🔄 开始加载互动统计函数执行')
       try {
         console.log('🔄 开始加载互动统计，letterId:', letterId)
         const url = `/api/letters/${letterId}/interactions`
@@ -75,12 +78,17 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
       } catch (error) {
         console.error('💥 加载互动统计失败:', error)
       } finally {
+        console.log('🏁 加载统计完成，设置loading为false')
         setLoading(false)
       }
     }
 
     if (letterId) {
+      console.log('✅ letterId存在，开始加载统计')
       loadInteractionStats()
+    } else {
+      console.log('❌ letterId不存在，跳过加载')
+      setLoading(false)
     }
   }, [letterId])
 
