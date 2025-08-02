@@ -151,24 +151,6 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
 
   return (
     <div className="letter-interactions">
-      {/* 调试按钮 - 临时显示 */}
-      <button 
-        onClick={async () => {
-          console.log('🔧 手动测试GET请求')
-          try {
-            const response = await fetch(`/api/letters/${letterId}/interactions`)
-            console.log('🔧 手动请求状态:', response.status)
-            const data = await response.json()
-            console.log('🔧 手动请求数据:', data)
-          } catch (error) {
-            console.log('🔧 手动请求错误:', error)
-          }
-        }}
-        style={{ margin: '10px', padding: '5px', fontSize: '12px', background: '#f0f0f0' }}
-      >
-        手动测试GET
-      </button>
-      
       {loading ? (
         <div className="interactions-loading">
           <div className="loading-dots">
