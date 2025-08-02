@@ -85,13 +85,35 @@ export function UserProvider({ children }: UserProviderProps) {
 
   const signOut = async () => {
     try {
-      await userService.signOut()
+      console.log('🚪 UserContext: 开始注销流程')
+      
+      // 立即清除用户状态，确保界面马上更新
       setUser(null)
+      setLoading(false)
+      
+      // 后台执行完整注销逻辑
+      await userService.signOut()
+      
       // 重新初始化匿名用户
       const anonId = await userService.initializeUser()
       setAnonymousId(anonId)
+      
+      console.log('✅ UserContext: 注销完成，已重新初始化匿名用户')
     } catch (error) {
-      console.error('登出失败:', error)
+      console.error('❌ UserContext: 注销失败:', error)
+      
+      // 即使出错，也要确保界面显示为未登录状态
+      setUser(null)
+      setLoading(false)
+      
+      // 尝试重新初始化匿名用户
+      try {
+        const anonId = await userService.initializeUser()
+        setAnonymousId(anonId)
+      } catch (initError) {
+        console.error('❌ 重新初始化匿名用户失败:', initError)
+      }
+      
       throw error
     }
   }

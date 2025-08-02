@@ -398,27 +398,19 @@ export class UserService {
 
   // 登出
   async signOut(): Promise<void> {
-    console.log('🚪 开始用户登出...')
+    console.log('🚪 UserService: 开始用户登出...')
     
-    try {
-      if (supabase) {
-        await supabase.auth.signOut()
-        console.log('✅ Supabase登出成功')
-      }
-    } catch (error) {
-      console.warn('⚠️ Supabase登出失败:', error)
-    }
-    
-    // 重置内存状态
+    // 立即清除内存状态
     this.currentUser = null
     
-    // 清理localStorage
+    // 清理localStorage中的用户数据
     if (typeof window !== 'undefined') {
+      console.log('🧹 清理localStorage用户数据...')
       localStorage.removeItem('user')
       localStorage.removeItem('isAuthenticated')
       localStorage.removeItem('supabase_auth_error')
       
-      // 清除Supabase会话数据
+      // 清除所有Supabase会话数据
       const supabaseKeys = []
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i)
@@ -428,11 +420,20 @@ export class UserService {
       }
       supabaseKeys.forEach(key => localStorage.removeItem(key))
       
-      console.log('🧹 已清理用户登录状态')
+      console.log(`🧹 已清除 ${supabaseKeys.length + 3} 个localStorage项目`)
     }
     
-    // 保留匿名ID以便下次使用
-    console.log('✅ 用户登出完成')
+    // 尝试清除Supabase会话（异步，不阻塞）
+    if (supabase) {
+      try {
+        await supabase.auth.signOut()
+        console.log('✅ Supabase登出成功')
+      } catch (error) {
+        console.warn('⚠️ Supabase登出失败（但本地状态已清除）:', error)
+      }
+    }
+    
+    console.log('✅ UserService: 用户登出完成（本地状态已清除）')
   }
 
   // 获取当前用户

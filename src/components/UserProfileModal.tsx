@@ -51,15 +51,33 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
 
   const handleSignOut = async () => {
     try {
+      console.log('🚪 用户点击Sign out按钮')
+      
+      // 立即关闭弹窗，让用户看到变化
+      onClose()
+      
+      // 优先执行本地状态清除，确保界面立即更新为未登录状态
       if (onSignOut) {
         onSignOut()
-      } else {
-        await userService.signOut()
-        window.location.reload()
       }
-      onClose()
+      
+      // 后台执行完整的注销流程
+      try {
+        await userService.signOut()
+        console.log('✅ 注销完成')
+      } catch (signOutError) {
+        console.warn('⚠️ 后台注销过程中出现错误，但用户界面已更新:', signOutError)
+      }
+      
+      // 刷新页面以确保完全清除状态
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
+      
     } catch (error) {
-      console.error('Sign out error:', error)
+      console.error('❌ Sign out操作失败:', error)
+      // 即使出错也要关闭弹窗
+      onClose()
     }
   }
 

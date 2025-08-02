@@ -576,7 +576,7 @@ export default function LetterInteractions({ letterId }: LetterInteractionsProps
           }
 
           .count-number {
-            top: 2px;
+            top: -2px;
             right: 4px;
             font-size: 9px;
           }
