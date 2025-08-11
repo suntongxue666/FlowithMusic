@@ -70,7 +70,6 @@ export class UserService {
         await supabase.from('anonymous_sessions').insert({
           anonymous_id: identity.id,
           user_agent: identity.deviceInfo.userAgent,
-          device_fingerprint: identity.fingerprint
         })
       } catch (error) {
         console.warn('Failed to record anonymous session:', error)
