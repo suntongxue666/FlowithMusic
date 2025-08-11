@@ -786,6 +786,7 @@ export class LetterService {
         `,
         filters: { eq: { is_public: true } },
         limit,
+        offset, // 传递 offset 给代理
         order: { column: sortBy, ascending: false }
       }
       
@@ -801,9 +802,10 @@ export class LetterService {
       if (!proxyError && proxyData) {
         console.log('Successfully retrieved letters via proxy API:', proxyData.length)
         
-        // 应用分页
-        const paginatedData = proxyData.slice(offset, offset + limit)
-        
+        // 移除客户端分页，现在由代理处理
+        // const paginatedData = proxyData.slice(offset, offset + limit)
+        const paginatedData = proxyData; // 代理已经处理了分页
+
         // 缓存结果（缓存2分钟）
         cacheManager.set(cacheKey, paginatedData, 2 * 60 * 1000)
         

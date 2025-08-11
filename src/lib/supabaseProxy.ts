@@ -36,6 +36,7 @@ class SupabaseProxy {
     single?: boolean
     limit?: number
     order?: { column: string, ascending: boolean }
+    offset?: number // 添加 offset 参数
   }) {
     const response = await fetch(`${this.baseUrl}/api/supabase-proxy`, {
       method: 'POST',
@@ -51,6 +52,7 @@ class SupabaseProxy {
           single: options?.single,
           limit: options?.limit,
           order: options?.order,
+          offset: options?.offset, // 将 offset 传递给后端
         },
       }),
     })

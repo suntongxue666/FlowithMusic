@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import MusicCard from './MusicCard'
 import { letterService } from '@/lib/letterService'
 import { Letter } from '@/lib/supabase'
+import { useRef } from 'react'
 
 interface ExploreCardsProps {
   searchQuery?: string
@@ -34,65 +35,51 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
       let fetchedLetters: Letter[] = []
 
       if (searchQuery && searchQuery.trim()) {
-        // 搜索模式：按收件人、歌曲、艺术家搜索
-        const query = searchQuery.trim().toLowerCase()
-        const allLetters = await letterService.getPublicLetters(1000, 0, 'created_at')
-        
-        fetchedLetters = allLetters.filter(letter => {
-          const recipientMatch = letter.recipient_name.toLowerCase().includes(query)
-          const songMatch = letter.song_title.toLowerCase().includes(query)
-          const artistMatch = letter.song_artist.toLowerCase().includes(query)
-          
-          return (recipientMatch || songMatch || artistMatch)
-        }).slice(offset, offset + LETTERS_PER_PAGE)
+        const query = searchQuery.trim();
+        fetchedLetters = await letterService.searchLetters(query, LETTERS_PER_PAGE, offset);
       } else {
-        // 普通模式：获取所有公开Letters
-        fetchedLetters = await letterService.getPublicLetters(LETTERS_PER_PAGE, offset, 'created_at')
+        fetchedLetters = await letterService.getPublicLetters(LETTERS_PER_PAGE, offset, 'created_at');
         
-        // 如果检测到认证错误，补充localStorage中的所有Letters
         if (localStorage.getItem('supabase_auth_error') && pageNum === 0) {
-          console.log('📝 Explore: 检测到认证错误，合并localStorage所有数据')
+          console.log('📝 Explore: 检测到认证错误，合并localStorage所有数据');
           
-          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-          const allLocalLetters = localLetters // 移除时间限制，显示所有本地Letters
+          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]');
+          const allLocalLetters = localLetters;
           
           if (allLocalLetters.length > 0) {
-            console.log('📝 Explore: 发现本地Letters，合并显示:', allLocalLetters.length)
-            // 合并并去重
-            const combinedLetters = [...allLocalLetters, ...fetchedLetters]
+            console.log('📝 Explore: 发现本地Letters，合并显示:', allLocalLetters.length);
+            const combinedLetters = [...allLocalLetters, ...fetchedLetters];
             fetchedLetters = combinedLetters.filter((letter, index, self) => 
               index === self.findIndex(l => l.link_id === letter.link_id)
-            ).sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            ).sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
           }
         }
       }
 
-      // 如果没有足够的Letters，尝试从localStorage获取
       if (fetchedLetters.length === 0 && pageNum === 0) {
-        console.log('📝 Explore: 数据库无Letters，检查localStorage和认证状态...')
+        console.log('📝 Explore: 数据库无Letters，检查localStorage和认证状态...');
         
-        // 检查是否有认证错误
-        const hasAuthError = localStorage.getItem('supabase_auth_error')
+        const hasAuthError = localStorage.getItem('supabase_auth_error');
         if (hasAuthError) {
-          console.log('📝 Explore: 检测到认证错误，使用localStorage作为主要数据源')
+          console.log('📝 Explore: 检测到认证错误，使用localStorage作为主要数据源');
         }
         
         if (typeof window !== 'undefined') {
-          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]');
           const validLocalLetters = localLetters
             .filter((letter: Letter) => {
               if (searchQuery && searchQuery.trim()) {
-                const query = searchQuery.trim().toLowerCase()
-                const recipientMatch = letter.recipient_name.toLowerCase().includes(query)
-                const songMatch = letter.song_title.toLowerCase().includes(query)
-                const artistMatch = letter.song_artist.toLowerCase().includes(query)
-                return (recipientMatch || songMatch || artistMatch)
+                const query = searchQuery.trim().toLowerCase();
+                const recipientMatch = letter.recipient_name.toLowerCase().includes(query);
+                const songMatch = letter.song_title.toLowerCase().includes(query);
+                const artistMatch = letter.song_artist.toLowerCase().includes(query);
+                return (recipientMatch || songMatch || artistMatch);
               }
-              return true // 移除其他限制条件，显示所有Letters
+              return true;
             })
-            .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
           
-          fetchedLetters = validLocalLetters.slice(offset, offset + LETTERS_PER_PAGE)
+          fetchedLetters = validLocalLetters.slice(offset, offset + LETTERS_PER_PAGE);
         }
       }
 
@@ -145,19 +132,30 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [searchQuery])
+  }, [searchQuery, page])
 
-  // 初始加载
+  const observerTarget = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    loadLetters(0, true)
-  }, [loadLetters])
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+          loadLetters(page + 1);
+        }
+      },
+      { threshold: 1.0 }
+    );
 
-  // 加载更多
-  const loadMore = () => {
-    if (!loadingMore && hasMore) {
-      loadLetters(page + 1)
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
     }
-  }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [hasMore, loadingMore, loading, page, loadLetters]);
 
   // Convert Letter to the format expected by MusicCard
   const convertLetterToCard = (letter: Letter) => ({
@@ -171,7 +169,7 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
     linkId: letter.link_id
   })
 
-  if (loading) {
+  if (loading && letters.length === 0) {
     return (
       <section className="explore-cards">
         <div className="loading-cards">Loading letters...</div>
@@ -206,17 +204,14 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
         })}
       </div>
       
-      {hasMore && (
+      {loadingMore && (
         <div className="load-more-container">
-          <button 
-            className="load-more-btn"
-            onClick={loadMore}
-            disabled={loadingMore}
-          >
-            {loadingMore ? 'Loading more letters...' : 'Load More'}
-          </button>
+          <p>Loading more letters...</p>
         </div>
       )}
+
+      {/* 用于无限滚动的观察目标元素 */}
+      <div ref={observerTarget} style={{ height: '1px', margin: '10px 0' }} />
     </section>
   )
 }

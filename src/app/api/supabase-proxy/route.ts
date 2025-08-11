@@ -72,6 +72,14 @@ export async function POST(request: NextRequest) {
           query = query.order(options.order.column, { ascending: options.order.ascending })
         }
         
+        // 如果同时有 limit 和 offset，则使用 range 进行分页
+        if (options?.limit && options?.offset !== undefined) {
+          query = query.range(options.offset, options.offset + options.limit - 1);
+        } else if (options?.limit) {
+          // 如果只有 limit，则只使用 limit
+          query = query.limit(options.limit);
+        }
+
         let selectResult
         if (options?.single) {
           selectResult = await query.single()
