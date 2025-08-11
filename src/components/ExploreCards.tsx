@@ -137,6 +137,11 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
   const observerTarget = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // 首次加载或搜索查询变化时触发
+    loadLetters(0, true); 
+  }, [searchQuery]); // 依赖searchQuery，当searchQuery变化时重新加载
+
+  useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {

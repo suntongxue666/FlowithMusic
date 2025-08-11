@@ -773,8 +773,6 @@ export class LetterService {
     
     // 优先尝试代理API，失败时使用直接连接
     try {
-      console.log('Attempting to get public letters via proxy API')
-      
       let queryOptions: any = {
         select: `
           *,
@@ -800,8 +798,6 @@ export class LetterService {
       const { data: proxyData, error: proxyError } = await supabaseProxy.select('letters', queryOptions)
       
       if (!proxyError && proxyData) {
-        console.log('Successfully retrieved letters via proxy API:', proxyData.length)
-        
         // 移除客户端分页，现在由代理处理
         // const paginatedData = proxyData.slice(offset, offset + limit)
         const paginatedData = proxyData; // 代理已经处理了分页
