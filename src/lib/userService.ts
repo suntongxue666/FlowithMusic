@@ -168,7 +168,7 @@ export class UserService {
     }
   }
 
-  // 登录成功后的数据迁移
+  // 登录成功后的数据处理（简化版 - 依赖数据库触发器）
   async handleAuthCallback(user: any): Promise<User> {
     console.log('🔄 UserService: 开始处理登录回调...')
     console.log('👤 UserService: 用户信息:', { id: user.id, email: user.email })
@@ -178,100 +178,60 @@ export class UserService {
       return this.createFallbackUser(user)
     }
 
-    // 获取当前匿名ID
+    // 获取当前匿名ID用于数据迁移
     const anonymousId = this.anonymousId || localStorage.getItem('anonymous_id')
     console.log('🔍 UserService: 当前匿名ID:', anonymousId)
     
     try {
-      // 验证当前会话 - 添加超时处理
-      console.log('🔍 UserService: 验证会话...')
-      let sessionData
-      try {
-        const sessionPromise = supabase.auth.getSession()
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session验证超时')), 5000)
-        )
-        
-        const result = await Promise.race([sessionPromise, timeoutPromise]) as any
-        sessionData = result.data
-        
-        if (!sessionData?.session) {
-          console.warn('⚠️ UserService: 无有效会话，跳过会话验证')
-          // 不要抛错，直接继续处理
-        } else {
-          console.log('✅ UserService: 有效会话已确认')
-        }
-      } catch (sessionError) {
-        console.warn('⚠️ UserService: 会话验证失败，继续处理:', sessionError)
-        // 不要抛错，直接继续处理
-      }
+      // 等待触发器创建用户记录（稍等片刻）
+      console.log('⏳ UserService: 等待触发器创建用户记录...')
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
-      // 检查用户是否已存在 - 添加超时处理
-      console.log('🔍 UserService: 查询现有用户...')
-      let existingUser, fetchError
-      try {
-        const fetchPromise = supabase
-          .from('users')
-          .select('*')
-          .eq('google_id', user.id)
-          .single()
-        
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('用户查询超时')), 8000)
-        )
-        
-        const result = await Promise.race([fetchPromise, timeoutPromise]) as any
-        existingUser = result.data
-        fetchError = result.error
-      } catch (queryError) {
-        console.warn('⚠️ UserService: 用户查询失败，使用fallback处理:', queryError)
-        return this.createFallbackUser(user)
+      // 查找通过触发器创建的用户记录
+      console.log('🔍 UserService: 查询触发器创建的用户记录...')
+      let existingUser
+      
+      // 重试机制，因为触发器可能需要一点时间
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const result = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)  // 使用auth用户的ID直接查询
+            .single()
+            
+          existingUser = result.data
+          
+          if (existingUser) {
+            console.log(`✅ UserService: 第${attempt}次尝试，找到用户记录`)
+            break
+          }
+          
+          if (attempt < 3) {
+            console.log(`⏳ UserService: 第${attempt}次未找到，等待后重试...`)
+            await new Promise(resolve => setTimeout(resolve, 1000))
+          }
+        } catch (queryError) {
+          console.warn(`⚠️ UserService: 第${attempt}次查询失败:`, queryError)
+          if (attempt === 3) {
+            throw queryError
+          }
+        }
       }
 
       let finalUser: User
 
       if (existingUser) {
-        console.log('✅ UserService: 用户已存在，更新信息')
-        
-        // 更新现有用户信息 - 添加超时处理
-        try {
-          const updatePromise = supabase
-            .from('users')
-            .update({
-              email: user.email,
-              display_name: user.user_metadata?.full_name || user.email?.split('@')[0],
-              avatar_url: user.user_metadata?.avatar_url,
-              updated_at: new Date().toISOString(),
-              user_agent: getUserAgent()
-            })
-            .eq('google_id', user.id)
-            .select()
-            .single()
-
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('用户更新超时')), 8000)
-          )
-
-          const result = await Promise.race([updatePromise, timeoutPromise]) as any
-          
-          if (result.error) {
-            console.error('❌ UserService: 更新用户失败:', result.error)
-            throw new Error(`更新用户信息失败: ${result.error.message}`)
-          }
-
-          finalUser = result.data
-        } catch (updateError) {
-          console.warn('⚠️ UserService: 用户更新失败，使用fallback处理:', updateError)
-          return this.createFallbackUser(user)
-        }
+        console.log('✅ UserService: 找到触发器创建的用户记录')
+        finalUser = existingUser
       } else {
-        console.log('🆕 UserService: 创建新用户')
-        
-        // 创建新用户 - 添加超时处理
+        console.log('⚠️ UserService: 未找到触发器创建的用户，使用fallback创建')
+        // 如果触发器没有工作，回退到手动创建
         try {
-          const createPromise = supabase
+          const { data: createdUser, error: createError } = await supabase
             .from('users')
             .insert({
+              id: user.id,  // 使用auth用户的ID
               email: user.email,
               google_id: user.id,
               anonymous_id: anonymousId || generateAnonymousId(),
@@ -284,26 +244,23 @@ export class UserService {
             .select()
             .single()
 
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('用户创建超时')), 8000)
-          )
-
-          const result = await Promise.race([createPromise, timeoutPromise]) as any
-
-          if (result.error) {
-            console.error('❌ UserService: 创建用户失败:', result.error)
-            throw new Error(`创建用户失败: ${result.error.message}`)
+          if (createError) {
+            console.error('❌ UserService: Fallback创建用户失败:', createError)
+            throw createError
           }
 
-          finalUser = result.data
+          finalUser = createdUser
         } catch (createError) {
-          console.warn('⚠️ UserService: 用户创建失败，使用fallback处理:', createError)
+          console.warn('⚠️ UserService: Fallback创建也失败，使用临时用户:', createError)
           return this.createFallbackUser(user)
         }
       }
 
       // 处理匿名Letter的迁移
-      await this.migrateAnonymousLetters(anonymousId, finalUser)
+      if (anonymousId) {
+        console.log('🔄 UserService: 开始迁移匿名数据...')
+        await this.migrateAnonymousLetters(anonymousId, finalUser)
+      }
 
       // 更新本地状态
       this.currentUser = finalUser
@@ -316,16 +273,7 @@ export class UserService {
           localStorage.setItem('isAuthenticated', 'true')
           localStorage.setItem('anonymous_id', finalUser.anonymous_id)
           
-          // 验证保存是否成功
-          const savedUser = localStorage.getItem('user')
-          const savedAuth = localStorage.getItem('isAuthenticated')
-          
-          console.log('💾 用户数据保存验证:', {
-            saved: !!savedUser,
-            parsable: !!JSON.parse(savedUser || '{}'),
-            isAuthenticated: savedAuth === 'true',
-            userEmail: JSON.parse(savedUser || '{}').email
-          })
+          console.log('💾 用户数据已保存到localStorage')
         } catch (saveError) {
           console.error('❌ UserService: localStorage保存失败:', saveError)
         }
@@ -336,7 +284,8 @@ export class UserService {
         email: finalUser.email,
         display_name: finalUser.display_name,
         avatar_url: finalUser.avatar_url,
-        anonymous_id: finalUser.anonymous_id
+        anonymous_id: finalUser.anonymous_id,
+        通过触发器创建: !!existingUser
       })
       return finalUser
       
