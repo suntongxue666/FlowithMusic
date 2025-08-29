@@ -64,7 +64,7 @@ export default function DevTestPanel() {
       <div className="max-w-4xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">🧪 数据库测试面板</h2>
+            <h2 className="text-xl font-bold">🧪 数据库测试面板 v2.0</h2>
             <button
               onClick={() => setShowPanel(false)}
               className="text-gray-500 hover:text-gray-700"
