@@ -36,13 +36,20 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
 
   // 初始化社交媒体数据
   useEffect(() => {
+    console.log('🔄 初始化社交媒体数据:', user?.social_media_info)
     if (user?.social_media_info) {
       setSocialMedias(prev => prev.map(media => ({
         ...media,
         value: user.social_media_info?.[media.name.toLowerCase()] || ''
       })))
+    } else {
+      // 如果没有社交媒体信息，重置为空
+      setSocialMedias(prev => prev.map(media => ({
+        ...media,
+        value: ''
+      })))
     }
-  }, [user])
+  }, [user, isOpen]) // 添加isOpen依赖，确保每次打开都重新初始化
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -103,19 +110,28 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
   const handleSave = async (index: number, value: string) => {
     setSaving(true)
     try {
+      console.log('🔄 开始保存社交媒体信息:', { index, value, mediaName: socialMedias[index].name })
+      
       const mediaName = socialMedias[index].name.toLowerCase()
-      await userService.updateSocialMedia({
+      const updatedUser = await userService.updateSocialMedia({
         [mediaName]: value
       })
       
+      console.log('✅ 社交媒体信息保存成功:', updatedUser.social_media_info)
+      
+      // 更新本地状态
       setSocialMedias(prev => prev.map((media, i) => 
         i === index ? { ...media, value, isEditing: false } : media
       ))
       
-      console.log('✅ 社交媒体信息已保存')
+      // 强制刷新用户数据（通过触发父组件重新获取用户信息）
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
+      
     } catch (error) {
       console.error('❌ 保存社交媒体信息失败:', error)
-      alert('保存失败，请重试')
+      alert(`保存失败: ${error.message}`)
     } finally {
       setSaving(false)
     }

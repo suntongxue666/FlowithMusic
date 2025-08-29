@@ -579,6 +579,8 @@ export class UserService {
 
   // 更新用户资料
   async updateProfile(updates: Partial<User>): Promise<User> {
+    console.log('🔄 UserService: 开始更新用户资料:', updates)
+    
     if (!supabase) {
       throw new Error('数据库连接不可用')
     }
@@ -587,6 +589,8 @@ export class UserService {
       throw new Error('用户未登录')
     }
 
+    console.log('📡 UserService: 发送数据库更新请求, 用户ID:', this.currentUser.id)
+
     const { data, error } = await supabase
       .from('users')
       .update(updates)
@@ -594,13 +598,19 @@ export class UserService {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('❌ UserService: 数据库更新失败:', error)
+      throw error
+    }
+    
+    console.log('✅ UserService: 数据库更新成功:', data)
     
     this.currentUser = data
     
     // 更新localStorage中的用户数据
     if (typeof window !== 'undefined') {
       localStorage.setItem('user', JSON.stringify(data))
+      console.log('💾 UserService: localStorage已更新')
     }
     
     return data

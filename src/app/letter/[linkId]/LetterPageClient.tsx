@@ -295,12 +295,14 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
                 </p>
               </div>
             )}
-            {/* 发送者信息 */}
+            
+            {/* 发送者信息 - 放在Letter内容和日期之间 */}
             <div className="letter-sender" style={{ 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
               gap: '8px',
+              marginTop: '16px',
               marginBottom: '8px',
               fontSize: '14px',
               color: '#666'
