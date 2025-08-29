@@ -21,25 +21,35 @@ export default function Header({ currentPage }: HeaderProps) {
       console.log('🔍 Header: 初始化认证状态...')
       
       try {
-        // 首先快速检查当前状态，避免复杂的初始化
+        // 强制重新检查用户状态
         let currentUser = userService.getCurrentUser()
         let isAuth = userService.isAuthenticated()
         
-        // 如果没有用户状态，尝试简单初始化
+        console.log('👤 Header: 初始用户状态:', { 
+          user: currentUser?.email || currentUser?.display_name || 'Anonymous',
+          isAuthenticated: isAuth,
+          hasAvatar: !!currentUser?.avatar_url
+        })
+        
+        // 立即更新UI状态
+        setUser(currentUser)
+        setIsAuthenticated(isAuth)
+        
+        // 如果没有用户状态，尝试初始化
         if (!currentUser && !isAuth) {
-          console.log('🔄 Header: 无用户状态，尝试简单初始化...')
+          console.log('🔄 Header: 无用户状态，尝试初始化...')
           await userService.initializeUser()
           currentUser = userService.getCurrentUser()
           isAuth = userService.isAuthenticated()
+          
+          console.log('👤 Header: 初始化后用户状态:', { 
+            user: currentUser?.email || currentUser?.display_name || 'Anonymous',
+            isAuthenticated: isAuth 
+          })
+          
+          setUser(currentUser)
+          setIsAuthenticated(isAuth)
         }
-        
-        console.log('👤 Header: 用户状态:', { 
-          user: currentUser?.email || currentUser?.display_name || 'Anonymous',
-          isAuthenticated: isAuth 
-        })
-        
-        setUser(currentUser)
-        setIsAuthenticated(isAuth)
         
         // 检查是否从OAuth回调页面返回
         const urlParams = new URLSearchParams(window.location.search)

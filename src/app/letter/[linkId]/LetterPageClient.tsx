@@ -10,6 +10,148 @@ import { letterService } from '@/lib/letterService'
 import { ImprovedUserIdentity } from '@/lib/improvedUserIdentity'
 import type { Letter } from '@/lib/supabase'
 
+// 动物表情符号数组
+const ANIMAL_EMOJIS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧', '🐘', '🦛', '🦏', '🐪', '🐫', '🦒', '🦘', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐕‍🦺', '🐈', '🐈‍⬛', '🐓', '🦃', '🦚', '🦜', '🦢', '🦩', '🕊️', '🐇', '🦝', '🦨', '🦡', '🦦', '🦥', '🐁', '🐀', '🐿️', '🦔']
+
+// 浅色背景数组
+const LIGHT_COLORS = [
+  '#FFE5E5', '#E5F3FF', '#E5FFE5', '#FFF5E5', '#F0E5FF', '#E5FFFF',
+  '#FFE5F5', '#F5FFE5', '#E5E5FF', '#FFFFE5', '#FFE5CC', '#E5FFCC',
+  '#CCE5FF', '#FFCCE5', '#E5CCFF', '#CCFFE5', '#FFCCCC', '#CCFFCC',
+  '#CCCCFF', '#FFFFCC', '#FFE0E0', '#E0FFE0', '#E0E0FF', '#FFFFE0'
+]
+
+// 生成匿名用户头像和用户名
+function generateAnonymousUser(linkId: string) {
+  // 使用linkId作为种子来确保同一个letter总是显示相同的头像和用户名
+  let hash = 0
+  for (let i = 0; i < linkId.length; i++) {
+    const char = linkId.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  
+  const emojiIndex = Math.abs(hash) % ANIMAL_EMOJIS.length
+  const colorIndex = Math.abs(hash >> 8) % LIGHT_COLORS.length
+  const userNumber = Math.abs(hash >> 16) % 100000000 // 8位数字
+  
+  return {
+    emoji: ANIMAL_EMOJIS[emojiIndex],
+    backgroundColor: LIGHT_COLORS[colorIndex],
+    username: `Guest${userNumber.toString().padStart(8, '0')}`
+  }
+}
+
+// Letter发送者组件
+function LetterSender({ user }: { user?: any }) {
+  const [showTooltip, setShowTooltip] = useState(false)
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
+  
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    setTooltipPosition({ x: e.clientX, y: e.clientY })
+    setShowTooltip(true)
+  }
+  
+  const handleMouseLeave = () => {
+    setShowTooltip(false)
+  }
+  
+  if (user) {
+    // 已登录用户
+    return (
+      <div className="letter-sender-section">
+        <div 
+          className="letter-sender-avatar"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          {user.avatar_url ? (
+            <img 
+              src={user.avatar_url} 
+              alt={user.display_name || 'Sender'} 
+              className="sender-avatar-img"
+            />
+          ) : (
+            <div className="sender-avatar-placeholder">
+              {user.display_name?.charAt(0) || user.email?.charAt(0) || 'U'}
+            </div>
+          )}
+        </div>
+        <div className="letter-sender-text">
+          From {user.display_name || 'Anonymous'}
+        </div>
+        
+        {/* 用户信息提示框 */}
+        {showTooltip && (
+          <div 
+            className="user-tooltip"
+            style={{
+              position: 'fixed',
+              left: tooltipPosition.x - 150,
+              top: tooltipPosition.y - 200,
+              zIndex: 1000
+            }}
+          >
+            <div className="tooltip-avatar">
+              {user.avatar_url ? (
+                <img src={user.avatar_url} alt={user.display_name} />
+              ) : (
+                <div className="tooltip-avatar-placeholder">
+                  {user.display_name?.charAt(0) || user.email?.charAt(0) || 'U'}
+                </div>
+              )}
+            </div>
+            <div className="tooltip-info">
+              <div className="tooltip-username">{user.display_name || 'Anonymous'}</div>
+              {user.social_media_info && (
+                <div className="tooltip-social">
+                  {user.social_media_info.whatsapp && (
+                    <div>📱 WhatsApp: {user.social_media_info.whatsapp}</div>
+                  )}
+                  {user.social_media_info.instagram && (
+                    <div>📷 Instagram: @{user.social_media_info.instagram}</div>
+                  )}
+                  {user.social_media_info.tiktok && (
+                    <div>🎵 TikTok: @{user.social_media_info.tiktok}</div>
+                  )}
+                  {user.social_media_info.x && (
+                    <div>🐦 X: @{user.social_media_info.x}</div>
+                  )}
+                  {user.social_media_info.facebook && (
+                    <div>👥 Facebook: {user.social_media_info.facebook}</div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  } else {
+    // 匿名用户 - 使用linkId生成一致的头像和用户名
+    const linkId = typeof window !== 'undefined' 
+      ? window.location.pathname.split('/').pop() || 'default'
+      : 'default'
+    const anonymousUser = generateAnonymousUser(linkId)
+    
+    return (
+      <div className="letter-sender-section">
+        <div className="letter-sender-avatar">
+          <div 
+            className="sender-avatar-anonymous"
+            style={{ backgroundColor: anonymousUser.backgroundColor }}
+          >
+            {anonymousUser.emoji}
+          </div>
+        </div>
+        <div className="letter-sender-text">
+          From {anonymousUser.username}
+        </div>
+      </div>
+    )
+  }
+}
+
 interface LetterPageClientProps {
   linkId: string
 }
@@ -296,66 +438,8 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
               </div>
             )}
             
-            {/* 发送者信息 - 放在Letter内容和日期之间 */}
-            <div className="letter-sender" style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              gap: '8px',
-              marginTop: '16px',
-              marginBottom: '8px',
-              fontSize: '14px',
-              color: '#666'
-            }}>
-              {letter.user ? (
-                <>
-                  {letter.user.avatar_url ? (
-                    <img 
-                      src={letter.user.avatar_url} 
-                      alt={letter.user.display_name || 'Sender'} 
-                      style={{
-                        width: '24px',
-                        height: '24px',
-                        borderRadius: '50%',
-                        objectFit: 'cover'
-                      }}
-                    />
-                  ) : (
-                    <div style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '12px',
-                      fontWeight: 'bold'
-                    }}>
-                      {letter.user.display_name?.charAt(0) || 'U'}
-                    </div>
-                  )}
-                  <span>From {letter.user.display_name || 'Anonymous'}</span>
-                </>
-              ) : (
-                <>
-                  <div style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '50%',
-                    background: '#f0f0f0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '12px'
-                  }}>
-                    👤
-                  </div>
-                  <span>From Anonymous</span>
-                </>
-              )}
-            </div>
+            {/* 发送者信息 - 单独一行显示 */}
+            <LetterSender user={letter.user} />
             
             <div className="letter-date centered-date" style={{ fontSize: '12px' }}>
               Sent on {new Date(letter.created_at).toLocaleDateString('en-US', {

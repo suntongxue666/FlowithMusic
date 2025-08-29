@@ -3255,4 +3255,213 @@ edia Inputs Styles */
     height: auto;
     min-height: 270px;
   }
+}/*
+ Letter发送者样式 */
+.letter-sender-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 16px 0;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.letter-sender-avatar {
+  position: relative;
+  cursor: pointer;
+}
+
+.sender-avatar-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.sender-avatar-img:hover {
+  transform: scale(1.05);
+}
+
+.sender-avatar-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.sender-avatar-placeholder:hover {
+  transform: scale(1.05);
+}
+
+.sender-avatar-anonymous {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.sender-avatar-anonymous:hover {
+  transform: scale(1.05);
+}
+
+.letter-sender-text {
+  font-size: 16px;
+  color: #666;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* 用户信息提示框样式 */
+.user-tooltip {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  min-width: 280px;
+  max-width: 320px;
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tooltip-avatar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.tooltip-avatar img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tooltip-avatar-placeholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tooltip-info {
+  text-align: center;
+}
+
+.tooltip-username {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.tooltip-social {
+  text-align: left;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.tooltip-social div {
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 6px;
+  border-left: 3px solid #667eea;
+}
+
+.tooltip-social div:last-child {
+  margin-bottom: 0;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .letter-sender-section {
+    margin: 16px 0 12px 0;
+    padding: 12px;
+  }
+  
+  .sender-avatar-img,
+  .sender-avatar-placeholder,
+  .sender-avatar-anonymous {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .sender-avatar-placeholder {
+    font-size: 16px;
+  }
+  
+  .sender-avatar-anonymous {
+    font-size: 20px;
+  }
+  
+  .letter-sender-text {
+    font-size: 14px;
+  }
+  
+  .user-tooltip {
+    min-width: 240px;
+    max-width: 280px;
+    padding: 12px;
+  }
+  
+  .tooltip-avatar img,
+  .tooltip-avatar-placeholder {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .tooltip-avatar-placeholder {
+    font-size: 18px;
+  }
+  
+  .tooltip-username {
+    font-size: 16px;
+  }
+  
+  .tooltip-social {
+    font-size: 13px;
+  }
 }
