@@ -262,7 +262,7 @@ export class UserService {
               avatar_url: (user.user_metadata as any)?.avatar_url || (user.user_metadata as any)?.picture,
               user_agent: getUserAgent(),
               social_media_info: user.user_metadata || {},
-              coins: 100,
+              coins: 10,
               is_premium: false
             })
             .select()
@@ -364,7 +364,7 @@ export class UserService {
       avatar_url: (user.user_metadata as any)?.avatar_url || (user.user_metadata as any)?.picture,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      coins: 100,
+      coins: 10,
       is_premium: false,
       user_agent: getUserAgent()
     }
@@ -597,7 +597,77 @@ export class UserService {
     if (error) throw error
     
     this.currentUser = data
+    
+    // 更新localStorage中的用户数据
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(data))
+    }
+    
     return data
+  }
+
+  // 更新社交媒体信息
+  async updateSocialMedia(socialMedia: {
+    whatsapp?: string
+    tiktok?: string
+    instagram?: string
+    facebook?: string
+    x?: string
+  }): Promise<User> {
+    if (!this.currentUser) {
+      throw new Error('用户未登录')
+    }
+
+    // 合并现有的社交媒体信息
+    const currentSocialMedia = this.currentUser.social_media_info || {}
+    const updatedSocialMedia = { ...currentSocialMedia, ...socialMedia }
+
+    return await this.updateProfile({
+      social_media_info: updatedSocialMedia
+    })
+  }
+
+  // 获取用户社交媒体信息（需要积分）
+  async getUserSocialMedia(userId: string): Promise<{
+    whatsapp?: string
+    tiktok?: string
+    instagram?: string
+    facebook?: string
+    x?: string
+  } | null> {
+    if (!supabase) {
+      throw new Error('数据库连接不可用')
+    }
+
+    // 检查是否是查看自己的信息
+    if (this.currentUser && this.currentUser.id === userId) {
+      return this.currentUser.social_media_info || {}
+    }
+
+    // 查看他人信息需要消耗积分
+    if (!this.currentUser) {
+      throw new Error('需要登录才能查看他人信息')
+    }
+
+    if (this.currentUser.coins < 10) {
+      throw new Error('积分不足，查看他人社交媒体信息需要10积分')
+    }
+
+    // 扣除积分
+    await this.updateProfile({
+      coins: this.currentUser.coins - 10
+    })
+
+    // 获取目标用户的社交媒体信息
+    const { data, error } = await supabase
+      .from('users')
+      .select('social_media_info')
+      .eq('id', userId)
+      .single()
+
+    if (error) throw error
+
+    return data?.social_media_info || {}
   }
 
   // 获取用户统计信息

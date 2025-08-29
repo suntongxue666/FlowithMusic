@@ -295,6 +295,66 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
                 </p>
               </div>
             )}
+            {/* 发送者信息 */}
+            <div className="letter-sender" style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              gap: '8px',
+              marginBottom: '8px',
+              fontSize: '14px',
+              color: '#666'
+            }}>
+              {letter.user ? (
+                <>
+                  {letter.user.avatar_url ? (
+                    <img 
+                      src={letter.user.avatar_url} 
+                      alt={letter.user.display_name || 'Sender'} 
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: '12px',
+                      fontWeight: 'bold'
+                    }}>
+                      {letter.user.display_name?.charAt(0) || 'U'}
+                    </div>
+                  )}
+                  <span>From {letter.user.display_name || 'Anonymous'}</span>
+                </>
+              ) : (
+                <>
+                  <div style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    background: '#f0f0f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px'
+                  }}>
+                    👤
+                  </div>
+                  <span>From Anonymous</span>
+                </>
+              )}
+            </div>
+            
             <div className="letter-date centered-date" style={{ fontSize: '12px' }}>
               Sent on {new Date(letter.created_at).toLocaleDateString('en-US', {
                 year: 'numeric',

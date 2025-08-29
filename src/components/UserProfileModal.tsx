@@ -11,6 +11,8 @@ interface UserProfileModalProps {
     avatar_url?: string
     display_name?: string
     email?: string
+    coins?: number
+    social_media_info?: any
   }
 }
 
@@ -22,6 +24,7 @@ interface SocialMedia {
 
 export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: UserProfileModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
+  const [saving, setSaving] = useState(false)
   
   const [socialMedias, setSocialMedias] = useState<SocialMedia[]>([
     { name: 'WhatsApp', value: '', isEditing: false },
@@ -30,6 +33,16 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
     { name: 'Facebook', value: '', isEditing: false },
     { name: 'X', value: '', isEditing: false }
   ])
+
+  // 初始化社交媒体数据
+  useEffect(() => {
+    if (user?.social_media_info) {
+      setSocialMedias(prev => prev.map(media => ({
+        ...media,
+        value: user.social_media_info?.[media.name.toLowerCase()] || ''
+      })))
+    }
+  }, [user])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -87,10 +100,25 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
     ))
   }
 
-  const handleSave = (index: number, value: string) => {
-    setSocialMedias(prev => prev.map((media, i) => 
-      i === index ? { ...media, value, isEditing: false } : media
-    ))
+  const handleSave = async (index: number, value: string) => {
+    setSaving(true)
+    try {
+      const mediaName = socialMedias[index].name.toLowerCase()
+      await userService.updateSocialMedia({
+        [mediaName]: value
+      })
+      
+      setSocialMedias(prev => prev.map((media, i) => 
+        i === index ? { ...media, value, isEditing: false } : media
+      ))
+      
+      console.log('✅ 社交媒体信息已保存')
+    } catch (error) {
+      console.error('❌ 保存社交媒体信息失败:', error)
+      alert('保存失败，请重试')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleInputChange = (index: number, value: string) => {
@@ -118,6 +146,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
           <div className="user-info">
             <div className="user-name">{user.display_name || 'User'}</div>
             <div className="user-email">{user.email}</div>
+            <div className="user-coins">积分: {user.coins || 0}</div>
           </div>
         </div>
 
@@ -130,8 +159,11 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
                 <button 
                   className="edit-btn"
                   onClick={() => media.isEditing ? handleSave(index, media.value) : toggleEdit(index)}
+                  disabled={saving}
                 >
-                  {media.isEditing ? (
+                  {saving && media.isEditing ? (
+                    <div className="loading-spinner"></div>
+                  ) : media.isEditing ? (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="20,6 9,17 4,12"></polyline>
                     </svg>
@@ -248,6 +280,12 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
           color: rgba(255, 255, 255, 0.7);
         }
 
+        .user-coins {
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.6);
+          margin-top: 4px;
+        }
+
         .social-links {
           display: flex;
           flex-direction: column;
@@ -292,6 +330,25 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
         .edit-btn:hover {
           color: white;
           background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .edit-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .loading-spinner {
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top: 2px solid white;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
 
         .social-input-row {
