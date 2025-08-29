@@ -109,7 +109,30 @@ export default function TestGoogleOAuth() {
         addLog('✅ 找到有效会话:')
         addLog(`  - 用户ID: ${session.user.id}`)
         addLog(`  - 邮箱: ${session.user.email}`)
+        addLog(`  - 用户元数据: ${JSON.stringify(session.user.user_metadata)}`)
         addLog(`  - 过期时间: ${new Date(session.expires_at! * 1000).toLocaleString()}`)
+        
+        // 检查数据库中的用户记录
+        addLog('🔍 检查数据库中的用户记录...')
+        const { data: dbUser, error: dbError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+        
+        if (dbError) {
+          addLog(`❌ 数据库查询失败: ${dbError.message}`)
+        } else if (dbUser) {
+          addLog('✅ 数据库中的用户记录:')
+          addLog(`  - ID: ${dbUser.id}`)
+          addLog(`  - 邮箱: ${dbUser.email || '空'}`)
+          addLog(`  - 显示名: ${dbUser.display_name || '空'}`)
+          addLog(`  - 头像: ${dbUser.avatar_url || '空'}`)
+          addLog(`  - Google ID: ${dbUser.google_id || '空'}`)
+          addLog(`  - 匿名ID: ${dbUser.anonymous_id || '空'}`)
+        } else {
+          addLog('❌ 数据库中未找到用户记录')
+        }
         
         // 如果有会话但本地没有用户，尝试处理
         if (!currentUser) {
@@ -118,6 +141,7 @@ export default function TestGoogleOAuth() {
             const processedUser = await userService.handleAuthCallback(session.user)
             setCurrentUser(processedUser)
             addLog('✅ 会话用户处理完成')
+            addLog(`处理后的用户: ${JSON.stringify(processedUser)}`)
           } catch (processError) {
             addLog(`❌ 处理会话用户失败: ${processError}`)
           }
@@ -153,12 +177,66 @@ export default function TestGoogleOAuth() {
         if (data && data.length > 0) {
           addLog('最近的用户:')
           data.forEach((user, index) => {
-            addLog(`  ${index + 1}. ${user.email} (${user.display_name})`)
+            addLog(`  ${index + 1}. ${user.email || '无邮箱'} (${user.display_name || '无显示名'})`)
           })
         }
       }
     } catch (error) {
       addLog(`❌ 数据库测试异常: ${error}`)
+    }
+  }
+
+  // 手动修复用户数据
+  const fixUserData = async () => {
+    try {
+      addLog('🔧 开始修复用户数据...')
+      
+      if (!supabase) {
+        addLog('❌ Supabase不可用')
+        return
+      }
+
+      // 获取当前会话
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError || !session) {
+        addLog('❌ 无有效会话，请先登录')
+        return
+      }
+
+      const user = session.user
+      addLog(`🔍 当前会话用户: ${user.email}`)
+      addLog(`🔍 用户元数据: ${JSON.stringify(user.user_metadata)}`)
+
+      // 更新用户数据
+      const { data: updatedUser, error: updateError } = await supabase
+        .from('users')
+        .update({
+          email: user.email,
+          display_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0],
+          avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
+          social_media_info: user.user_metadata || {},
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        addLog(`❌ 更新用户数据失败: ${updateError.message}`)
+      } else {
+        addLog('✅ 用户数据更新成功:')
+        addLog(`  - 邮箱: ${updatedUser.email}`)
+        addLog(`  - 显示名: ${updatedUser.display_name}`)
+        addLog(`  - 头像: ${updatedUser.avatar_url ? '有' : '无'}`)
+        
+        // 重新处理用户数据
+        const processedUser = await userService.handleAuthCallback(user)
+        setCurrentUser(processedUser)
+        addLog('✅ 本地用户状态已更新')
+      }
+    } catch (error) {
+      addLog(`❌ 修复用户数据异常: ${error}`)
     }
   }
 
@@ -213,6 +291,13 @@ export default function TestGoogleOAuth() {
                 className="w-full px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
               >
                 测试数据库连接
+              </button>
+              
+              <button
+                onClick={fixUserData}
+                className="w-full px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+              >
+                修复用户数据
               </button>
               
               <button
