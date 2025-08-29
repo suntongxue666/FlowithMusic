@@ -21,56 +21,55 @@ export default function Header({ currentPage }: HeaderProps) {
       console.log('🔍 Header: 初始化认证状态...')
       
       try {
-        // 强制重新检查用户状态
-        let currentUser = userService.getCurrentUser()
-        let isAuth = userService.isAuthenticated()
+        // 直接从localStorage获取用户状态，避免复杂的初始化逻辑
+        const storedUser = localStorage.getItem('user')
+        const storedAuth = localStorage.getItem('isAuthenticated')
         
-        console.log('👤 Header: 初始用户状态:', { 
-          user: currentUser?.email || currentUser?.display_name || 'Anonymous',
-          isAuthenticated: isAuth,
-          hasAvatar: !!currentUser?.avatar_url
+        if (storedUser && storedAuth === 'true') {
+          try {
+            const parsedUser = JSON.parse(storedUser)
+            if (parsedUser && parsedUser.email) {
+              console.log('✅ Header: 从localStorage恢复用户状态:', parsedUser.email)
+              setUser(parsedUser)
+              setIsAuthenticated(true)
+              return
+            }
+          } catch (error) {
+            console.warn('⚠️ Header: localStorage用户数据解析失败:', error)
+          }
+        }
+        
+        // 如果localStorage没有有效数据，检查userService
+        const currentUser = userService.getCurrentUser()
+        const isAuth = userService.isAuthenticated()
+        
+        console.log('👤 Header: userService状态:', { 
+          user: currentUser?.email || 'None',
+          isAuthenticated: isAuth
         })
         
-        // 立即更新UI状态
         setUser(currentUser)
         setIsAuthenticated(isAuth)
-        
-        // 如果没有用户状态，尝试初始化
-        if (!currentUser && !isAuth) {
-          console.log('🔄 Header: 无用户状态，尝试初始化...')
-          await userService.initializeUser()
-          currentUser = userService.getCurrentUser()
-          isAuth = userService.isAuthenticated()
-          
-          console.log('👤 Header: 初始化后用户状态:', { 
-            user: currentUser?.email || currentUser?.display_name || 'Anonymous',
-            isAuthenticated: isAuth 
-          })
-          
-          setUser(currentUser)
-          setIsAuthenticated(isAuth)
-        }
         
         // 检查是否从OAuth回调页面返回
         const urlParams = new URLSearchParams(window.location.search)
         if (urlParams.get('login') === 'success') {
-          console.log('🎉 Header: 检测到登录成功回调')
-          // 立即刷新用户状态，减少等待时间
+          console.log('🎉 Header: 检测到登录成功回调，延迟检查用户状态')
+          // 给登录回调处理一些时间
           setTimeout(() => {
             const updatedUser = userService.getCurrentUser()
             const updatedAuth = userService.isAuthenticated()
             
-            console.log('🔄 Header: 更新后的用户状态:', {
-              user: updatedUser?.email || updatedUser?.display_name,
-              avatar: updatedUser?.avatar_url,
+            console.log('🔄 Header: 回调后用户状态:', {
+              user: updatedUser?.email || 'None',
               isAuth: updatedAuth
             })
             
-            if (updatedUser) {
+            if (updatedUser && updatedUser.email) {
               setUser(updatedUser)
               setIsAuthenticated(updatedAuth)
             }
-          }, 500) // 减少到500ms
+          }, 1000)
         }
         
       } catch (error) {
@@ -82,40 +81,53 @@ export default function Header({ currentPage }: HeaderProps) {
 
     initializeAuth()
     
-    // 定期检查用户状态（特别是在登录后）
-    const checkUserStatus = () => {
-      const currentUser = userService.getCurrentUser()
-      const isAuth = userService.isAuthenticated()
+    // 简化的状态检查 - 只在登录后的前60秒内频繁检查
+    let statusCheckInterval: NodeJS.Timeout | null = null
+    
+    const startStatusCheck = () => {
+      statusCheckInterval = setInterval(() => {
+        const currentUser = userService.getCurrentUser()
+        const isAuth = userService.isAuthenticated()
+        
+        // 只有状态真正改变时才更新
+        if (currentUser?.email !== user?.email || isAuth !== isAuthenticated) {
+          console.log('🔄 Header: 检测到用户状态变化')
+          setUser(currentUser)
+          setIsAuthenticated(isAuth)
+        }
+      }, 3000) // 每3秒检查一次
       
-      // 只有状态真正改变时才更新
-      if (currentUser?.email !== user?.email || isAuth !== isAuthenticated) {
-        console.log('🔄 Header: 检测到用户状态变化，更新UI')
+      // 60秒后停止频繁检查
+      setTimeout(() => {
+        if (statusCheckInterval) {
+          clearInterval(statusCheckInterval)
+          statusCheckInterval = null
+        }
+      }, 60000)
+    }
+    
+    // 如果检测到可能的登录状态，开始状态检查
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get('login') === 'success' || !user) {
+      startStatusCheck()
+    }
+    
+    // 监听存储变化（用于跨标签页同步）
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'user' || e.key === 'isAuthenticated') {
+        console.log('🔄 Header: 检测到localStorage变化')
+        const currentUser = userService.getCurrentUser()
+        const isAuth = userService.isAuthenticated()
         setUser(currentUser)
         setIsAuthenticated(isAuth)
       }
     }
     
-    // 设置定期检查（前30秒每2秒检查一次，之后每10秒检查一次）
-    const quickInterval = setInterval(checkUserStatus, 2000)
-    let longInterval: NodeJS.Timeout | null = null
-    
-    const slowTimeout = setTimeout(() => {
-      clearInterval(quickInterval)
-      longInterval = setInterval(checkUserStatus, 10000)
-    }, 30000)
-    
-    // 监听存储变化（用于跨标签页同步）
-    const handleStorageChange = () => {
-      checkUserStatus()
-    }
-    
     window.addEventListener('storage', handleStorageChange)
     
     return () => {
-      clearInterval(quickInterval)
-      clearTimeout(slowTimeout)
-      if (longInterval) {
-        clearInterval(longInterval)
+      if (statusCheckInterval) {
+        clearInterval(statusCheckInterval)
       }
       window.removeEventListener('storage', handleStorageChange)
     }

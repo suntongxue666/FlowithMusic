@@ -355,30 +355,12 @@ export default function HistoryPage() {
           </div>
         )}
 
-        <div className="history-header">
-          <h1>Your Message History</h1>
-          <div className="header-actions">
-            {letters.length === 0 && !loading && (
-              <button 
-                className="recovery-btn"
-                onClick={() => setShowRecoveryModal(true)}
-                title="如果您的Letters丢失，点击尝试恢复"
-              >
-                🔄 恢复数据
-              </button>
-            )}
-            {/* 调试功能仅对内测用户开放 */}
-            {user?.email === 'sunwei7482@gmail.com' && (
-              <button 
-                className="debug-btn"
-                onClick={() => setShowDebugInfo(!showDebugInfo)}
-                title="显示调试信息"
-              >
-                🔍 调试
-              </button>
-            )}
+        {/* 只在已登录时显示标题 */}
+        {isAuthenticated && (
+          <div className="history-header">
+            <h1>Your Message History</h1>
           </div>
-        </div>
+        )}
 
         {showDebugInfo && (
           <div className="debug-panel">
@@ -469,7 +451,7 @@ export default function HistoryPage() {
             <div className="loading-spinner"></div>
             <p>Loading your letters...</p>
           </div>
-        ) : letters.length === 0 ? (
+        ) : letters.length === 0 && isAuthenticated ? (
           <div className="empty-state">
             <h3>No letters yet</h3>
             <p>You haven't created any musical letters yet.</p>
