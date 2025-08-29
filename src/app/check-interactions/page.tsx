@@ -14,7 +14,7 @@ export default function CheckInteractionsPage() {
       const data = await response.json()
       setResult(data)
     } catch (error) {
-      setResult({ error: error.message })
+      setResult({ error: error instanceof Error ? error.message : 'Unknown error' })
     } finally {
       setLoading(false)
     }

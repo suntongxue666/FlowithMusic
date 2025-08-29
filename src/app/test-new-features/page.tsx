@@ -17,7 +17,7 @@ export default function TestNewFeaturesPage() {
       const data = await response.json()
       setResult({ type: 'interactions', data })
     } catch (error) {
-      setResult({ type: 'error', error: error.message })
+      setResult({ type: 'error', error: error instanceof Error ? error.message : 'Unknown error' })
     } finally {
       setLoading(false)
     }
@@ -30,7 +30,7 @@ export default function TestNewFeaturesPage() {
       setAnonymousUser(user)
       setResult({ type: 'anonymous_user', data: user })
     } catch (error) {
-      setResult({ type: 'error', error: error.message })
+      setResult({ type: 'error', error: error instanceof Error ? error.message : 'Unknown error' })
     } finally {
       setLoading(false)
     }
@@ -52,7 +52,7 @@ export default function TestNewFeaturesPage() {
       
       setResult({ type: 'social_media_update', data: updatedUser })
     } catch (error) {
-      setResult({ type: 'error', error: error.message })
+      setResult({ type: 'error', error: error instanceof Error ? error.message : 'Unknown error' })
     } finally {
       setLoading(false)
     }
@@ -70,7 +70,7 @@ export default function TestNewFeaturesPage() {
       const socialMedia = await userService.getUserSocialMedia(currentUser.id)
       setResult({ type: 'view_social_media', data: socialMedia })
     } catch (error) {
-      setResult({ type: 'error', error: error.message })
+      setResult({ type: 'error', error: error instanceof Error ? error.message : 'Unknown error' })
     } finally {
       setLoading(false)
     }

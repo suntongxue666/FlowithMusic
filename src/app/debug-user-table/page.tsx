@@ -30,7 +30,7 @@ export default function DebugUserTablePage() {
 
     } catch (error) {
       console.error('❌ 测试失败:', error)
-      setResult({ error: error.message })
+      setResult({ error: error instanceof Error ? error.message : 'Unknown error' })
     } finally {
       setLoading(false)
     }
@@ -66,7 +66,7 @@ export default function DebugUserTablePage() {
 
     } catch (error) {
       console.error('❌ 更新失败:', error)
-      setResult({ success: false, error: error.message })
+      setResult({ success: false, error: error instanceof Error ? error.message : 'Unknown error' })
     } finally {
       setLoading(false)
     }

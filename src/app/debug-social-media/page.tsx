@@ -36,7 +36,7 @@ export default function DebugSocialMediaPage() {
       
     } catch (error) {
       console.error('❌ 保存失败:', error)
-      setResult({ success: false, error: error.message })
+      setResult({ success: false, error: error instanceof Error ? error.message : 'Unknown error' })
     } finally {
       setLoading(false)
     }
@@ -55,7 +55,7 @@ export default function DebugSocialMediaPage() {
       const data = await response.json()
       setResult({ type: 'database_test', data })
     } catch (error) {
-      setResult({ type: 'database_test', error: error.message })
+      setResult({ type: 'database_test', error: error instanceof Error ? error.message : 'Unknown error' })
     } finally {
       setLoading(false)
     }
