@@ -87,11 +87,12 @@ function AuthCallbackComponent() {
                   console.warn('⚠️ AuthCallback: 用户处理失败，使用简化流程:', processError)
                   
                   // 简化处理：直接保存基本用户信息到localStorage
+                  const metadata = user.user_metadata as any
                   const simpleUser = {
                     id: user.id,
                     email: user.email,
-                    display_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0],
-                    avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
+                    display_name: metadata?.full_name || metadata?.name || user.email?.split('@')[0],
+                    avatar_url: metadata?.avatar_url || metadata?.picture,
                     google_id: user.id,
                     anonymous_id: `anon_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`,
                     coins: 100,
