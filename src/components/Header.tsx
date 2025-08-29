@@ -18,12 +18,19 @@ export default function Header({ currentPage }: HeaderProps) {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      console.log('🔍 Header: 初始化认证状态...')
+      console.log('🔍 Header: 开始初始化认证状态...')
       
       try {
-        // 直接从localStorage获取用户状态，避免复杂的初始化逻辑
+        // 1. 检查localStorage
+        console.log('🔍 Header: 检查localStorage...')
         const storedUser = localStorage.getItem('user')
         const storedAuth = localStorage.getItem('isAuthenticated')
+        
+        console.log('📱 Header: localStorage状态:', {
+          hasUser: !!storedUser,
+          isAuth: storedAuth,
+          userEmail: storedUser ? JSON.parse(storedUser).email : 'None'
+        })
         
         if (storedUser && storedAuth === 'true') {
           try {
@@ -39,29 +46,38 @@ export default function Header({ currentPage }: HeaderProps) {
           }
         }
         
-        // 如果localStorage没有有效数据，检查userService
+        // 2. 检查userService
+        console.log('🔍 Header: 检查userService...')
         let currentUser = userService.getCurrentUser()
         let isAuth = userService.isAuthenticated()
         
         console.log('👤 Header: userService状态:', { 
           user: currentUser?.email || 'None',
-          isAuthenticated: isAuth
+          isAuthenticated: isAuth,
+          hasCurrentUser: !!currentUser
         })
         
-        // 如果还是没有用户数据，尝试从数据库获取
+        // 3. 如果还是没有用户数据，尝试从数据库获取
         if (!currentUser && !isAuth) {
-          console.log('🔍 Header: 尝试从数据库获取用户数据...')
+          console.log('🔍 Header: localStorage和userService都无数据，尝试从数据库获取...')
           try {
             const fetchedUser = await userService.fetchAndCacheUser()
             if (fetchedUser) {
               console.log('✅ Header: 从数据库获取用户成功:', fetchedUser.email)
               currentUser = fetchedUser
               isAuth = true
+            } else {
+              console.log('❌ Header: 从数据库获取用户失败')
             }
           } catch (error) {
-            console.warn('⚠️ Header: 从数据库获取用户失败:', error)
+            console.error('💥 Header: 从数据库获取用户异常:', error)
           }
         }
+        
+        console.log('🎯 Header: 最终用户状态:', {
+          user: currentUser?.email || 'None',
+          isAuthenticated: isAuth
+        })
         
         setUser(currentUser)
         setIsAuthenticated(isAuth)

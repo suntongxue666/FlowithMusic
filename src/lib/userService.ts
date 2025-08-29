@@ -493,62 +493,114 @@ export class UserService {
 
   // 从数据库获取用户数据并缓存
   async fetchAndCacheUser(): Promise<User | null> {
+    console.log('🔍 fetchAndCacheUser: 开始获取用户数据...')
+    
     if (!supabase) {
-      console.warn('⚠️ Supabase不可用，无法从数据库获取用户')
+      console.warn('⚠️ fetchAndCacheUser: Supabase不可用，无法从数据库获取用户')
       return null
     }
 
     try {
-      // 获取当前Supabase会话
-      const { data: { user: authUser } } = await supabase.auth.getUser()
+      // 1. 检查Supabase会话
+      console.log('🔍 fetchAndCacheUser: 检查Supabase会话...')
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
-      if (!authUser) {
-        console.log('📱 无Supabase认证用户')
+      if (sessionError) {
+        console.error('❌ fetchAndCacheUser: 获取会话失败:', sessionError)
         return null
       }
 
-      console.log('🔍 从数据库获取用户数据:', authUser.id)
+      if (!session) {
+        console.log('📱 fetchAndCacheUser: 无Supabase会话')
+        return null
+      }
+
+      console.log('✅ fetchAndCacheUser: 找到Supabase会话:', {
+        userId: session.user.id,
+        email: session.user.email
+      })
+
+      // 2. 获取认证用户
+      const { data: { user: authUser }, error: userError } = await supabase.auth.getUser()
       
-      // 从数据库获取完整用户信息
-      const { data: userData, error } = await supabase
+      if (userError) {
+        console.error('❌ fetchAndCacheUser: 获取认证用户失败:', userError)
+        return null
+      }
+
+      if (!authUser) {
+        console.log('📱 fetchAndCacheUser: 无认证用户')
+        return null
+      }
+
+      console.log('✅ fetchAndCacheUser: 找到认证用户:', {
+        id: authUser.id,
+        email: authUser.email,
+        metadata: authUser.user_metadata
+      })
+
+      // 3. 从数据库获取完整用户信息
+      console.log('🔍 fetchAndCacheUser: 查询数据库用户数据...')
+      const { data: userData, error: dbError } = await supabase
         .from('users')
         .select('*')
         .eq('id', authUser.id)
         .single()
 
-      if (error) {
-        console.warn('⚠️ 数据库查询用户失败:', error)
+      if (dbError) {
+        console.error('❌ fetchAndCacheUser: 数据库查询失败:', {
+          error: dbError,
+          code: dbError.code,
+          message: dbError.message,
+          details: dbError.details
+        })
         return null
       }
 
-      if (userData) {
-        console.log('✅ 从数据库获取用户成功:', {
-          email: userData.email,
-          display_name: userData.display_name,
-          avatar_url: userData.avatar_url
-        })
-
-        // 缓存到内存和localStorage
-        this.currentUser = userData
-        
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('user', JSON.stringify(userData))
-            localStorage.setItem('isAuthenticated', 'true')
-            localStorage.setItem('anonymous_id', userData.anonymous_id || '')
-            console.log('💾 用户数据已缓存到localStorage')
-          } catch (saveError) {
-            console.error('❌ 缓存用户数据失败:', saveError)
-          }
-        }
-
-        return userData
+      if (!userData) {
+        console.warn('⚠️ fetchAndCacheUser: 数据库中未找到用户数据')
+        return null
       }
-    } catch (error) {
-      console.error('💥 获取用户数据异常:', error)
-    }
 
-    return null
+      console.log('✅ fetchAndCacheUser: 从数据库获取用户成功:', {
+        id: userData.id,
+        email: userData.email,
+        display_name: userData.display_name,
+        avatar_url: userData.avatar_url,
+        anonymous_id: userData.anonymous_id
+      })
+
+      // 4. 缓存到内存
+      this.currentUser = userData
+      console.log('💾 fetchAndCacheUser: 已缓存到内存')
+      
+      // 5. 缓存到localStorage
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('user', JSON.stringify(userData))
+          localStorage.setItem('isAuthenticated', 'true')
+          localStorage.setItem('anonymous_id', userData.anonymous_id || '')
+          
+          // 验证保存
+          const savedUser = localStorage.getItem('user')
+          const savedAuth = localStorage.getItem('isAuthenticated')
+          
+          console.log('✅ fetchAndCacheUser: localStorage缓存成功:', {
+            userSaved: !!savedUser,
+            authSaved: savedAuth === 'true',
+            userEmail: savedUser ? JSON.parse(savedUser).email : 'None'
+          })
+        } catch (saveError) {
+          console.error('❌ fetchAndCacheUser: localStorage缓存失败:', saveError)
+        }
+      }
+
+      return userData
+      
+    } catch (error) {
+      console.error('💥 fetchAndCacheUser: 获取用户数据异常:', error)
+      return null
+    }
   }
 
   // 获取当前用户
