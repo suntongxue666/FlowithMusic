@@ -8,6 +8,23 @@ export default function DevTestPanel() {
   const [testResult, setTestResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [showPanel, setShowPanel] = useState(false)
+  const [checkEmail, setCheckEmail] = useState('sunwei7482@gmail.com')
+
+  const checkSpecificUser = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/check-user?email=${encodeURIComponent(checkEmail)}`)
+      const result = await response.json()
+      setTestResult(result)
+    } catch (error) {
+      setTestResult({ 
+        error: '用户查询失败', 
+        details: error instanceof Error ? error.message : String(error) 
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const testDatabase = async () => {
     setLoading(true)
@@ -90,7 +107,24 @@ export default function DevTestPanel() {
               )}
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex gap-2 justify-center items-center">
+              <input
+                type="email"
+                value={checkEmail}
+                onChange={(e) => setCheckEmail(e.target.value)}
+                placeholder="输入邮箱查询用户"
+                className="border rounded px-3 py-2 text-sm"
+              />
+              <button
+                onClick={checkSpecificUser}
+                disabled={loading}
+                className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 disabled:opacity-50 text-sm"
+              >
+                {loading ? '查询中...' : '🔍 查询用户'}
+              </button>
+            </div>
+
+            <div className="flex gap-4 justify-center">
               <button
                 onClick={testDatabase}
                 disabled={loading}
