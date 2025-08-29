@@ -22,6 +22,12 @@ export default function TestUserSync() {
     try {
       addLog('🔍 检查数据库触发器状态...')
       
+      if (!supabase) {
+        addLog('❌ Supabase客户端未初始化')
+        setTriggerExists(false)
+        return
+      }
+      
       const { data, error } = await supabase
         .from('information_schema.triggers')
         .select('*')
@@ -46,6 +52,11 @@ export default function TestUserSync() {
     try {
       addLog('🔍 获取auth.users中的用户...')
       
+      if (!supabase) {
+        addLog('❌ Supabase客户端未初始化')
+        return
+      }
+      
       // 注意：这个查询可能需要特殊权限
       const { data: { users }, error } = await supabase.auth.admin.listUsers()
       
@@ -67,6 +78,11 @@ export default function TestUserSync() {
   const getCustomUsers = async () => {
     try {
       addLog('🔍 获取自定义users表中的用户...')
+      
+      if (!supabase) {
+        addLog('❌ Supabase客户端未初始化')
+        return
+      }
       
       const { data, error } = await supabase
         .from('users')
@@ -110,6 +126,11 @@ export default function TestUserSync() {
   const createTrigger = async () => {
     try {
       addLog('🔧 开始创建用户同步触发器...')
+      
+      if (!supabase) {
+        addLog('❌ Supabase客户端未初始化')
+        return
+      }
       
       // 执行触发器创建SQL
       const triggerSQL = `
@@ -211,6 +232,11 @@ export default function TestUserSync() {
     try {
       addLog('🔄 开始手动同步现有用户...')
       
+      if (!supabase) {
+        addLog('❌ Supabase客户端未初始化')
+        return
+      }
+      
       // 获取当前会话用户
       const { data: { user }, error } = await supabase.auth.getUser()
       
@@ -222,7 +248,7 @@ export default function TestUserSync() {
       addLog(`🔍 找到当前用户: ${user.email}`)
       
       // 检查用户是否已存在于自定义表中
-      const { data: existingUser } = await supabase
+      const { data: existingUser } = await supabase!
         .from('users')
         .select('*')
         .eq('id', user.id)
@@ -236,7 +262,7 @@ export default function TestUserSync() {
       // 手动插入用户
       const anonymousId = userService.getAnonymousId() || `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       
-      const { data: newUser, error: insertError } = await supabase
+      const { data: newUser, error: insertError } = await supabase!
         .from('users')
         .insert({
           id: user.id,

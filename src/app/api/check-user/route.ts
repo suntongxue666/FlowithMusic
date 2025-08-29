@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 检查auth.users表（需要管理员权限，可能会失败）
-    let authUsers = []
+    let authUsers: any[] = []
     try {
       const { data: authData } = await supabase.auth.admin.listUsers()
       authUsers = authData?.users || []
