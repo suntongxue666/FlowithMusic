@@ -12,7 +12,7 @@ export default function DevTestPanel() {
   const testDatabase = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/test-database')
+      const response = await fetch('/api/test-supabase')
       const result = await response.json()
       setTestResult(result)
     } catch (error) {
