@@ -62,19 +62,51 @@ function AuthCallbackComponent() {
                 
                 console.log('✅ AuthCallback: 直接解析成功，跳过Supabase会话检查')
                 
-                // 直接调用userService处理用户数据
+                // 直接调用userService处理用户数据 - 简化版
                 console.log('🔄 AuthCallback: 调用userService处理用户数据...')
-                const processedUser = await userService.handleAuthCallback(user)
                 
-                console.log('✅ AuthCallback: 用户处理完成:', {
-                  id: processedUser.id,
-                  email: processedUser.email,
-                  display_name: processedUser.display_name
-                })
+                try {
+                  // 设置10秒超时
+                  const userProcessPromise = userService.handleAuthCallback(user)
+                  const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('用户处理超时')), 10000)
+                  )
+                  
+                  const processedUser = await Promise.race([userProcessPromise, timeoutPromise]) as any
+                  
+                  console.log('✅ AuthCallback: 用户处理完成:', {
+                    id: processedUser.id,
+                    email: processedUser.email,
+                    display_name: processedUser.display_name
+                  })
 
-                console.log('🎉 AuthCallback: 登录成功，即将重定向...')
-                router.push('/history?login=success')
-                return
+                  console.log('🎉 AuthCallback: 登录成功，即将重定向...')
+                  router.push('/history?login=success')
+                  return
+                } catch (processError) {
+                  console.warn('⚠️ AuthCallback: 用户处理失败，使用简化流程:', processError)
+                  
+                  // 简化处理：直接保存基本用户信息到localStorage
+                  const simpleUser = {
+                    id: user.id,
+                    email: user.email,
+                    display_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0],
+                    avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
+                    google_id: user.id,
+                    anonymous_id: `anon_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`,
+                    coins: 100,
+                    is_premium: false,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  }
+                  
+                  localStorage.setItem('user', JSON.stringify(simpleUser))
+                  localStorage.setItem('isAuthenticated', 'true')
+                  
+                  console.log('✅ AuthCallback: 简化登录完成，即将重定向...')
+                  router.push('/history?login=success')
+                  return
+                }
               }
             }
           } catch (parseError) {
@@ -172,9 +204,16 @@ function AuthCallbackComponent() {
           user = session.user
         }
         
-        // 调用userService处理用户数据和迁移
+        // 调用userService处理用户数据和迁移 - 添加超时处理
         console.log('🔄 AuthCallback: 调用userService处理用户数据...')
-        const processedUser = await userService.handleAuthCallback(user)
+        
+        // 设置15秒超时
+        const userProcessPromise = userService.handleAuthCallback(user)
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('用户数据处理超时')), 15000)
+        )
+        
+        const processedUser = await Promise.race([userProcessPromise, timeoutPromise]) as any
         
         console.log('✅ AuthCallback: 用户处理完成:', {
           id: processedUser.id,

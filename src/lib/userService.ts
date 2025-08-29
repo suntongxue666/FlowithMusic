@@ -191,16 +191,24 @@ export class UserService {
       console.log('🔍 UserService: 查询用户记录...')
       let existingUser
       
-      // 重试机制，触发器可能需要时间
-      for (let attempt = 1; attempt <= 5; attempt++) {
+      // 重试机制，触发器可能需要时间 - 优化超时处理
+      for (let attempt = 1; attempt <= 3; attempt++) {
         try {
           console.log(`🔍 UserService: 第${attempt}次查询用户记录...`)
           
-          const { data, error } = await supabase
+          // 为每次查询设置超时
+          const queryPromise = supabase
             .from('users')
             .select('*')
             .eq('id', user.id)
             .single()
+          
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('查询超时')), 5000)
+          )
+          
+          const result = await Promise.race([queryPromise, timeoutPromise]) as any
+          const { data, error } = result
             
           if (error && error.code !== 'PGRST116') {
             // PGRST116 是 "not found" 错误，其他错误需要处理
@@ -217,14 +225,15 @@ export class UserService {
             break
           }
           
-          if (attempt < 5) {
-            console.log(`⏳ UserService: 第${attempt}次未找到，等待${attempt * 500}ms后重试...`)
-            await new Promise(resolve => setTimeout(resolve, attempt * 500))
+          if (attempt < 3) {
+            console.log(`⏳ UserService: 第${attempt}次未找到，等待${attempt * 1000}ms后重试...`)
+            await new Promise(resolve => setTimeout(resolve, attempt * 1000))
           }
         } catch (queryError) {
           console.warn(`⚠️ UserService: 第${attempt}次查询异常:`, queryError)
-          if (attempt === 5) {
-            throw queryError
+          if (attempt === 3) {
+            console.log('⚠️ UserService: 所有查询尝试都失败，跳过查询直接创建用户')
+            break
           }
           await new Promise(resolve => setTimeout(resolve, 1000))
         }
