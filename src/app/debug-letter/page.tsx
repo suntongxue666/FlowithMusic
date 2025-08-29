@@ -20,7 +20,7 @@ export default function DebugLetterPage() {
       
     } catch (error) {
       console.error('❌ 获取Letter失败:', error)
-      setResult({ error: error.message })
+      setResult({ error: error instanceof Error ? error.message : String(error) })
     } finally {
       setLoading(false)
     }
@@ -39,7 +39,7 @@ export default function DebugLetterPage() {
       
     } catch (error) {
       console.error('❌ Supabase测试失败:', error)
-      setResult({ error: error.message })
+      setResult({ error: error instanceof Error ? error.message : String(error) })
     } finally {
       setLoading(false)
     }

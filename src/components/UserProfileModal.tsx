@@ -131,7 +131,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
       
     } catch (error) {
       console.error('❌ 保存社交媒体信息失败:', error)
-      alert(`保存失败: ${error.message}`)
+      alert(`保存失败: ${error instanceof Error ? error.message : String(error)}`)
     } finally {
       setSaving(false)
     }
