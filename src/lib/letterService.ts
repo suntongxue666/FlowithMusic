@@ -406,20 +406,10 @@ export class LetterService {
       recentlyRecovered
     })
     
-    // 如果用户状态异常（已认证但无用户信息），强制重新初始化
+    // 如果用户状态异常（已认证但无用户信息），跳过复杂处理，直接使用localStorage
     if (userService.isAuthenticated() && !user?.id) {
-      console.warn('⚠️ 检测到用户状态异常，强制重新初始化...')
-      try {
-        await userService.initializeUser()
-        const refreshedUser = userService.getCurrentUser()
-        console.log('🔄 重新初始化后的用户状态:', refreshedUser ? {
-          id: refreshedUser.id,
-          email: refreshedUser.email,
-          display_name: refreshedUser.display_name
-        } : null)
-      } catch (error) {
-        console.error('❌ 用户状态重新初始化失败:', error)
-      }
+      console.warn('⚠️ 检测到用户状态异常，跳过复杂处理，使用localStorage数据')
+      return this.getLettersFromLocalStorage(user, anonymousId, limit, offset)
     }
     
     // 重新获取用户状态

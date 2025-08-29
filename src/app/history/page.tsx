@@ -101,12 +101,25 @@ export default function HistoryPage() {
           anonymousId: userService.getAnonymousId()
         })
         
-        // 只有在完全没有用户状态时才初始化
+        // 只有在完全没有用户状态时才初始化（跳过复杂的数据库处理）
         if (!currentUser && !isAuth) {
-          console.log('🔄 无用户状态，开始初始化...')
-          await userService.initializeUser()
-          currentUser = userService.getCurrentUser()
-          isAuth = userService.isAuthenticated()
+          console.log('🔄 无用户状态，检查localStorage...')
+          // 简单检查localStorage中是否有用户数据
+          const storedUser = localStorage.getItem('user')
+          const storedAuth = localStorage.getItem('isAuthenticated')
+          
+          if (storedUser && storedAuth === 'true') {
+            try {
+              const parsedUser = JSON.parse(storedUser)
+              if (parsedUser && parsedUser.email) {
+                currentUser = parsedUser
+                isAuth = true
+                console.log('✅ 从localStorage恢复用户状态:', parsedUser.email)
+              }
+            } catch (error) {
+              console.warn('⚠️ localStorage用户数据解析失败:', error)
+            }
+          }
         }
         
         // 立即设置状态，避免显示未登录的UI
@@ -120,7 +133,13 @@ export default function HistoryPage() {
           // Authenticated user - get from database and migrate if needed
           console.log('🔐 Authenticated user detected, calling getUserLetters...')
           try {
-            userLetters = await letterService.getUserLetters(50, 0)
+            // 设置超时保护，避免无限等待
+            const lettersPromise = letterService.getUserLetters(50, 0)
+            const timeoutPromise = new Promise<Letter[]>((_, reject) => 
+              setTimeout(() => reject(new Error('获取Letters超时')), 8000)
+            )
+            
+            userLetters = await Promise.race([lettersPromise, timeoutPromise])
             console.log(`✅ Loaded ${userLetters.length} letters for authenticated user:`, 
               userLetters.map(l => ({
                 linkId: l.link_id,
