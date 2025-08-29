@@ -21,12 +21,17 @@ export default function Header({ currentPage }: HeaderProps) {
       console.log('🔍 Header: 初始化认证状态...')
       
       try {
-        // 初始化用户服务
-        await userService.initializeUser()
+        // 首先快速检查当前状态，避免复杂的初始化
+        let currentUser = userService.getCurrentUser()
+        let isAuth = userService.isAuthenticated()
         
-        // 检查当前用户状态
-        const currentUser = userService.getCurrentUser()
-        const isAuth = userService.isAuthenticated()
+        // 如果没有用户状态，尝试简单初始化
+        if (!currentUser && !isAuth) {
+          console.log('🔄 Header: 无用户状态，尝试简单初始化...')
+          await userService.initializeUser()
+          currentUser = userService.getCurrentUser()
+          isAuth = userService.isAuthenticated()
+        }
         
         console.log('👤 Header: 用户状态:', { 
           user: currentUser?.email || currentUser?.display_name || 'Anonymous',
@@ -67,17 +72,41 @@ export default function Header({ currentPage }: HeaderProps) {
 
     initializeAuth()
     
-    // 监听存储变化（用于跨标签页同步）
-    const handleStorageChange = () => {
+    // 定期检查用户状态（特别是在登录后）
+    const checkUserStatus = () => {
       const currentUser = userService.getCurrentUser()
       const isAuth = userService.isAuthenticated()
-      setUser(currentUser)
-      setIsAuthenticated(isAuth)
+      
+      // 只有状态真正改变时才更新
+      if (currentUser?.email !== user?.email || isAuth !== isAuthenticated) {
+        console.log('🔄 Header: 检测到用户状态变化，更新UI')
+        setUser(currentUser)
+        setIsAuthenticated(isAuth)
+      }
+    }
+    
+    // 设置定期检查（前30秒每2秒检查一次，之后每10秒检查一次）
+    const quickInterval = setInterval(checkUserStatus, 2000)
+    let longInterval: NodeJS.Timeout | null = null
+    
+    const slowTimeout = setTimeout(() => {
+      clearInterval(quickInterval)
+      longInterval = setInterval(checkUserStatus, 10000)
+    }, 30000)
+    
+    // 监听存储变化（用于跨标签页同步）
+    const handleStorageChange = () => {
+      checkUserStatus()
     }
     
     window.addEventListener('storage', handleStorageChange)
     
     return () => {
+      clearInterval(quickInterval)
+      clearTimeout(slowTimeout)
+      if (longInterval) {
+        clearInterval(longInterval)
+      }
       window.removeEventListener('storage', handleStorageChange)
     }
   }, [])
