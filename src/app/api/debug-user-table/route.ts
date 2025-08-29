@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       console.error('❌ 无法导入supabase-server:', importError)
       return NextResponse.json({ 
         error: 'Supabase server not available',
-        details: importError.message 
+        details: importError instanceof Error ? importError.message : 'Unknown import error'
       }, { status: 500 })
     }
 
