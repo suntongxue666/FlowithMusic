@@ -1889,7 +1889,7 @@ nav {
 }
 
 .letter-message {
-  margin: 2rem 0;
+  margin: -16px 0px 16px;
 }
 
 .letter-message h3 {
@@ -3262,7 +3262,7 @@ edia Inputs Styles */
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  margin: 24px 0 16px 0;
+  margin: 12px 0px 12px;
   padding: 0;
   background: transparent;
 }

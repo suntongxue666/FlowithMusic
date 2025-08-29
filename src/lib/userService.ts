@@ -491,6 +491,66 @@ export class UserService {
     console.log('✅ UserService: 用户登出完成（本地状态已清除）')
   }
 
+  // 从数据库获取用户数据并缓存
+  async fetchAndCacheUser(): Promise<User | null> {
+    if (!supabase) {
+      console.warn('⚠️ Supabase不可用，无法从数据库获取用户')
+      return null
+    }
+
+    try {
+      // 获取当前Supabase会话
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      
+      if (!authUser) {
+        console.log('📱 无Supabase认证用户')
+        return null
+      }
+
+      console.log('🔍 从数据库获取用户数据:', authUser.id)
+      
+      // 从数据库获取完整用户信息
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single()
+
+      if (error) {
+        console.warn('⚠️ 数据库查询用户失败:', error)
+        return null
+      }
+
+      if (userData) {
+        console.log('✅ 从数据库获取用户成功:', {
+          email: userData.email,
+          display_name: userData.display_name,
+          avatar_url: userData.avatar_url
+        })
+
+        // 缓存到内存和localStorage
+        this.currentUser = userData
+        
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('user', JSON.stringify(userData))
+            localStorage.setItem('isAuthenticated', 'true')
+            localStorage.setItem('anonymous_id', userData.anonymous_id || '')
+            console.log('💾 用户数据已缓存到localStorage')
+          } catch (saveError) {
+            console.error('❌ 缓存用户数据失败:', saveError)
+          }
+        }
+
+        return userData
+      }
+    } catch (error) {
+      console.error('💥 获取用户数据异常:', error)
+    }
+
+    return null
+  }
+
   // 获取当前用户
   getCurrentUser(): User | null {
     // 首先检查内存中的用户状态

@@ -40,13 +40,28 @@ export default function Header({ currentPage }: HeaderProps) {
         }
         
         // 如果localStorage没有有效数据，检查userService
-        const currentUser = userService.getCurrentUser()
-        const isAuth = userService.isAuthenticated()
+        let currentUser = userService.getCurrentUser()
+        let isAuth = userService.isAuthenticated()
         
         console.log('👤 Header: userService状态:', { 
           user: currentUser?.email || 'None',
           isAuthenticated: isAuth
         })
+        
+        // 如果还是没有用户数据，尝试从数据库获取
+        if (!currentUser && !isAuth) {
+          console.log('🔍 Header: 尝试从数据库获取用户数据...')
+          try {
+            const fetchedUser = await userService.fetchAndCacheUser()
+            if (fetchedUser) {
+              console.log('✅ Header: 从数据库获取用户成功:', fetchedUser.email)
+              currentUser = fetchedUser
+              isAuth = true
+            }
+          } catch (error) {
+            console.warn('⚠️ Header: 从数据库获取用户失败:', error)
+          }
+        }
         
         setUser(currentUser)
         setIsAuthenticated(isAuth)
@@ -54,20 +69,32 @@ export default function Header({ currentPage }: HeaderProps) {
         // 检查是否从OAuth回调页面返回
         const urlParams = new URLSearchParams(window.location.search)
         if (urlParams.get('login') === 'success') {
-          console.log('🎉 Header: 检测到登录成功回调，延迟检查用户状态')
-          // 给登录回调处理一些时间
-          setTimeout(() => {
-            const updatedUser = userService.getCurrentUser()
-            const updatedAuth = userService.isAuthenticated()
-            
-            console.log('🔄 Header: 回调后用户状态:', {
-              user: updatedUser?.email || 'None',
-              isAuth: updatedAuth
-            })
-            
-            if (updatedUser && updatedUser.email) {
-              setUser(updatedUser)
-              setIsAuthenticated(updatedAuth)
+          console.log('🎉 Header: 检测到登录成功回调，从数据库获取用户状态')
+          // 给登录回调处理一些时间，然后从数据库获取
+          setTimeout(async () => {
+            try {
+              const fetchedUser = await userService.fetchAndCacheUser()
+              if (fetchedUser) {
+                console.log('✅ Header: 回调后从数据库获取用户成功:', fetchedUser.email)
+                setUser(fetchedUser)
+                setIsAuthenticated(true)
+              } else {
+                // 如果数据库获取失败，尝试从userService获取
+                const updatedUser = userService.getCurrentUser()
+                const updatedAuth = userService.isAuthenticated()
+                
+                console.log('🔄 Header: 回调后用户状态:', {
+                  user: updatedUser?.email || 'None',
+                  isAuth: updatedAuth
+                })
+                
+                if (updatedUser && updatedUser.email) {
+                  setUser(updatedUser)
+                  setIsAuthenticated(updatedAuth)
+                }
+              }
+            } catch (error) {
+              console.warn('⚠️ Header: 回调后获取用户失败:', error)
             }
           }, 1000)
         }
