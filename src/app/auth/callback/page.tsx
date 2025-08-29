@@ -179,10 +179,15 @@ function AuthCallbackComponent() {
         console.log('✅ AuthCallback: 用户处理完成:', {
           id: processedUser.id,
           email: processedUser.email,
-          display_name: processedUser.display_name
+          display_name: processedUser.display_name,
+          avatar_url: processedUser.avatar_url,
+          anonymous_id: processedUser.anonymous_id
         })
 
         console.log('🎉 AuthCallback: 登录成功，即将重定向...')
+        
+        // 等待一下确保数据保存完成
+        await new Promise(resolve => setTimeout(resolve, 500))
         
         // 重定向到历史页面
         router.push('/history?login=success')

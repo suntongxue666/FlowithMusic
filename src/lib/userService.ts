@@ -168,10 +168,14 @@ export class UserService {
     }
   }
 
-  // 登录成功后的数据处理（简化版 - 依赖数据库触发器）
+  // 登录成功后的数据处理（优化版 - 依赖数据库触发器）
   async handleAuthCallback(user: any): Promise<User> {
     console.log('🔄 UserService: 开始处理登录回调...')
-    console.log('👤 UserService: 用户信息:', { id: user.id, email: user.email })
+    console.log('👤 UserService: 用户信息:', { 
+      id: user.id, 
+      email: user.email,
+      metadata: user.user_metadata 
+    })
     
     if (!supabase) {
       console.warn('⚠️ UserService: Supabase不可用，使用fallback处理')
@@ -183,39 +187,46 @@ export class UserService {
     console.log('🔍 UserService: 当前匿名ID:', anonymousId)
     
     try {
-      // 等待触发器创建用户记录（稍等片刻）
-      console.log('⏳ UserService: 等待触发器创建用户记录...')
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // 查找通过触发器创建的用户记录
-      console.log('🔍 UserService: 查询触发器创建的用户记录...')
+      // 查找通过触发器创建的用户记录 - 优化重试逻辑
+      console.log('🔍 UserService: 查询用户记录...')
       let existingUser
       
-      // 重试机制，因为触发器可能需要一点时间
-      for (let attempt = 1; attempt <= 3; attempt++) {
+      // 重试机制，触发器可能需要时间
+      for (let attempt = 1; attempt <= 5; attempt++) {
         try {
-          const result = await supabase
+          console.log(`🔍 UserService: 第${attempt}次查询用户记录...`)
+          
+          const { data, error } = await supabase
             .from('users')
             .select('*')
-            .eq('id', user.id)  // 使用auth用户的ID直接查询
+            .eq('id', user.id)
             .single()
             
-          existingUser = result.data
+          if (error && error.code !== 'PGRST116') {
+            // PGRST116 是 "not found" 错误，其他错误需要处理
+            console.warn(`⚠️ UserService: 查询错误:`, error)
+          }
           
-          if (existingUser) {
-            console.log(`✅ UserService: 第${attempt}次尝试，找到用户记录`)
+          if (data) {
+            existingUser = data
+            console.log(`✅ UserService: 第${attempt}次尝试成功，找到用户记录:`, {
+              email: data.email,
+              display_name: data.display_name,
+              avatar_url: data.avatar_url
+            })
             break
           }
           
-          if (attempt < 3) {
-            console.log(`⏳ UserService: 第${attempt}次未找到，等待后重试...`)
-            await new Promise(resolve => setTimeout(resolve, 1000))
+          if (attempt < 5) {
+            console.log(`⏳ UserService: 第${attempt}次未找到，等待${attempt * 500}ms后重试...`)
+            await new Promise(resolve => setTimeout(resolve, attempt * 500))
           }
         } catch (queryError) {
-          console.warn(`⚠️ UserService: 第${attempt}次查询失败:`, queryError)
-          if (attempt === 3) {
+          console.warn(`⚠️ UserService: 第${attempt}次查询异常:`, queryError)
+          if (attempt === 5) {
             throw queryError
           }
+          await new Promise(resolve => setTimeout(resolve, 1000))
         }
       }
 
@@ -225,19 +236,23 @@ export class UserService {
         console.log('✅ UserService: 找到触发器创建的用户记录')
         finalUser = existingUser
       } else {
-        console.log('⚠️ UserService: 未找到触发器创建的用户，使用fallback创建')
-        // 如果触发器没有工作，回退到手动创建
+        console.log('⚠️ UserService: 触发器未创建用户记录，尝试手动创建')
+        
+        // 生成匿名ID
+        const newAnonymousId = anonymousId || `anon_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`
+        
         try {
           const { data: createdUser, error: createError } = await supabase
             .from('users')
             .insert({
-              id: user.id,  // 使用auth用户的ID
+              id: user.id,
               email: user.email,
               google_id: user.id,
-              anonymous_id: anonymousId || generateAnonymousId(),
-              display_name: user.user_metadata?.full_name || user.email?.split('@')[0],
-              avatar_url: user.user_metadata?.avatar_url,
+              anonymous_id: newAnonymousId,
+              display_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0],
+              avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
               user_agent: getUserAgent(),
+              social_media_info: user.user_metadata || {},
               coins: 100,
               is_premium: false
             })
@@ -245,21 +260,43 @@ export class UserService {
             .single()
 
           if (createError) {
-            console.error('❌ UserService: Fallback创建用户失败:', createError)
-            throw createError
+            console.error('❌ UserService: 手动创建用户失败:', createError)
+            
+            // 如果是唯一约束冲突，尝试再次查询
+            if (createError.code === '23505') {
+              console.log('🔄 UserService: 用户已存在，重新查询...')
+              const { data: retryUser } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', user.id)
+                .single()
+              
+              if (retryUser) {
+                finalUser = retryUser
+              } else {
+                throw createError
+              }
+            } else {
+              throw createError
+            }
+          } else {
+            finalUser = createdUser
+            console.log('✅ UserService: 手动创建用户成功')
           }
-
-          finalUser = createdUser
         } catch (createError) {
-          console.warn('⚠️ UserService: Fallback创建也失败，使用临时用户:', createError)
+          console.warn('⚠️ UserService: 所有创建方法都失败，使用临时用户:', createError)
           return this.createFallbackUser(user)
         }
       }
 
       // 处理匿名Letter的迁移
-      if (anonymousId) {
-        console.log('🔄 UserService: 开始迁移匿名数据...')
-        await this.migrateAnonymousLetters(anonymousId, finalUser)
+      if (anonymousId && finalUser.id) {
+        try {
+          console.log('🔄 UserService: 开始迁移匿名数据...')
+          await this.migrateAnonymousLetters(anonymousId, finalUser)
+        } catch (migrateError) {
+          console.warn('⚠️ UserService: 数据迁移失败，但用户登录成功:', migrateError)
+        }
       }
 
       // 更新本地状态
@@ -271,9 +308,13 @@ export class UserService {
         try {
           localStorage.setItem('user', JSON.stringify(finalUser))
           localStorage.setItem('isAuthenticated', 'true')
-          localStorage.setItem('anonymous_id', finalUser.anonymous_id)
+          localStorage.setItem('anonymous_id', finalUser.anonymous_id || '')
           
-          console.log('💾 用户数据已保存到localStorage')
+          console.log('💾 UserService: 用户数据已保存到localStorage:', {
+            email: finalUser.email,
+            display_name: finalUser.display_name,
+            has_avatar: !!finalUser.avatar_url
+          })
         } catch (saveError) {
           console.error('❌ UserService: localStorage保存失败:', saveError)
         }
@@ -285,7 +326,13 @@ export class UserService {
         display_name: finalUser.display_name,
         avatar_url: finalUser.avatar_url,
         anonymous_id: finalUser.anonymous_id,
-        通过触发器创建: !!existingUser
+        创建方式: existingUser ? '触发器自动创建' : '手动创建',
+        数据完整性: {
+          有邮箱: !!finalUser.email,
+          有显示名: !!finalUser.display_name,
+          有头像: !!finalUser.avatar_url,
+          有匿名ID: !!finalUser.anonymous_id
+        }
       })
       return finalUser
       

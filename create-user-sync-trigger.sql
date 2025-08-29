@@ -6,7 +6,7 @@
 -- ============================================
 
 CREATE OR REPLACE FUNCTION sync_user_to_custom_table()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER AS $$$
 DECLARE
   user_anonymous_id TEXT;
 BEGIN
