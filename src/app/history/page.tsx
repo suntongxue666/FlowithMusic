@@ -90,31 +90,39 @@ export default function HistoryPage() {
       try {
         setLoading(true)
         
-        // 优化的用户状态获取，与Header保持一致，添加超时保护
+        // 紧急用户状态恢复 - 优先使用localStorage，避免数据库超时
         let currentUser = null
-        try {
-          const userPromise = userService.getCurrentUserAsync()
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('用户获取超时')), 5000)
-          )
-          
-          currentUser = await Promise.race([userPromise, timeoutPromise]) as any
-        } catch (userError) {
-          console.warn('⚠️ History: 用户获取失败，使用localStorage fallback:', userError)
-          
-          // Fallback: 直接从localStorage获取
-          if (typeof window !== 'undefined') {
-            try {
-              const storedUser = localStorage.getItem('user')
-              const storedAuth = localStorage.getItem('isAuthenticated')
-              
-              if (storedUser && storedAuth === 'true') {
-                currentUser = JSON.parse(storedUser)
-                console.log('✅ History: 从localStorage恢复用户:', currentUser?.email)
-              }
-            } catch (parseError) {
-              console.warn('⚠️ History: localStorage解析失败:', parseError)
+        
+        // 首先检查localStorage中的用户
+        if (typeof window !== 'undefined') {
+          try {
+            const storedUser = localStorage.getItem('user')
+            const storedAuth = localStorage.getItem('isAuthenticated')
+            
+            if (storedUser && storedAuth === 'true') {
+              currentUser = JSON.parse(storedUser)
+              console.log('✅ History: 从localStorage直接恢复用户:', currentUser?.email)
             }
+          } catch (parseError) {
+            console.warn('⚠️ History: localStorage解析失败:', parseError)
+          }
+        }
+        
+        // 如果localStorage没有用户，再尝试异步获取（设置短超时）
+        if (!currentUser) {
+          try {
+            console.log('🔍 History: localStorage无用户，尝试异步获取...')
+            const userPromise = userService.getCurrentUserAsync()
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('用户获取超时')), 2000) // 减少到2秒
+            )
+            
+            currentUser = await Promise.race([userPromise, timeoutPromise]) as any
+            console.log('✅ History: 异步获取用户成功:', currentUser?.email)
+          } catch (userError) {
+            console.warn('⚠️ History: 异步用户获取失败:', userError)
+            // 标记数据库超时，下次直接使用localStorage
+            localStorage.setItem('last_db_timeout', Date.now().toString())
           }
         }
         
@@ -460,6 +468,7 @@ export default function HistoryPage() {
                   localStorage.removeItem('letters_recovered')
                   localStorage.removeItem('supabase_auth_error')
                   localStorage.removeItem('force_show_all_letters')
+                  localStorage.removeItem('last_db_timeout') // 清除超时标记
                   
                   // 重新初始化用户状态
                   await userService.initializeUser()
@@ -473,6 +482,25 @@ export default function HistoryPage() {
                 }}
               >
                 🔄 同步数据库
+              </button>
+              <button 
+                className="emergency-mode-btn"
+                onClick={() => {
+                  console.log('🚨 启用紧急模式，清除数据库超时标记')
+                  localStorage.removeItem('last_db_timeout')
+                  localStorage.removeItem('supabase_auth_error')
+                  
+                  // 强制显示localStorage中的所有letters
+                  const allLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+                  const sortedLetters = allLetters.sort((a: any, b: any) => 
+                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                  )
+                  setLetters(sortedLetters)
+                  
+                  console.log('✅ 紧急模式已启用，显示所有localStorage letters:', sortedLetters.length)
+                }}
+              >
+                🚨 紧急模式
               </button>
             </div>
           </div>
@@ -776,6 +804,15 @@ export default function HistoryPage() {
 
         .sync-data-btn:hover {
           background: #138496;
+        }
+        
+        .emergency-mode-btn {
+          background: #dc3545;
+          color: white;
+        }
+
+        .emergency-mode-btn:hover {
+          background: #c82333;
         }
 
         .modal-overlay {

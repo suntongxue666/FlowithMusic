@@ -378,6 +378,15 @@ export class LetterService {
       return this.getLettersFromLocalStorage(user, anonymousId, limit, offset, true)
     }
     
+    // 检查是否最近有数据库超时（紧急模式）
+    const lastDbTimeout = localStorage.getItem('last_db_timeout')
+    const hasRecentTimeout = lastDbTimeout && (Date.now() - parseInt(lastDbTimeout)) < 5 * 60 * 1000 // 5分钟内
+    
+    if (hasRecentTimeout) {
+      console.log('🚨 检测到最近的数据库超时，启用紧急模式，直接使用localStorage')
+      return this.getLettersFromLocalStorage(user, anonymousId, limit, offset)
+    }
+    
     // 检查是否最近进行过数据恢复
     const recoveryTimestamp = localStorage.getItem('letters_recovered')
     const recentlyRecovered = recoveryTimestamp && (Date.now() - parseInt(recoveryTimestamp)) < 30 * 60 * 1000 // 30分钟内
@@ -505,7 +514,7 @@ export class LetterService {
             // 为数据库查询添加超时保护
             const queryPromise = query
             const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('数据库查询超时')), 3000) // 3秒超时
+              setTimeout(() => reject(new Error('数据库查询超时')), 1500) // 减少到1.5秒，快速失败
             )
             
             try {
@@ -517,9 +526,15 @@ export class LetterService {
                 throw error // 抛出错误，让外层catch处理
               } else {
                 letters = data || []
+                console.log('✅ 数据库查询成功，获取letters:', letters.length)
               }
             } catch (queryError) {
-              console.warn('数据库查询失败或超时，使用localStorage fallback:', queryError)
+              console.warn('🚨 数据库查询失败或超时，标记超时并使用localStorage:', queryError)
+              
+              // 标记数据库超时，下次直接使用localStorage
+              localStorage.setItem('last_db_timeout', Date.now().toString())
+              localStorage.setItem('supabase_auth_error', 'timeout')
+              
               // Fallback to localStorage
               const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
               const userLetters = existingLetters.filter((letter: Letter) => {
@@ -536,6 +551,8 @@ export class LetterService {
               letters = userLetters
                 .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                 .slice(offset, offset + limit)
+                
+              console.log('📱 localStorage fallback完成，获取letters:', letters.length)
             }
           }
         } catch (networkError) {
