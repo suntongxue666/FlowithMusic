@@ -139,10 +139,10 @@ export default function HistoryPage() {
           // Authenticated user - get from database and migrate if needed
           console.log('🔐 Authenticated user detected, calling getUserLetters...')
           try {
-            // 设置超时保护，避免无限等待
+            // 优化超时保护，减少等待时间，优先显示数据
             const lettersPromise = letterService.getUserLetters(50, 0)
             const timeoutPromise = new Promise<Letter[]>((_, reject) => 
-              setTimeout(() => reject(new Error('获取Letters超时')), 8000)
+              setTimeout(() => reject(new Error('获取Letters超时')), 4000) // 减少到4秒
             )
             
             userLetters = await Promise.race([lettersPromise, timeoutPromise])
@@ -155,10 +155,24 @@ export default function HistoryPage() {
             )
           } catch (error) {
             console.warn('❌ Failed to load from database, falling back to localStorage:', error)
-            // Fallback to localStorage
+            // 优化的localStorage fallback - 确保已登录用户能看到所有相关letters
             const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
             console.log('📱 Fallback: found letters in localStorage:', localLetters.length)
-            userLetters = localLetters.sort((a: any, b: any) => 
+            
+            // 为已登录用户过滤相关的letters
+            const relevantLetters = localLetters.filter((letter: any) => {
+              if (currentUser?.id) {
+                // 匹配user_id或anonymous_id的letters
+                return letter.user_id === currentUser.id || 
+                       (currentUser.anonymous_id && letter.anonymous_id === currentUser.anonymous_id) ||
+                       (!letter.user_id && letter.anonymous_id === currentUser.anonymous_id)
+              }
+              return false
+            })
+            
+            console.log(`📋 Filtered ${relevantLetters.length} relevant letters for user ${currentUser?.email}`)
+            
+            userLetters = relevantLetters.sort((a: any, b: any) => 
               new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             )
           }
@@ -368,6 +382,15 @@ export default function HistoryPage() {
         {isAuthenticated && (
           <div className="history-header">
             <h1>Your Message History</h1>
+            {letters.length > 0 && (
+              <div className="data-source-info">
+                <small style={{ color: '#666', fontSize: '12px' }}>
+                  {letters.some(l => l.id && typeof l.id === 'string' && l.id.includes('-')) 
+                    ? '📡 从数据库加载' 
+                    : '💾 从本地缓存加载'}
+                </small>
+              </div>
+            )}
           </div>
         )}
 

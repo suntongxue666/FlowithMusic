@@ -424,9 +424,9 @@ export class LetterService {
       offset
     })
     
-    // 尝试从缓存获取 - 但如果用户状态刚刚变化，跳过缓存
+    // 优化缓存策略 - 对于已登录用户，如果数据库查询经常超时，减少缓存依赖
     const shouldSkipCache = userService.isAuthenticated() && !finalUser?.id
-    if (!shouldSkipCache) {
+    if (!shouldSkipCache && !hasAuthError) { // 如果有认证错误，跳过缓存
       const cachedData = cacheManager.get(cacheKey)
       if (cachedData && cachedData.length > 0) {
         console.log('✅ 使用有效缓存的用户Letters:', cachedData.length)
@@ -436,7 +436,7 @@ export class LetterService {
         cacheManager.delete(cacheKey)
       }
     } else {
-      console.log('🔄 跳过缓存due to用户状态异常')
+      console.log('🔄 跳过缓存 - 用户状态异常或有认证错误')
     }
     
     let letters: Letter[] = []
@@ -500,12 +500,26 @@ export class LetterService {
             letters = []
           }
 
-          // 只有在有有效查询条件时才执行查询
+          // 只有在有有效查询条件时才执行查询，添加超时保护
           if (letters.length === 0 && (finalUser?.id || finalAnonymousId)) {
-            const { data, error } = await query
+            // 为数据库查询添加超时保护
+            const queryPromise = query
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('数据库查询超时')), 3000) // 3秒超时
+            )
+            
+            try {
+              const result = await Promise.race([queryPromise, timeoutPromise]) as any
+              const { data, error } = result
 
-            if (error) {
-              console.error('Failed to get user letters:', error)
+              if (error) {
+                console.error('Failed to get user letters:', error)
+                throw error // 抛出错误，让外层catch处理
+              } else {
+                letters = data || []
+              }
+            } catch (queryError) {
+              console.warn('数据库查询失败或超时，使用localStorage fallback:', queryError)
               // Fallback to localStorage
               const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
               const userLetters = existingLetters.filter((letter: Letter) => {
@@ -522,8 +536,6 @@ export class LetterService {
               letters = userLetters
                 .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                 .slice(offset, offset + limit)
-            } else {
-              letters = data || []
             }
           }
         } catch (networkError) {
@@ -545,6 +557,16 @@ export class LetterService {
             .slice(offset, offset + limit)
         }
       }
+    }
+    
+    // 缓存结果，但对于数据库查询失败的情况，设置较短的缓存时间
+    if (letters.length > 0) {
+      const cacheTime = letters.some(l => l.id && typeof l.id === 'string' && l.id.includes('-')) 
+        ? 300000 // 数据库数据缓存5分钟
+        : 60000  // localStorage数据缓存1分钟
+      
+      cacheManager.set(cacheKey, letters, cacheTime)
+      console.log(`💾 缓存Letters结果: ${letters.length}个, 缓存时间: ${cacheTime/1000}秒`)
     }
     
     console.log('📊 getUserLetters最终结果:', {
