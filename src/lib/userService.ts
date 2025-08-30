@@ -121,9 +121,9 @@ export class UserService {
     console.log('✅ 强制退出完成')
   }
 
-  // 清理损坏的用户数据
+  // 简化的数据清理 - 只清理明确的错误格式
   cleanupCorruptedData(): void {
-    console.log('🧹 开始清理损坏的用户数据...')
+    console.log('🧹 简化数据清理...')
     
     if (typeof window !== 'undefined') {
       try {
@@ -131,29 +131,23 @@ export class UserService {
         if (userData) {
           const parsed = JSON.parse(userData)
           
-          // 只清理明确损坏的数据：数组格式或完全无效的对象
+          // 只清理明确的数组格式错误
           if (Array.isArray(parsed)) {
-            console.log('🗑️ 发现数组格式的用户数据，清理中...', parsed)
-            localStorage.removeItem('user')
-            localStorage.removeItem('isAuthenticated')
-            this.currentUser = null
-          } else if (typeof parsed !== 'object' || parsed === null) {
-            console.log('🗑️ 发现非对象格式的用户数据，清理中...', parsed)
+            console.log('🗑️ 清理数组格式的用户数据')
             localStorage.removeItem('user')
             localStorage.removeItem('isAuthenticated')
             this.currentUser = null
           }
-          // 不再检查 id 和 email，因为有些用户数据可能暂时缺少这些字段
         }
       } catch (error) {
-        console.log('🗑️ 清理localStorage中的无效JSON数据')
+        console.log('🗑️ 清理无效JSON数据')
         localStorage.removeItem('user')
         localStorage.removeItem('isAuthenticated')
         this.currentUser = null
       }
     }
     
-    console.log('✅ 数据清理完成')
+    console.log('✅ 简化清理完成')
   }
 
   // 清理损坏的Supabase session
@@ -695,92 +689,19 @@ export class UserService {
     }
   }
 
-  // 获取当前用户 - 优先使用Supabase Auth
+  // 获取当前用户 - 直接使用Supabase Auth（简化版）
   getCurrentUser(): User | null {
-    // 首先检查内存中的用户状态
+    // 只检查内存缓存，不再依赖localStorage的复杂校验
     if (this.currentUser && this.currentUser.email) {
       console.log('🎯 从内存获取用户:', this.currentUser.email)
       return this.currentUser
-    } else if (this.currentUser && !this.currentUser.email) {
-      console.warn('⚠️ 内存中用户数据不完整，清除并重新获取')
-      this.currentUser = null
     }
     
-    // 从localStorage获取（作为备用）
-    if (typeof window !== 'undefined') {
-      try {
-        const userData = localStorage.getItem('user')
-        const isAuth = localStorage.getItem('isAuthenticated')
-        
-        if (userData && isAuth === 'true') {
-          let user
-          try {
-            user = JSON.parse(userData)
-          } catch (parseError) {
-            console.error('❌ localStorage用户数据JSON解析失败:', parseError)
-            localStorage.removeItem('user')
-            localStorage.removeItem('isAuthenticated')
-            return null
-          }
-          
-          // 检查是否是数组（错误的数据格式）
-          if (Array.isArray(user)) {
-            console.warn('⚠️ localStorage中存储的是数组而不是用户对象，清理数据:', user)
-            localStorage.removeItem('user')
-            localStorage.removeItem('isAuthenticated')
-            this.currentUser = null
-            return null
-          }
-          
-          // 验证用户数据完整性 - 更严格的检查
-          if (user && 
-              typeof user === 'object' && 
-              user.id && 
-              user.email && 
-              typeof user.email === 'string' && 
-              user.email.includes('@')) {
-            console.log('📱 从localStorage恢复用户:', {
-              email: user.email,
-              display_name: user.display_name,
-              avatar_url: user.avatar_url,
-              有头像: !!user.avatar_url,
-              用户ID: user.id
-            })
-            
-            this.currentUser = user
-            return user
-          } else {
-            console.warn('⚠️ localStorage中的用户数据不完整或损坏:', {
-              isObject: typeof user === 'object',
-              isArray: Array.isArray(user),
-              hasId: !!user?.id,
-              hasEmail: !!user?.email,
-              emailValid: user?.email && typeof user.email === 'string' && user.email.includes('@'),
-              userType: typeof user,
-              user: user
-            })
-            
-            // 清理损坏的数据
-            localStorage.removeItem('user')
-            localStorage.removeItem('isAuthenticated')
-            this.currentUser = null
-          }
-        } else {
-          console.log('📱 localStorage中无有效用户数据')
-        }
-      } catch (error) {
-        console.error('❌ 解析localStorage用户数据失败:', error)
-        // 清理损坏的数据
-        localStorage.removeItem('user')
-        localStorage.removeItem('isAuthenticated')
-        this.currentUser = null
-      }
-    }
-    
+    console.log('📱 内存中无用户，需要异步获取')
     return null
   }
 
-  // 异步获取当前用户 - 优先使用Supabase Auth
+  // 异步获取当前用户 - 直接使用Supabase Auth（简化版）
   async getCurrentUserAsync(): Promise<User | null> {
     console.log('🔍 getCurrentUserAsync: 开始异步获取用户...')
     
@@ -790,7 +711,7 @@ export class UserService {
       return this.currentUser
     }
 
-    // 2. 尝试从Supabase Auth获取
+    // 2. 直接从Supabase Auth获取，不再复杂校验
     if (supabase) {
       try {
         console.log('🔍 getCurrentUserAsync: 从Supabase Auth获取用户...')
@@ -798,7 +719,10 @@ export class UserService {
         
         if (error) {
           console.warn('⚠️ getCurrentUserAsync: Supabase Auth获取失败:', error)
-        } else if (authUser) {
+          return null
+        }
+        
+        if (authUser) {
           console.log('✅ getCurrentUserAsync: 找到Supabase Auth用户:', authUser.email)
           
           // 从数据库获取完整用户信息
@@ -806,16 +730,35 @@ export class UserService {
           if (fullUser) {
             return fullUser
           }
+          
+          // 如果数据库获取失败，至少返回Auth用户信息
+          console.log('⚠️ 数据库获取失败，使用Auth用户信息')
+          const basicUser = {
+            id: authUser.id,
+            email: authUser.email,
+            google_id: authUser.id,
+            display_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email?.split('@')[0],
+            avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture,
+            anonymous_id: this.anonymousId || generateAnonymousId(),
+            created_at: authUser.created_at,
+            updated_at: new Date().toISOString(),
+            coins: 10,
+            is_premium: false
+          }
+          
+          this.currentUser = basicUser
+          return basicUser
         } else {
           console.log('📱 getCurrentUserAsync: Supabase Auth无用户')
+          return null
         }
       } catch (error) {
         console.error('💥 getCurrentUserAsync: Supabase Auth查询异常:', error)
+        return null
       }
     }
 
-    // 3. 回退到localStorage
-    return this.getCurrentUser()
+    return null
   }
 
   // 获取匿名ID
@@ -823,25 +766,9 @@ export class UserService {
     return this.anonymousId || localStorage.getItem('anonymous_id')
   }
 
-  // 检查是否已登录
+  // 检查是否已登录 - 简化版，只检查内存状态
   isAuthenticated(): boolean {
-    // 首先检查是否有有效的用户数据
-    const currentUser = this.getCurrentUser()
-    if (currentUser && currentUser.email) {
-      return true
-    }
-    
-    // 如果没有有效用户但localStorage标记为已认证，清理状态
-    if (typeof window !== 'undefined') {
-      const isAuth = localStorage.getItem('isAuthenticated')
-      if (isAuth === 'true' && !currentUser) {
-        console.warn('⚠️ 认证状态不一致，清理状态')
-        localStorage.removeItem('isAuthenticated')
-        localStorage.removeItem('user')
-      }
-    }
-    
-    return false
+    return !!(this.currentUser && this.currentUser.email)
   }
 
   // 更新用户资料

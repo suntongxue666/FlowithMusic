@@ -22,66 +22,20 @@ export default function Header({ currentPage }: HeaderProps) {
       console.log('🔍 Header: 开始初始化认证状态...')
       
       try {
-        // 0. 先清理可能损坏的数据（仅清理明确损坏的数据）
-        try {
-          userService.cleanupCorruptedData()
-          await userService.cleanupCorruptedSession()
-        } catch (cleanupError) {
-          console.warn('⚠️ Header: 数据清理失败，继续执行:', cleanupError)
-        }
+        // 简化认证逻辑：直接使用Supabase Auth
+        console.log('🔍 Header: 开始获取用户状态...')
         
-        // 1. 优先使用异步方法获取用户（包含Supabase Auth检查）
-        console.log('🔍 Header: 使用异步方法获取用户...')
-        let currentUser = null
-        let isAuth = false
+        const currentUser = await userService.getCurrentUserAsync()
+        const isAuth = userService.isAuthenticated()
         
-        try {
-          currentUser = await userService.getCurrentUserAsync()
-          isAuth = userService.isAuthenticated()
-        } catch (userError) {
-          console.warn('⚠️ Header: 获取用户失败，使用默认状态:', userError)
-          currentUser = null
-          isAuth = false
-        }
-        
-        console.log('👤 Header: 异步获取用户结果:', { 
+        console.log('👤 Header: 用户状态:', { 
           user: currentUser?.email || 'None',
           isAuthenticated: isAuth,
-          hasCurrentUser: !!currentUser
+          hasUser: !!currentUser
         })
         
-        if (currentUser) {
-          setUser(currentUser)
-          setIsAuthenticated(true)
-        } else {
-          setUser(null)
-          setIsAuthenticated(false)
-        }
-        
-        // 2. 如果还是没有用户数据，检查localStorage作为备用
-        if (!currentUser) {
-          console.log('🔍 Header: 异步获取失败，检查localStorage备用...')
-          try {
-            const storedUser = localStorage.getItem('user')
-            const storedAuth = localStorage.getItem('isAuthenticated')
-            
-            if (storedUser && storedAuth === 'true') {
-              try {
-                const parsedUser = JSON.parse(storedUser)
-                if (parsedUser && typeof parsedUser === 'object' && !Array.isArray(parsedUser) && parsedUser.email) {
-                  console.log('✅ Header: 从localStorage恢复用户状态:', parsedUser.email)
-                  setUser(parsedUser)
-                  setIsAuthenticated(true)
-                  return
-                }
-              } catch (parseError) {
-                console.warn('⚠️ Header: localStorage用户数据解析失败:', parseError)
-              }
-            }
-          } catch (storageError) {
-            console.warn('⚠️ Header: localStorage访问失败:', storageError)
-          }
-        }
+        setUser(currentUser)
+        setIsAuthenticated(isAuth)
         
         // 检查是否从OAuth回调页面返回
         const urlParams = new URLSearchParams(window.location.search)
