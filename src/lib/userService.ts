@@ -632,14 +632,13 @@ export class UserService {
         用户邮箱: authUser.email
       })
       
-      // 先测试数据库连接和权限
+      // 先测试数据库连接和权限 - 修复count查询语法
       try {
-        const { data: testData, error: testError } = await supabase
+        const { count, error: testError } = await supabase
           .from('users')
-          .select('count(*)')
-          .limit(1)
+          .select('*', { count: 'exact', head: true })
         
-        console.log('🔍 数据库连接测试:', { testData, testError })
+        console.log('🔍 数据库连接测试:', { count, testError })
       } catch (testErr) {
         console.warn('⚠️ 数据库连接测试失败:', testErr)
       }
@@ -648,15 +647,14 @@ export class UserService {
       let userData = null
       let dbError = null
       
-      // 首先尝试用id查询
-      const { data: userById, error: errorById } = await supabase
+      // 首先尝试用id查询 - 不使用single()，因为可能返回数组
+      const { data: userByIdArray, error: errorById } = await supabase
         .from('users')
         .select('*')
         .eq('id', authUser.id)
-        .single()
       
-      if (userById) {
-        userData = userById
+      if (userByIdArray && userByIdArray.length > 0) {
+        userData = userByIdArray[0] // 取数组的第一个元素
         console.log('✅ fetchAndCacheUser: 通过id找到用户')
       } else if (errorById && errorById.code !== 'PGRST116') {
         console.warn('⚠️ fetchAndCacheUser: id查询出错:', errorById)
@@ -665,14 +663,13 @@ export class UserService {
       // 如果id查询失败，尝试用google_id查询
       if (!userData) {
         console.log('🔍 fetchAndCacheUser: id查询失败，尝试google_id查询...')
-        const { data: userByGoogleId, error: errorByGoogleId } = await supabase
+        const { data: userByGoogleIdArray, error: errorByGoogleId } = await supabase
           .from('users')
           .select('*')
           .eq('google_id', authUser.id)
-          .single()
         
-        if (userByGoogleId) {
-          userData = userByGoogleId
+        if (userByGoogleIdArray && userByGoogleIdArray.length > 0) {
+          userData = userByGoogleIdArray[0]
           console.log('✅ fetchAndCacheUser: 通过google_id找到用户')
         } else if (errorByGoogleId && errorByGoogleId.code !== 'PGRST116') {
           console.warn('⚠️ fetchAndCacheUser: google_id查询出错:', errorByGoogleId)
@@ -682,14 +679,13 @@ export class UserService {
       // 如果还是没找到，尝试用email查询
       if (!userData) {
         console.log('🔍 fetchAndCacheUser: google_id查询失败，尝试email查询...')
-        const { data: userByEmail, error: errorByEmail } = await supabase
+        const { data: userByEmailArray, error: errorByEmail } = await supabase
           .from('users')
           .select('*')
           .eq('email', authUser.email)
-          .single()
         
-        if (userByEmail) {
-          userData = userByEmail
+        if (userByEmailArray && userByEmailArray.length > 0) {
+          userData = userByEmailArray[0]
           console.log('✅ fetchAndCacheUser: 通过email找到用户')
         } else if (errorByEmail && errorByEmail.code !== 'PGRST116') {
           dbError = errorByEmail
@@ -708,14 +704,22 @@ export class UserService {
       }
 
       console.log('✅ fetchAndCacheUser: 从数据库获取用户成功:', {
-        原始数据: userData,
-        id: userData.id,
-        email: userData.email,
-        display_name: userData.display_name,
-        avatar_url: userData.avatar_url,
-        anonymous_id: userData.anonymous_id,
+        原始数据完整输出: JSON.stringify(userData, null, 2),
         数据类型: typeof userData,
-        所有字段: Object.keys(userData || {})
+        是否为数组: Array.isArray(userData),
+        所有字段: Object.keys(userData || {}),
+        字段值检查: {
+          id: userData.id,
+          email: userData.email,
+          display_name: userData.display_name,
+          avatar_url: userData.avatar_url,
+          anonymous_id: userData.anonymous_id,
+          // 可能的其他字段名
+          user_id: userData.user_id,
+          picture: userData.picture,
+          full_name: userData.full_name,
+          name: userData.name
+        }
       })
 
       // 4. 缓存到内存
