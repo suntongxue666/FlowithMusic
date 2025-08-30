@@ -156,6 +156,63 @@ export class UserService {
     console.log('✅ 数据清理完成')
   }
 
+  // 清理损坏的Supabase session
+  async cleanupCorruptedSession(): Promise<void> {
+    console.log('🧹 开始清理损坏的Supabase session...')
+    
+    if (!supabase || typeof window === 'undefined') {
+      return
+    }
+
+    try {
+      // 检查当前session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.log('🗑️ Session获取失败，清理所有认证数据:', sessionError)
+        await supabase.auth.signOut()
+        return
+      }
+
+      if (session && session.access_token) {
+        // 验证token是否有效
+        try {
+          const { data: { user }, error: userError } = await supabase.auth.getUser()
+          
+          if (userError) {
+            if (userError.message.includes('invalid claim') || 
+                userError.message.includes('missing sub claim') ||
+                userError.status === 403) {
+              console.log('🗑️ 检测到无效token，清理session:', userError.message)
+              await supabase.auth.signOut()
+              
+              // 清理相关的localStorage数据
+              const supabaseKeys = []
+              for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i)
+                if (key && key.startsWith('sb-')) {
+                  supabaseKeys.push(key)
+                }
+              }
+              supabaseKeys.forEach(key => localStorage.removeItem(key))
+              
+              console.log(`🧹 已清理 ${supabaseKeys.length} 个损坏的Supabase session项目`)
+            }
+          } else if (user) {
+            console.log('✅ Session有效，用户:', user.email)
+          }
+        } catch (tokenError) {
+          console.log('🗑️ Token验证异常，清理session:', tokenError)
+          await supabase.auth.signOut()
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Session清理过程中出现异常:', error)
+    }
+    
+    console.log('✅ Session清理完成')
+  }
+
   // Google OAuth 登录
   async signInWithGoogle(): Promise<void> {
     // 清除认证错误标记，准备重新尝试

@@ -25,6 +25,7 @@ export default function Header({ currentPage }: HeaderProps) {
         // 0. 先清理可能损坏的数据（仅清理明确损坏的数据）
         try {
           userService.cleanupCorruptedData()
+          await userService.cleanupCorruptedSession()
         } catch (cleanupError) {
           console.warn('⚠️ Header: 数据清理失败，继续执行:', cleanupError)
         }
@@ -128,30 +129,31 @@ export default function Header({ currentPage }: HeaderProps) {
     let authSubscription: any = null
     
     if (typeof window !== 'undefined' && supabase) {
-      console.log('🔍 Header: 设置Supabase Auth状态监听...')
-      
-      authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('🔄 Header: Auth状态变化:', event, session?.user?.email || 'No user')
+      try {
+        console.log('🔍 Header: 设置Supabase Auth状态监听...')
         
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log('✅ Header: 用户登录，更新状态')
+        // 先清理可能损坏的session
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session && session.access_token) {
+          // 验证token是否有效
           try {
-            const fullUser = await userService.fetchAndCacheUser()
-            if (fullUser) {
-              setUser(fullUser)
-              setIsAuthenticated(true)
+            const { data: { user }, error } = await supabase.auth.getUser()
+            if (error && error.message.includes('invalid claim')) {
+              console.log('🧹 Header: 检测到无效token，清理session')
+              await supabase.auth.signOut()
             }
-          } catch (error) {
-            console.error('❌ Header: 登录后获取用户失败:', error)
+          } catch (tokenError) {
+            console.warn('⚠️ Header: Token验证失败，清理session:', tokenError)
+            await supabase.auth.signOut()
           }
-        } else if (event === 'SIGNED_OUT') {
-          console.log('🚪 Header: 用户登出，清除状态')
-          setUser(null)
-          setIsAuthenticated(false)
-        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          console.log('🔄 Header: Token刷新，验证用户状态')
-          const currentUser = userService.getCurrentUser()
-          if (!currentUser) {
+        }
+        
+        // 正确设置Auth状态监听
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          console.log('🔄 Header: Auth状态变化:', event, session?.user?.email || 'No user')
+          
+          if (event === 'SIGNED_IN' && session?.user) {
+            console.log('✅ Header: 用户登录，更新状态')
             try {
               const fullUser = await userService.fetchAndCacheUser()
               if (fullUser) {
@@ -159,31 +161,68 @@ export default function Header({ currentPage }: HeaderProps) {
                 setIsAuthenticated(true)
               }
             } catch (error) {
-              console.error('❌ Header: Token刷新后获取用户失败:', error)
+              console.error('❌ Header: 登录后获取用户失败:', error)
+            }
+          } else if (event === 'SIGNED_OUT') {
+            console.log('🚪 Header: 用户登出，清除状态')
+            setUser(null)
+            setIsAuthenticated(false)
+          } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+            console.log('🔄 Header: Token刷新，验证用户状态')
+            const currentUser = userService.getCurrentUser()
+            if (!currentUser) {
+              try {
+                const fullUser = await userService.fetchAndCacheUser()
+                if (fullUser) {
+                  setUser(fullUser)
+                  setIsAuthenticated(true)
+                }
+              } catch (error) {
+                console.error('❌ Header: Token刷新后获取用户失败:', error)
+              }
             }
           }
-        }
-      })
+        })
+        
+        authSubscription = subscription
+        
+      } catch (authError) {
+        console.warn('⚠️ Header: Auth监听设置失败:', authError)
+      }
     }
     
     // 监听存储变化（用于跨标签页同步）
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'user' || e.key === 'isAuthenticated') {
         console.log('🔄 Header: 检测到localStorage变化')
-        const currentUser = userService.getCurrentUser()
-        const isAuth = userService.isAuthenticated()
-        setUser(currentUser)
-        setIsAuthenticated(isAuth)
+        try {
+          const currentUser = userService.getCurrentUser()
+          const isAuth = userService.isAuthenticated()
+          setUser(currentUser)
+          setIsAuthenticated(isAuth)
+        } catch (storageError) {
+          console.warn('⚠️ Header: 存储变化处理失败:', storageError)
+        }
       }
     }
     
-    window.addEventListener('storage', handleStorageChange)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange)
+    }
     
     return () => {
+      // 正确的Supabase订阅清理方式
       if (authSubscription) {
-        authSubscription.unsubscribe()
+        try {
+          authSubscription.unsubscribe()
+        } catch (unsubError) {
+          console.warn('⚠️ Header: 订阅清理失败:', unsubError)
+        }
       }
-      window.removeEventListener('storage', handleStorageChange)
+      
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', handleStorageChange)
+      }
     }
   }, [])
 
