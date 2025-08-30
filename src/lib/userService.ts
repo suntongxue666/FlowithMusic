@@ -586,6 +586,9 @@ export class UserService {
       return null
     }
 
+    // 创建本地引用以避免TypeScript null检查问题
+    const supabaseClient = supabase
+
     try {
       // 为整个方法设置总超时时间
       const totalTimeout = new Promise((_, reject) => 
@@ -596,7 +599,7 @@ export class UserService {
         // 1. 检查Supabase会话 - 减少超时时间
         console.log('🔍 fetchAndCacheUser: 检查Supabase会话...')
         
-        const sessionPromise = supabase.auth.getSession()
+        const sessionPromise = supabaseClient.auth.getSession()
         const sessionTimeout = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Session获取超时')), 3000)
         )
@@ -620,7 +623,7 @@ export class UserService {
         })
 
         // 2. 获取认证用户 - 减少超时时间
-        const userPromise = supabase.auth.getUser()
+        const userPromise = supabaseClient.auth.getUser()
         const userTimeout = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('GetUser超时')), 2000)
         )
@@ -668,11 +671,11 @@ export class UserService {
         // 并行执行多种查询方式，提高效率
         const queryPromises = [
           // 查询1: 通过id查询
-          supabase.from('users').select('*').eq('id', authUser.id).limit(1),
+          supabaseClient.from('users').select('*').eq('id', authUser.id).limit(1),
           // 查询2: 通过google_id查询
-          supabase.from('users').select('*').eq('google_id', authUser.id).limit(1),
+          supabaseClient.from('users').select('*').eq('google_id', authUser.id).limit(1),
           // 查询3: 通过email查询
-          supabase.from('users').select('*').eq('email', authUser.email).limit(1)
+          supabaseClient.from('users').select('*').eq('email', authUser.email).limit(1)
         ]
         
         // 为数据库查询设置超时
@@ -803,11 +806,14 @@ export class UserService {
 
     // 3. 如果localStorage没有，再从Supabase Auth获取
     if (supabase) {
+      // 创建本地引用以避免TypeScript null检查问题
+      const supabaseClient = supabase
+      
       try {
         console.log('🔍 getCurrentUserAsync: 从Supabase Auth获取用户...')
         
         // 为Auth查询设置超时
-        const authPromise = supabase.auth.getUser()
+        const authPromise = supabaseClient.auth.getUser()
         const authTimeout = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Auth查询超时')), 3000)
         )
