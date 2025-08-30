@@ -90,46 +90,26 @@ export default function HistoryPage() {
       try {
         setLoading(true)
         
-        // 首先检查当前用户状态（不重新初始化，避免打断现有登录状态）
-        let currentUser = userService.getCurrentUser()
-        let isAuth = userService.isAuthenticated()
+        // 使用简化的用户状态获取，与Header保持一致
+        const currentUser = await userService.getCurrentUserAsync()
+        const isAuth = userService.isAuthenticated()
         
-        console.log('📊 History初始用户状态:', {
+        console.log('📊 History用户状态:', {
           isAuth,
           user: currentUser?.email,
           userId: currentUser?.id,
-          anonymousId: userService.getAnonymousId()
+          hasUser: !!currentUser
         })
         
-        // 只有在完全没有用户状态时才初始化（跳过复杂的数据库处理）
-        if (!currentUser && !isAuth) {
-          console.log('🔄 无用户状态，检查localStorage...')
-          // 简单检查localStorage中是否有用户数据
-          const storedUser = localStorage.getItem('user')
-          const storedAuth = localStorage.getItem('isAuthenticated')
-          
-          if (storedUser && storedAuth === 'true') {
-            try {
-              const parsedUser = JSON.parse(storedUser)
-              if (parsedUser && parsedUser.email) {
-                currentUser = parsedUser
-                isAuth = true
-                console.log('✅ 从localStorage恢复用户状态:', parsedUser.email)
-              }
-            } catch (error) {
-              console.warn('⚠️ localStorage用户数据解析失败:', error)
-            }
-          }
-        }
-        
-        // 立即设置状态，避免显示未登录的UI
+        // 立即设置状态，确保与Header同步
         setUser(currentUser)
-        setIsAuthenticated(isAuth)
+        setIsAuthenticated(!!currentUser)
         
         // Load letters based on authentication status
         let userLetters: Letter[] = []
+        const finalIsAuth = !!currentUser // 基于用户数据判断认证状态
         
-        if (isAuth && currentUser) {
+        if (finalIsAuth && currentUser) {
           // Authenticated user - get from database and migrate if needed
           console.log('🔐 Authenticated user detected, calling getUserLetters...')
           try {
@@ -218,6 +198,10 @@ export default function HistoryPage() {
         
         setLetters(userLetters)
         
+        // 确保最终状态一致
+        setUser(currentUser)
+        setIsAuthenticated(!!currentUser)
+        
         // Check for login success callback
         const urlParams = new URLSearchParams(window.location.search)
         if (urlParams.get('login') === 'success') {
@@ -278,16 +262,15 @@ export default function HistoryPage() {
         console.log('🔄 History: 检测到用户状态变化，重新加载...')
         
         const currentUser = userService.getCurrentUser()
-        const isAuth = userService.isAuthenticated()
         
         console.log('📊 History: 用户状态同步更新:', {
           user: currentUser?.email || currentUser?.display_name,
           avatar: currentUser?.avatar_url,
-          isAuth
+          hasUser: !!currentUser
         })
         
         setUser(currentUser)
-        setIsAuthenticated(isAuth)
+        setIsAuthenticated(!!currentUser) // 基于用户数据判断认证状态
       }
     }
     

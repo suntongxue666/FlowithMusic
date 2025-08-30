@@ -1,309 +1,177 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useUser } from '@/contexts/UserContext'
-import { userService } from '@/lib/userService'
-import { letterService } from '@/lib/letterService'
 import { supabase } from '@/lib/supabase'
 
 export default function DebugUserLettersPage() {
-  const { user, anonymousId, isAuthenticated } = useUser()
-  const [debugData, setDebugData] = useState<any>({})
-  const [loading, setLoading] = useState(false)
-
-  const debugUserLetters = async () => {
-    setLoading(true)
-    const debug: any = {
-      timestamp: new Date().toISOString(),
-      userContext: {},
-      localStorage: {},
-      userServiceData: {},
-      letterServiceData: {},
-      supabaseData: {}
-    }
-
-    try {
-      // 1. User Context 数据
-      debug.userContext = {
-        user: user ? {
-          id: user.id,
-          email: user.email,
-          anonymous_id: user.anonymous_id,
-          display_name: user.display_name
-        } : null,
-        anonymousId,
-        isAuthenticated
-      }
-
-      // 2. localStorage 数据
-      if (typeof window !== 'undefined') {
-        debug.localStorage = {
-          anonymous_id: localStorage.getItem('anonymous_id'),
-          letters: JSON.parse(localStorage.getItem('letters') || '[]'),
-          user_agent: localStorage.getItem('user_agent')
-        }
-      }
-
-      // 3. UserService 数据
-      debug.userServiceData = {
-        getCurrentUser: userService.getCurrentUser(),
-        getAnonymousId: userService.getAnonymousId(),
-        isAuthenticated: userService.isAuthenticated()
-      }
-
-      // 4. LetterService getUserLetters 调用
-      console.log('📞 Calling letterService.getUserLetters...')
-      const userLetters = await letterService.getUserLetters(50, 0)
-      debug.letterServiceData = {
-        userLettersCount: userLetters.length,
-        userLetters: userLetters.map(letter => ({
-          id: letter.id,
-          link_id: letter.link_id,
-          recipient_name: letter.recipient_name,
-          song_title: letter.song_title,
-          user_id: letter.user_id,
-          anonymous_id: letter.anonymous_id,
-          created_at: letter.created_at
-        }))
-      }
-
-      // 5. 直接查询 Supabase
-      if (supabase) {
-        console.log('📞 Querying Supabase directly...')
-        
-        // 查询所有letters
-        const { data: allLetters } = await supabase
-          .from('letters')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(10)
-
-        debug.supabaseData.allLetters = allLetters?.map(letter => ({
-          id: letter.id,
-          link_id: letter.link_id,
-          recipient_name: letter.recipient_name,
-          song_title: letter.song_title,
-          user_id: letter.user_id,
-          anonymous_id: letter.anonymous_id,
-          created_at: letter.created_at
-        })) || []
-
-        // 如果用户已登录，查询用户的letters
-        if (user) {
-          const { data: userLettersFromDB } = await supabase
-            .from('letters')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-
-          debug.supabaseData.userLettersFromDB = userLettersFromDB?.map(letter => ({
-            id: letter.id,
-            link_id: letter.link_id,
-            recipient_name: letter.recipient_name,
-            song_title: letter.song_title,
-            user_id: letter.user_id,
-            anonymous_id: letter.anonymous_id,
-            created_at: letter.created_at
-          })) || []
-        }
-
-        // 查询匿名用户的letters
-        const currentAnonymousId = user?.anonymous_id || localStorage.getItem('anonymous_id')
-        if (currentAnonymousId) {
-          const { data: anonLettersFromDB } = await supabase
-            .from('letters')
-            .select('*')
-            .eq('anonymous_id', currentAnonymousId)
-            .order('created_at', { ascending: false })
-
-          debug.supabaseData.anonLettersFromDB = anonLettersFromDB?.map(letter => ({
-            id: letter.id,
-            link_id: letter.link_id,
-            recipient_name: letter.recipient_name,
-            song_title: letter.song_title,
-            user_id: letter.user_id,
-            anonymous_id: letter.anonymous_id,
-            created_at: letter.created_at
-          })) || []
-        }
-      }
-
-      // 6. 分析问题
-      debug.analysis = {
-        localLettersCount: debug.localStorage.letters?.length || 0,
-        remoteLettersCount: debug.letterServiceData.userLettersCount || 0,
-        userIdMatch: debug.localStorage.letters?.filter((l: any) => 
-          user ? l.user_id === user.id : false
-        ).length || 0,
-        anonymousIdMatch: debug.localStorage.letters?.filter((l: any) => 
-          l.anonymous_id === (user?.anonymous_id || localStorage.getItem('anonymous_id'))
-        ).length || 0,
-        possibleIssues: []
-      }
-
-      // 检测可能的问题
-      if (debug.localStorage.letters?.length > 0 && debug.letterServiceData.userLettersCount === 0) {
-        debug.analysis.possibleIssues.push('本地有数据，但getUserLetters返回空 - 可能是用户身份匹配问题')
-      }
-
-      if (debug.userContext.anonymousId !== debug.localStorage.anonymous_id) {
-        debug.analysis.possibleIssues.push('Context中的anonymousId与localStorage不一致')
-      }
-
-      if (debug.userServiceData.getAnonymousId !== debug.localStorage.anonymous_id) {
-        debug.analysis.possibleIssues.push('UserService的anonymousId与localStorage不一致')
-      }
-
-    } catch (error) {
-      debug.error = {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : 'No stack trace'
-      }
-    }
-
-    setDebugData(debug)
-    setLoading(false)
-  }
+  const [userData, setUserData] = useState<any>(null)
+  const [lettersData, setLettersData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    debugUserLetters()
-  }, [user, anonymousId, isAuthenticated])
+    const fetchUserAndLetters = async () => {
+      try {
+        console.log('🔍 开始查询用户和Letters数据...')
+        
+        // 1. 查找用户
+        const { data: users, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', 'sunwei7482@gmail.com')
+        
+        if (userError) {
+          throw new Error(`用户查询失败: ${userError.message}`)
+        }
+        
+        console.log('👤 用户查询结果:', users)
+        
+        if (!users || users.length === 0) {
+          setError('未找到用户 sunwei7482@gmail.com')
+          return
+        }
+        
+        const user = users[0]
+        setUserData(user)
+        
+        // 2. 查找该用户的所有Letters
+        const { data: letters, error: lettersError } = await supabase
+          .from('letters')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+        
+        if (lettersError) {
+          throw new Error(`Letters查询失败: ${lettersError.message}`)
+        }
+        
+        console.log('📝 Letters查询结果:', letters)
+        setLettersData(letters || [])
+        
+        // 3. 也查询可能的匿名Letters
+        if (user.anonymous_id) {
+          const { data: anonymousLetters, error: anonError } = await supabase
+            .from('letters')
+            .select('*')
+            .eq('anonymous_id', user.anonymous_id)
+            .is('user_id', null)
+            .order('created_at', { ascending: false })
+          
+          if (!anonError && anonymousLetters && anonymousLetters.length > 0) {
+            console.log('📝 匿名Letters查询结果:', anonymousLetters)
+            setLettersData(prev => [...prev, ...anonymousLetters])
+          }
+        }
+        
+      } catch (err: any) {
+        console.error('❌ 查询失败:', err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUserAndLetters()
+  }, [])
+
+  if (loading) {
+    return (
+      <div style={{ padding: '20px' }}>
+        <h1>查询用户Letters数据</h1>
+        <p>加载中...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: '20px' }}>
+        <h1>查询用户Letters数据</h1>
+        <p style={{ color: 'red' }}>错误: {error}</p>
+      </div>
+    )
+  }
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'monospace', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1>🔍 User Letters Debug Tool</h1>
+    <div style={{ padding: '20px', fontFamily: 'monospace' }}>
+      <h1>用户Letters数据查询结果</h1>
       
-      <button 
-        onClick={debugUserLetters} 
-        disabled={loading}
-        style={{
-          padding: '0.75rem 1.5rem',
-          backgroundColor: '#007BFF',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: loading ? 'not-allowed' : 'pointer',
-          marginBottom: '2rem'
-        }}
-      >
-        {loading ? '🔄 Debugging...' : '🔍 Run Debug Analysis'}
-      </button>
+      <div style={{ marginBottom: '30px', padding: '15px', border: '1px solid #ccc', borderRadius: '5px' }}>
+        <h2>👤 用户信息</h2>
+        <p><strong>邮箱:</strong> {userData?.email}</p>
+        <p><strong>用户ID:</strong> {userData?.id}</p>
+        <p><strong>显示名:</strong> {userData?.display_name}</p>
+        <p><strong>匿名ID:</strong> {userData?.anonymous_id}</p>
+        <p><strong>创建时间:</strong> {userData?.created_at}</p>
+        <p><strong>积分:</strong> {userData?.coins}</p>
+        <p><strong>是否高级用户:</strong> {userData?.is_premium ? '是' : '否'}</p>
+      </div>
 
-      {debugData.timestamp && (
-        <div style={{ backgroundColor: '#f8f9fa', padding: '1.5rem', borderRadius: '8px', fontSize: '12px' }}>
-          <h3>Debug Results ({debugData.timestamp})</h3>
-          
-          <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: '1fr 1fr' }}>
-            <div>
-              <h4>🔐 User Context</h4>
-              <pre style={{ backgroundColor: '#e9ecef', padding: '0.5rem', borderRadius: '4px', overflow: 'auto' }}>
-                {JSON.stringify(debugData.userContext, null, 2)}
-              </pre>
-            </div>
+      <div style={{ marginBottom: '30px', padding: '15px', border: '1px solid #ccc', borderRadius: '5px' }}>
+        <h2>📝 Letters统计</h2>
+        <p><strong>总Letters数量:</strong> {lettersData.length}</p>
+        <p><strong>昨天创建的Letters:</strong> {
+          lettersData.filter(letter => {
+            const letterDate = new Date(letter.created_at)
+            const yesterday = new Date()
+            yesterday.setDate(yesterday.getDate() - 1)
+            return letterDate.toDateString() === yesterday.toDateString()
+          }).length
+        }</p>
+        <p><strong>今天创建的Letters:</strong> {
+          lettersData.filter(letter => {
+            const letterDate = new Date(letter.created_at)
+            const today = new Date()
+            return letterDate.toDateString() === today.toDateString()
+          }).length
+        }</p>
+      </div>
 
-            <div>
-              <h4>💾 localStorage</h4>
-              <pre style={{ backgroundColor: '#e9ecef', padding: '0.5rem', borderRadius: '4px', overflow: 'auto' }}>
-                {JSON.stringify({
-                  anonymous_id: debugData.localStorage?.anonymous_id,
-                  lettersCount: debugData.localStorage?.letters?.length,
-                  user_agent: debugData.localStorage?.user_agent
-                }, null, 2)}
-              </pre>
-            </div>
-
-            <div>
-              <h4>👤 UserService Data</h4>
-              <pre style={{ backgroundColor: '#e9ecef', padding: '0.5rem', borderRadius: '4px', overflow: 'auto' }}>
-                {JSON.stringify(debugData.userServiceData, null, 2)}
-              </pre>
-            </div>
-
-            <div>
-              <h4>📝 LetterService Data</h4>
-              <pre style={{ backgroundColor: '#e9ecef', padding: '0.5rem', borderRadius: '4px', overflow: 'auto' }}>
-                {JSON.stringify({
-                  userLettersCount: debugData.letterServiceData?.userLettersCount,
-                  sample: debugData.letterServiceData?.userLetters?.slice(0, 2)
-                }, null, 2)}
-              </pre>
-            </div>
+      <div style={{ padding: '15px', border: '1px solid #ccc', borderRadius: '5px' }}>
+        <h2>📋 Letters详细列表</h2>
+        {lettersData.length === 0 ? (
+          <p>没有找到任何Letters</p>
+        ) : (
+          <div>
+            {lettersData.map((letter, index) => (
+              <div key={letter.id || index} style={{ 
+                marginBottom: '15px', 
+                padding: '10px', 
+                border: '1px solid #eee', 
+                borderRadius: '3px',
+                backgroundColor: '#f9f9f9'
+              }}>
+                <p><strong>Letter ID:</strong> {letter.id}</p>
+                <p><strong>Link ID:</strong> {letter.link_id}</p>
+                <p><strong>标题:</strong> {letter.title || '无标题'}</p>
+                <p><strong>内容预览:</strong> {letter.content ? letter.content.substring(0, 100) + '...' : '无内容'}</p>
+                <p><strong>创建时间:</strong> {new Date(letter.created_at).toLocaleString()}</p>
+                <p><strong>查看次数:</strong> {letter.view_count || 0}</p>
+                <p><strong>用户ID:</strong> {letter.user_id || '匿名'}</p>
+                <p><strong>匿名ID:</strong> {letter.anonymous_id || '无'}</p>
+                <p><strong>歌曲:</strong> {letter.song_name || '无'} - {letter.artist_name || '无'}</p>
+                <p><strong>链接:</strong> <a href={`/letter/${letter.link_id}`} target="_blank">/letter/{letter.link_id}</a></p>
+              </div>
+            ))}
           </div>
+        )}
+      </div>
 
-          {debugData.supabaseData && (
-            <div style={{ marginTop: '1rem' }}>
-              <h4>🗄️ Supabase Data</h4>
-              <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: '1fr 1fr 1fr' }}>
-                <div>
-                  <h5>All Letters (Latest 10)</h5>
-                  <pre style={{ backgroundColor: '#e9ecef', padding: '0.5rem', borderRadius: '4px', overflow: 'auto', maxHeight: '200px' }}>
-                    {JSON.stringify(debugData.supabaseData.allLetters?.slice(0, 3), null, 2)}
-                  </pre>
-                </div>
-                
-                <div>
-                  <h5>User Letters</h5>
-                  <pre style={{ backgroundColor: '#e9ecef', padding: '0.5rem', borderRadius: '4px', overflow: 'auto', maxHeight: '200px' }}>
-                    {JSON.stringify(debugData.supabaseData.userLettersFromDB || 'No user logged in', null, 2)}
-                  </pre>
-                </div>
-                
-                <div>
-                  <h5>Anonymous Letters</h5>
-                  <pre style={{ backgroundColor: '#e9ecef', padding: '0.5rem', borderRadius: '4px', overflow: 'auto', maxHeight: '200px' }}>
-                    {JSON.stringify(debugData.supabaseData.anonLettersFromDB || [], null, 2)}
-                  </pre>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {debugData.analysis && (
-            <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#fff3cd', borderRadius: '6px' }}>
-              <h4>📊 Analysis</h4>
-              <div>
-                <strong>Local Letters:</strong> {debugData.analysis.localLettersCount}<br/>
-                <strong>Remote Letters:</strong> {debugData.analysis.remoteLettersCount}<br/>
-                <strong>User ID Matches:</strong> {debugData.analysis.userIdMatch}<br/>
-                <strong>Anonymous ID Matches:</strong> {debugData.analysis.anonymousIdMatch}<br/>
-              </div>
-              
-              {debugData.analysis.possibleIssues?.length > 0 && (
-                <div style={{ marginTop: '0.5rem' }}>
-                  <strong>🚨 Possible Issues:</strong>
-                  <ul>
-                    {debugData.analysis.possibleIssues.map((issue: string, i: number) => (
-                      <li key={i}>{issue}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-
-          {debugData.localStorage?.letters?.length > 0 && (
-            <div style={{ marginTop: '1rem' }}>
-              <h4>📋 Local Letters Details</h4>
-              <div style={{ maxHeight: '300px', overflow: 'auto' }}>
-                {debugData.localStorage.letters.map((letter: any, i: number) => (
-                  <div key={i} style={{ margin: '0.5rem 0', padding: '0.5rem', backgroundColor: '#f1f3f4', borderRadius: '4px' }}>
-                    <strong>{letter.recipient_name}</strong> - {letter.song_title}<br/>
-                    <small>User ID: {letter.user_id || 'null'} | Anonymous ID: {letter.anonymous_id || 'null'}</small><br/>
-                    <small>Created: {letter.created_at}</small>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {debugData.error && (
-            <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f8d7da', borderRadius: '6px' }}>
-              <h4>❌ Error</h4>
-              <pre>{JSON.stringify(debugData.error, null, 2)}</pre>
-            </div>
-          )}
-        </div>
-      )}
+      <div style={{ marginTop: '30px', padding: '15px', border: '1px solid #ccc', borderRadius: '5px' }}>
+        <h2>🔍 原始数据 (JSON)</h2>
+        <details>
+          <summary>点击查看用户原始数据</summary>
+          <pre style={{ backgroundColor: '#f5f5f5', padding: '10px', overflow: 'auto' }}>
+            {JSON.stringify(userData, null, 2)}
+          </pre>
+        </details>
+        <details>
+          <summary>点击查看Letters原始数据</summary>
+          <pre style={{ backgroundColor: '#f5f5f5', padding: '10px', overflow: 'auto' }}>
+            {JSON.stringify(lettersData, null, 2)}
+          </pre>
+        </details>
+      </div>
     </div>
   )
 }
