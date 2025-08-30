@@ -902,16 +902,26 @@ export class UserService {
       throw new Error('数据库连接不可用')
     }
 
-    if (!this.currentUser) {
-      throw new Error('用户未登录')
+    // 优化的用户检查 - 如果内存中没有用户，尝试获取
+    let currentUser = this.currentUser
+    if (!currentUser) {
+      console.log('⚠️ updateProfile: 内存中无用户，尝试获取...')
+      currentUser = await this.getCurrentUserAsync()
+      
+      if (!currentUser) {
+        console.error('❌ updateProfile: 无法获取用户信息')
+        throw new Error('用户未登录')
+      }
+      
+      console.log('✅ updateProfile: 成功获取用户:', currentUser.email)
     }
 
-    console.log('📡 UserService: 发送数据库更新请求, 用户ID:', this.currentUser.id)
+    console.log('📡 UserService: 发送数据库更新请求, 用户ID:', currentUser.id)
 
     const { data, error } = await supabase
       .from('users')
       .update(updates)
-      .eq('id', this.currentUser.id)
+      .eq('id', currentUser.id)
       .select()
       .single()
 
@@ -941,13 +951,31 @@ export class UserService {
     facebook?: string
     x?: string
   }): Promise<User> {
-    if (!this.currentUser) {
-      throw new Error('用户未登录')
+    console.log('🔄 updateSocialMedia: 开始更新社交媒体信息:', socialMedia)
+    
+    // 优化的用户检查 - 如果内存中没有用户，尝试获取
+    let currentUser = this.currentUser
+    if (!currentUser) {
+      console.log('⚠️ updateSocialMedia: 内存中无用户，尝试获取...')
+      currentUser = await this.getCurrentUserAsync()
+      
+      if (!currentUser) {
+        console.error('❌ updateSocialMedia: 无法获取用户信息')
+        throw new Error('用户未登录')
+      }
+      
+      console.log('✅ updateSocialMedia: 成功获取用户:', currentUser.email)
     }
 
     // 合并现有的社交媒体信息
-    const currentSocialMedia = this.currentUser.social_media_info || {}
+    const currentSocialMedia = currentUser.social_media_info || {}
     const updatedSocialMedia = { ...currentSocialMedia, ...socialMedia }
+    
+    console.log('🔄 updateSocialMedia: 合并社交媒体信息:', {
+      current: currentSocialMedia,
+      new: socialMedia,
+      merged: updatedSocialMedia
+    })
 
     return await this.updateProfile({
       social_media_info: updatedSocialMedia
