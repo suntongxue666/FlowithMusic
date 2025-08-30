@@ -14,6 +14,10 @@ export default function DebugUserLettersPage() {
       try {
         console.log('🔍 开始查询用户和Letters数据...')
         
+        if (!supabase) {
+          throw new Error('Supabase客户端不可用')
+        }
+        
         // 1. 查找用户
         const { data: users, error: userError } = await supabase
           .from('users')
