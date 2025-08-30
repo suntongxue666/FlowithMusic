@@ -131,13 +131,19 @@ export class UserService {
         if (userData) {
           const parsed = JSON.parse(userData)
           
-          // 检查是否是数组或无效数据
-          if (Array.isArray(parsed) || !parsed.id || !parsed.email) {
-            console.log('🗑️ 发现损坏的用户数据，清理中...', parsed)
+          // 只清理明确损坏的数据：数组格式或完全无效的对象
+          if (Array.isArray(parsed)) {
+            console.log('🗑️ 发现数组格式的用户数据，清理中...', parsed)
+            localStorage.removeItem('user')
+            localStorage.removeItem('isAuthenticated')
+            this.currentUser = null
+          } else if (typeof parsed !== 'object' || parsed === null) {
+            console.log('🗑️ 发现非对象格式的用户数据，清理中...', parsed)
             localStorage.removeItem('user')
             localStorage.removeItem('isAuthenticated')
             this.currentUser = null
           }
+          // 不再检查 id 和 email，因为有些用户数据可能暂时缺少这些字段
         }
       } catch (error) {
         console.log('🗑️ 清理localStorage中的无效JSON数据')
