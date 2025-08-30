@@ -603,7 +603,7 @@ export class UserService {
     }
   }
 
-  // 获取当前用户
+  // 获取当前用户 - 优先使用Supabase Auth
   getCurrentUser(): User | null {
     // 首先检查内存中的用户状态
     if (this.currentUser && this.currentUser.email) {
@@ -614,7 +614,7 @@ export class UserService {
       this.currentUser = null
     }
     
-    // 从localStorage获取
+    // 从localStorage获取（作为备用）
     if (typeof window !== 'undefined') {
       try {
         const userData = localStorage.getItem('user')
@@ -661,6 +661,44 @@ export class UserService {
     }
     
     return null
+  }
+
+  // 异步获取当前用户 - 优先使用Supabase Auth
+  async getCurrentUserAsync(): Promise<User | null> {
+    console.log('🔍 getCurrentUserAsync: 开始异步获取用户...')
+    
+    // 1. 检查内存缓存
+    if (this.currentUser && this.currentUser.email) {
+      console.log('🎯 getCurrentUserAsync: 从内存获取用户:', this.currentUser.email)
+      return this.currentUser
+    }
+
+    // 2. 尝试从Supabase Auth获取
+    if (supabase) {
+      try {
+        console.log('🔍 getCurrentUserAsync: 从Supabase Auth获取用户...')
+        const { data: { user: authUser }, error } = await supabase.auth.getUser()
+        
+        if (error) {
+          console.warn('⚠️ getCurrentUserAsync: Supabase Auth获取失败:', error)
+        } else if (authUser) {
+          console.log('✅ getCurrentUserAsync: 找到Supabase Auth用户:', authUser.email)
+          
+          // 从数据库获取完整用户信息
+          const fullUser = await this.fetchAndCacheUser()
+          if (fullUser) {
+            return fullUser
+          }
+        } else {
+          console.log('📱 getCurrentUserAsync: Supabase Auth无用户')
+        }
+      } catch (error) {
+        console.error('💥 getCurrentUserAsync: Supabase Auth查询异常:', error)
+      }
+    }
+
+    // 3. 回退到localStorage
+    return this.getCurrentUser()
   }
 
   // 获取匿名ID

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { userService } from '@/lib/userService'
+import { supabase } from '@/lib/supabase'
 import UserProfileModal from './UserProfileModal'
 
 interface HeaderProps {
@@ -21,66 +22,40 @@ export default function Header({ currentPage }: HeaderProps) {
       console.log('🔍 Header: 开始初始化认证状态...')
       
       try {
-        // 1. 检查localStorage
-        console.log('🔍 Header: 检查localStorage...')
-        const storedUser = localStorage.getItem('user')
-        const storedAuth = localStorage.getItem('isAuthenticated')
+        // 1. 优先使用异步方法获取用户（包含Supabase Auth检查）
+        console.log('🔍 Header: 使用异步方法获取用户...')
+        const currentUser = await userService.getCurrentUserAsync()
+        const isAuth = userService.isAuthenticated()
         
-        console.log('📱 Header: localStorage状态:', {
-          hasUser: !!storedUser,
-          isAuth: storedAuth,
-          userEmail: storedUser ? JSON.parse(storedUser).email : 'None'
-        })
-        
-        if (storedUser && storedAuth === 'true') {
-          try {
-            const parsedUser = JSON.parse(storedUser)
-            if (parsedUser && parsedUser.email) {
-              console.log('✅ Header: 从localStorage恢复用户状态:', parsedUser.email)
-              setUser(parsedUser)
-              setIsAuthenticated(true)
-              return
-            }
-          } catch (error) {
-            console.warn('⚠️ Header: localStorage用户数据解析失败:', error)
-          }
-        }
-        
-        // 2. 检查userService
-        console.log('🔍 Header: 检查userService...')
-        let currentUser = userService.getCurrentUser()
-        let isAuth = userService.isAuthenticated()
-        
-        console.log('👤 Header: userService状态:', { 
+        console.log('👤 Header: 异步获取用户结果:', { 
           user: currentUser?.email || 'None',
           isAuthenticated: isAuth,
           hasCurrentUser: !!currentUser
         })
         
-        // 3. 如果还是没有用户数据，尝试从数据库获取
-        if (!currentUser && !isAuth) {
-          console.log('🔍 Header: localStorage和userService都无数据，尝试从数据库获取...')
-          try {
-            const fetchedUser = await userService.fetchAndCacheUser()
-            if (fetchedUser) {
-              console.log('✅ Header: 从数据库获取用户成功:', fetchedUser.email)
-              currentUser = fetchedUser
-              isAuth = true
-            } else {
-              console.log('❌ Header: 从数据库获取用户失败')
+        setUser(currentUser)
+        setIsAuthenticated(!!currentUser)
+        
+        // 2. 如果还是没有用户数据，检查localStorage作为备用
+        if (!currentUser) {
+          console.log('🔍 Header: 异步获取失败，检查localStorage备用...')
+          const storedUser = localStorage.getItem('user')
+          const storedAuth = localStorage.getItem('isAuthenticated')
+          
+          if (storedUser && storedAuth === 'true') {
+            try {
+              const parsedUser = JSON.parse(storedUser)
+              if (parsedUser && parsedUser.email) {
+                console.log('✅ Header: 从localStorage恢复用户状态:', parsedUser.email)
+                setUser(parsedUser)
+                setIsAuthenticated(true)
+                return
+              }
+            } catch (error) {
+              console.warn('⚠️ Header: localStorage用户数据解析失败:', error)
             }
-          } catch (error) {
-            console.error('💥 Header: 从数据库获取用户异常:', error)
           }
         }
-        
-        console.log('🎯 Header: 最终用户状态:', {
-          user: currentUser?.email || 'None',
-          isAuthenticated: isAuth
-        })
-        
-        setUser(currentUser)
-        setIsAuthenticated(isAuth)
         
         // 检查是否从OAuth回调页面返回
         const urlParams = new URLSearchParams(window.location.search)
@@ -124,35 +99,46 @@ export default function Header({ currentPage }: HeaderProps) {
 
     initializeAuth()
     
-    // 简化的状态检查 - 只在登录后的前60秒内频繁检查
-    let statusCheckInterval: NodeJS.Timeout | null = null
+    // 设置Supabase Auth状态监听
+    let authSubscription: any = null
     
-    const startStatusCheck = () => {
-      statusCheckInterval = setInterval(() => {
-        const currentUser = userService.getCurrentUser()
-        const isAuth = userService.isAuthenticated()
-        
-        // 只有状态真正改变时才更新
-        if (currentUser?.email !== user?.email || isAuth !== isAuthenticated) {
-          console.log('🔄 Header: 检测到用户状态变化')
-          setUser(currentUser)
-          setIsAuthenticated(isAuth)
-        }
-      }, 3000) // 每3秒检查一次
+    if (typeof window !== 'undefined' && supabase) {
+      console.log('🔍 Header: 设置Supabase Auth状态监听...')
       
-      // 60秒后停止频繁检查
-      setTimeout(() => {
-        if (statusCheckInterval) {
-          clearInterval(statusCheckInterval)
-          statusCheckInterval = null
+      authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('🔄 Header: Auth状态变化:', event, session?.user?.email || 'No user')
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('✅ Header: 用户登录，更新状态')
+          try {
+            const fullUser = await userService.fetchAndCacheUser()
+            if (fullUser) {
+              setUser(fullUser)
+              setIsAuthenticated(true)
+            }
+          } catch (error) {
+            console.error('❌ Header: 登录后获取用户失败:', error)
+          }
+        } else if (event === 'SIGNED_OUT') {
+          console.log('🚪 Header: 用户登出，清除状态')
+          setUser(null)
+          setIsAuthenticated(false)
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          console.log('🔄 Header: Token刷新，验证用户状态')
+          const currentUser = userService.getCurrentUser()
+          if (!currentUser) {
+            try {
+              const fullUser = await userService.fetchAndCacheUser()
+              if (fullUser) {
+                setUser(fullUser)
+                setIsAuthenticated(true)
+              }
+            } catch (error) {
+              console.error('❌ Header: Token刷新后获取用户失败:', error)
+            }
+          }
         }
-      }, 60000)
-    }
-    
-    // 如果检测到可能的登录状态，开始状态检查
-    const urlParams = new URLSearchParams(window.location.search)
-    if (urlParams.get('login') === 'success' || !user) {
-      startStatusCheck()
+      })
     }
     
     // 监听存储变化（用于跨标签页同步）
@@ -169,8 +155,8 @@ export default function Header({ currentPage }: HeaderProps) {
     window.addEventListener('storage', handleStorageChange)
     
     return () => {
-      if (statusCheckInterval) {
-        clearInterval(statusCheckInterval)
+      if (authSubscription) {
+        authSubscription.unsubscribe()
       }
       window.removeEventListener('storage', handleStorageChange)
     }
