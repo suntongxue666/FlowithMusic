@@ -22,6 +22,9 @@ export default function Header({ currentPage }: HeaderProps) {
       console.log('🔍 Header: 开始初始化认证状态...')
       
       try {
+        // 0. 先清理可能损坏的数据
+        userService.cleanupCorruptedData()
+        
         // 1. 优先使用异步方法获取用户（包含Supabase Auth检查）
         console.log('🔍 Header: 使用异步方法获取用户...')
         const currentUser = await userService.getCurrentUserAsync()

@@ -121,6 +121,35 @@ export class UserService {
     console.log('✅ 强制退出完成')
   }
 
+  // 清理损坏的用户数据
+  cleanupCorruptedData(): void {
+    console.log('🧹 开始清理损坏的用户数据...')
+    
+    if (typeof window !== 'undefined') {
+      try {
+        const userData = localStorage.getItem('user')
+        if (userData) {
+          const parsed = JSON.parse(userData)
+          
+          // 检查是否是数组或无效数据
+          if (Array.isArray(parsed) || !parsed.id || !parsed.email) {
+            console.log('🗑️ 发现损坏的用户数据，清理中...', parsed)
+            localStorage.removeItem('user')
+            localStorage.removeItem('isAuthenticated')
+            this.currentUser = null
+          }
+        }
+      } catch (error) {
+        console.log('🗑️ 清理localStorage中的无效JSON数据')
+        localStorage.removeItem('user')
+        localStorage.removeItem('isAuthenticated')
+        this.currentUser = null
+      }
+    }
+    
+    console.log('✅ 数据清理完成')
+  }
+
   // Google OAuth 登录
   async signInWithGoogle(): Promise<void> {
     // 清除认证错误标记，准备重新尝试
@@ -621,10 +650,32 @@ export class UserService {
         const isAuth = localStorage.getItem('isAuthenticated')
         
         if (userData && isAuth === 'true') {
-          const user = JSON.parse(userData)
+          let user
+          try {
+            user = JSON.parse(userData)
+          } catch (parseError) {
+            console.error('❌ localStorage用户数据JSON解析失败:', parseError)
+            localStorage.removeItem('user')
+            localStorage.removeItem('isAuthenticated')
+            return null
+          }
+          
+          // 检查是否是数组（错误的数据格式）
+          if (Array.isArray(user)) {
+            console.warn('⚠️ localStorage中存储的是数组而不是用户对象，清理数据:', user)
+            localStorage.removeItem('user')
+            localStorage.removeItem('isAuthenticated')
+            this.currentUser = null
+            return null
+          }
           
           // 验证用户数据完整性 - 更严格的检查
-          if (user && user.id && user.email && typeof user.email === 'string' && user.email.includes('@')) {
+          if (user && 
+              typeof user === 'object' && 
+              user.id && 
+              user.email && 
+              typeof user.email === 'string' && 
+              user.email.includes('@')) {
             console.log('📱 从localStorage恢复用户:', {
               email: user.email,
               display_name: user.display_name,
@@ -637,9 +688,12 @@ export class UserService {
             return user
           } else {
             console.warn('⚠️ localStorage中的用户数据不完整或损坏:', {
+              isObject: typeof user === 'object',
+              isArray: Array.isArray(user),
               hasId: !!user?.id,
               hasEmail: !!user?.email,
               emailValid: user?.email && typeof user.email === 'string' && user.email.includes('@'),
+              userType: typeof user,
               user: user
             })
             
