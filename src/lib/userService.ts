@@ -626,34 +626,96 @@ export class UserService {
       })
 
       // 3. 从数据库获取完整用户信息
-      console.log('🔍 fetchAndCacheUser: 查询数据库用户数据...')
-      const { data: userData, error: dbError } = await supabase
+      console.log('🔍 fetchAndCacheUser: 查询数据库用户数据...', {
+        查询字段: 'id',
+        查询值: authUser.id,
+        用户邮箱: authUser.email
+      })
+      
+      // 先测试数据库连接和权限
+      try {
+        const { data: testData, error: testError } = await supabase
+          .from('users')
+          .select('count(*)')
+          .limit(1)
+        
+        console.log('🔍 数据库连接测试:', { testData, testError })
+      } catch (testErr) {
+        console.warn('⚠️ 数据库连接测试失败:', testErr)
+      }
+      
+      // 尝试多种查询方式
+      let userData = null
+      let dbError = null
+      
+      // 首先尝试用id查询
+      const { data: userById, error: errorById } = await supabase
         .from('users')
         .select('*')
         .eq('id', authUser.id)
         .single()
+      
+      if (userById) {
+        userData = userById
+        console.log('✅ fetchAndCacheUser: 通过id找到用户')
+      } else if (errorById && errorById.code !== 'PGRST116') {
+        console.warn('⚠️ fetchAndCacheUser: id查询出错:', errorById)
+      }
+      
+      // 如果id查询失败，尝试用google_id查询
+      if (!userData) {
+        console.log('🔍 fetchAndCacheUser: id查询失败，尝试google_id查询...')
+        const { data: userByGoogleId, error: errorByGoogleId } = await supabase
+          .from('users')
+          .select('*')
+          .eq('google_id', authUser.id)
+          .single()
+        
+        if (userByGoogleId) {
+          userData = userByGoogleId
+          console.log('✅ fetchAndCacheUser: 通过google_id找到用户')
+        } else if (errorByGoogleId && errorByGoogleId.code !== 'PGRST116') {
+          console.warn('⚠️ fetchAndCacheUser: google_id查询出错:', errorByGoogleId)
+        }
+      }
+      
+      // 如果还是没找到，尝试用email查询
+      if (!userData) {
+        console.log('🔍 fetchAndCacheUser: google_id查询失败，尝试email查询...')
+        const { data: userByEmail, error: errorByEmail } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', authUser.email)
+          .single()
+        
+        if (userByEmail) {
+          userData = userByEmail
+          console.log('✅ fetchAndCacheUser: 通过email找到用户')
+        } else if (errorByEmail && errorByEmail.code !== 'PGRST116') {
+          dbError = errorByEmail
+          console.warn('⚠️ fetchAndCacheUser: email查询出错:', errorByEmail)
+        }
+      }
 
       if (dbError) {
-        console.error('❌ fetchAndCacheUser: 数据库查询失败:', {
-          error: dbError,
-          code: dbError.code,
-          message: dbError.message,
-          details: dbError.details
-        })
+        console.error('❌ fetchAndCacheUser: 所有数据库查询都失败:', dbError)
         return null
       }
 
       if (!userData) {
-        console.warn('⚠️ fetchAndCacheUser: 数据库中未找到用户数据')
+        console.warn('⚠️ fetchAndCacheUser: 数据库中未找到用户数据，可能需要创建新用户')
         return null
       }
 
       console.log('✅ fetchAndCacheUser: 从数据库获取用户成功:', {
+        原始数据: userData,
         id: userData.id,
         email: userData.email,
         display_name: userData.display_name,
         avatar_url: userData.avatar_url,
-        anonymous_id: userData.anonymous_id
+        anonymous_id: userData.anonymous_id,
+        数据类型: typeof userData,
+        所有字段: Object.keys(userData || {})
       })
 
       // 4. 缓存到内存
