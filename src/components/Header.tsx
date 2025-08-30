@@ -15,27 +15,61 @@ export default function Header({ currentPage }: HeaderProps) {
   const [isUserModalOpen, setIsUserModalOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true) // 初始为loading状态
 
   useEffect(() => {
     const initializeAuth = async () => {
       console.log('🔍 Header: 开始初始化认证状态...')
       
+      if (!supabase) {
+        setLoading(false)
+        return
+      }
+
       try {
-        // 简化认证逻辑：直接使用Supabase Auth
-        console.log('🔍 Header: 开始获取用户状态...')
+        // 1. 首先获取当前session，不依赖自定义localStorage
+        const { data: { session }, error } = await supabase.auth.getSession()
         
-        const currentUser = await userService.getCurrentUserAsync()
-        const isAuth = userService.isAuthenticated()
-        
-        console.log('👤 Header: 用户状态:', { 
-          user: currentUser?.email || 'None',
-          isAuthenticated: isAuth,
-          hasUser: !!currentUser
-        })
-        
-        setUser(currentUser)
-        setIsAuthenticated(isAuth)
+        if (error) {
+          console.warn('⚠️ Header: 获取session失败:', error)
+          setUser(null)
+          setIsAuthenticated(false)
+        } else if (session?.user) {
+          console.log('✅ Header: 找到有效session:', session.user.email)
+          
+          // 尝试获取完整用户信息
+          try {
+            const fullUser = await userService.fetchAndCacheUser()
+            if (fullUser) {
+              setUser(fullUser)
+              setIsAuthenticated(true)
+            } else {
+              // 使用基本的Auth用户信息
+              const basicUser = {
+                id: session.user.id,
+                email: session.user.email,
+                display_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0],
+                avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture
+              }
+              setUser(basicUser)
+              setIsAuthenticated(true)
+            }
+          } catch (fetchError) {
+            console.warn('⚠️ Header: 获取完整用户信息失败，使用基本信息:', fetchError)
+            const basicUser = {
+              id: session.user.id,
+              email: session.user.email,
+              display_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0],
+              avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture
+            }
+            setUser(basicUser)
+            setIsAuthenticated(true)
+          }
+        } else {
+          console.log('📱 Header: 无有效session')
+          setUser(null)
+          setIsAuthenticated(false)
+        }
         
         // 检查是否从OAuth回调页面返回
         const urlParams = new URLSearchParams(window.location.search)
@@ -72,6 +106,8 @@ export default function Header({ currentPage }: HeaderProps) {
         
       } catch (error) {
         console.error('❌ Header: 认证初始化失败:', error)
+        setUser(null)
+        setIsAuthenticated(false)
       } finally {
         setLoading(false)
       }
@@ -107,39 +143,43 @@ export default function Header({ currentPage }: HeaderProps) {
             console.warn('⚠️ Header: Session检查失败:', sessionError)
           }
           
-          // 正确设置Auth状态监听
+          // 设置Auth状态监听 - 作为唯一的状态来源
           const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             console.log('🔄 Header: Auth状态变化:', event, session?.user?.email || 'No user')
             
-            if (event === 'SIGNED_IN' && session?.user) {
-              console.log('✅ Header: 用户登录，更新状态')
+            if (session?.user) {
+              console.log('✅ Header: 有用户session，更新状态')
               try {
                 const fullUser = await userService.fetchAndCacheUser()
                 if (fullUser) {
                   setUser(fullUser)
                   setIsAuthenticated(true)
+                } else {
+                  // 使用基本用户信息
+                  const basicUser = {
+                    id: session.user.id,
+                    email: session.user.email,
+                    display_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0],
+                    avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture
+                  }
+                  setUser(basicUser)
+                  setIsAuthenticated(true)
                 }
               } catch (error) {
-                console.error('❌ Header: 登录后获取用户失败:', error)
+                console.error('❌ Header: 获取用户信息失败，使用基本信息:', error)
+                const basicUser = {
+                  id: session.user.id,
+                  email: session.user.email,
+                  display_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email?.split('@')[0],
+                  avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture
+                }
+                setUser(basicUser)
+                setIsAuthenticated(true)
               }
-            } else if (event === 'SIGNED_OUT') {
-              console.log('🚪 Header: 用户登出，清除状态')
+            } else {
+              console.log('🚪 Header: 无用户session，清除状态')
               setUser(null)
               setIsAuthenticated(false)
-            } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-              console.log('🔄 Header: Token刷新，验证用户状态')
-              const currentUser = userService.getCurrentUser()
-              if (!currentUser) {
-                try {
-                  const fullUser = await userService.fetchAndCacheUser()
-                  if (fullUser) {
-                    setUser(fullUser)
-                    setIsAuthenticated(true)
-                  }
-                } catch (error) {
-                  console.error('❌ Header: Token刷新后获取用户失败:', error)
-                }
-              }
             }
           })
           
@@ -154,24 +194,7 @@ export default function Header({ currentPage }: HeaderProps) {
     // 异步设置Auth监听
     setupAuthListener()
     
-    // 监听存储变化（用于跨标签页同步）
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'user' || e.key === 'isAuthenticated') {
-        console.log('🔄 Header: 检测到localStorage变化')
-        try {
-          const currentUser = userService.getCurrentUser()
-          const isAuth = userService.isAuthenticated()
-          setUser(currentUser)
-          setIsAuthenticated(isAuth)
-        } catch (storageError) {
-          console.warn('⚠️ Header: 存储变化处理失败:', storageError)
-        }
-      }
-    }
-    
-    if (typeof window !== 'undefined') {
-      window.addEventListener('storage', handleStorageChange)
-    }
+    // 不再监听localStorage变化，完全依赖Supabase Auth状态
     
     return () => {
       // 正确的Supabase订阅清理方式
@@ -183,9 +206,7 @@ export default function Header({ currentPage }: HeaderProps) {
         }
       }
       
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('storage', handleStorageChange)
-      }
+      // 清理完成
     }
   }, [])
 
@@ -287,7 +308,7 @@ export default function Header({ currentPage }: HeaderProps) {
           {/* 登录状态显示 */}
           <div className="auth-section">
             {loading ? (
-              <div className="loading-indicator">...</div>
+              <div className="loading-indicator">Loading...</div>
             ) : isAuthenticated && user && user.email ? (
               <button className="user-avatar-btn" onClick={toggleUserModal}>
                 {user.avatar_url ? (
