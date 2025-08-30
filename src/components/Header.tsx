@@ -27,7 +27,26 @@ export default function Header({ currentPage }: HeaderProps) {
       }
 
       try {
-        // 1. 首先获取当前session，不依赖自定义localStorage
+        // 1. 首先检查localStorage中的用户数据（简化登录的fallback）
+        const storedUser = localStorage.getItem('user')
+        const storedAuth = localStorage.getItem('isAuthenticated')
+        
+        if (storedUser && storedAuth === 'true') {
+          try {
+            const parsedUser = JSON.parse(storedUser)
+            if (parsedUser && parsedUser.email) {
+              console.log('✅ Header: 从localStorage恢复用户状态:', parsedUser.email)
+              setUser(parsedUser)
+              setIsAuthenticated(true)
+              setLoading(false) // 立即停止loading
+              return // 直接返回，不再检查Supabase session
+            }
+          } catch (parseError) {
+            console.warn('⚠️ Header: localStorage解析失败:', parseError)
+          }
+        }
+
+        // 2. 如果localStorage没有用户，再检查Supabase session
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -37,9 +56,15 @@ export default function Header({ currentPage }: HeaderProps) {
         } else if (session?.user) {
           console.log('✅ Header: 找到有效session:', session.user.email)
           
-          // 尝试获取完整用户信息
+          // 尝试获取完整用户信息，但设置超时
           try {
-            const fullUser = await userService.fetchAndCacheUser()
+            const fetchPromise = userService.fetchAndCacheUser()
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('获取用户信息超时')), 3000)
+            )
+            
+            const fullUser = await Promise.race([fetchPromise, timeoutPromise]) as any
+            
             if (fullUser) {
               setUser(fullUser)
               setIsAuthenticated(true)
@@ -66,7 +91,7 @@ export default function Header({ currentPage }: HeaderProps) {
             setIsAuthenticated(true)
           }
         } else {
-          console.log('📱 Header: 无有效session')
+          console.log('📱 Header: 无有效session和localStorage用户')
           setUser(null)
           setIsAuthenticated(false)
         }
@@ -143,14 +168,21 @@ export default function Header({ currentPage }: HeaderProps) {
             console.warn('⚠️ Header: Session检查失败:', sessionError)
           }
           
-          // 设置Auth状态监听 - 作为唯一的状态来源
+          // 设置Auth状态监听 - 但不完全依赖它
           const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             console.log('🔄 Header: Auth状态变化:', event, session?.user?.email || 'No user')
             
             if (session?.user) {
               console.log('✅ Header: 有用户session，更新状态')
               try {
-                const fullUser = await userService.fetchAndCacheUser()
+                // 设置较短的超时时间
+                const fetchPromise = userService.fetchAndCacheUser()
+                const timeoutPromise = new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('获取用户信息超时')), 2000)
+                )
+                
+                const fullUser = await Promise.race([fetchPromise, timeoutPromise]) as any
+                
                 if (fullUser) {
                   setUser(fullUser)
                   setIsAuthenticated(true)
@@ -166,7 +198,7 @@ export default function Header({ currentPage }: HeaderProps) {
                   setIsAuthenticated(true)
                 }
               } catch (error) {
-                console.error('❌ Header: 获取用户信息失败，使用基本信息:', error)
+                console.warn('⚠️ Header: 获取用户信息失败，使用基本信息:', error)
                 const basicUser = {
                   id: session.user.id,
                   email: session.user.email,
@@ -176,11 +208,12 @@ export default function Header({ currentPage }: HeaderProps) {
                 setUser(basicUser)
                 setIsAuthenticated(true)
               }
-            } else {
-              console.log('🚪 Header: 无用户session，清除状态')
+            } else if (event === 'SIGNED_OUT') {
+              console.log('🚪 Header: 用户登出，清除状态')
               setUser(null)
               setIsAuthenticated(false)
             }
+            // 对于其他事件，不清除现有的localStorage用户状态
           })
           
           authSubscription = subscription

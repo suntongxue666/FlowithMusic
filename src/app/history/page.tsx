@@ -90,9 +90,35 @@ export default function HistoryPage() {
       try {
         setLoading(true)
         
-        // 使用简化的用户状态获取，与Header保持一致
-        const currentUser = await userService.getCurrentUserAsync()
-        const isAuth = userService.isAuthenticated()
+        // 优化的用户状态获取，与Header保持一致，添加超时保护
+        let currentUser = null
+        try {
+          const userPromise = userService.getCurrentUserAsync()
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('用户获取超时')), 5000)
+          )
+          
+          currentUser = await Promise.race([userPromise, timeoutPromise]) as any
+        } catch (userError) {
+          console.warn('⚠️ History: 用户获取失败，使用localStorage fallback:', userError)
+          
+          // Fallback: 直接从localStorage获取
+          if (typeof window !== 'undefined') {
+            try {
+              const storedUser = localStorage.getItem('user')
+              const storedAuth = localStorage.getItem('isAuthenticated')
+              
+              if (storedUser && storedAuth === 'true') {
+                currentUser = JSON.parse(storedUser)
+                console.log('✅ History: 从localStorage恢复用户:', currentUser?.email)
+              }
+            } catch (parseError) {
+              console.warn('⚠️ History: localStorage解析失败:', parseError)
+            }
+          }
+        }
+        
+        const isAuth = userService.isAuthenticated() || !!currentUser
         
         console.log('📊 History用户状态:', {
           isAuth,
@@ -103,7 +129,7 @@ export default function HistoryPage() {
         
         // 立即设置状态，确保与Header同步
         setUser(currentUser)
-        setIsAuthenticated(!!currentUser)
+        setIsAuthenticated(isAuth)
         
         // Load letters based on authentication status
         let userLetters: Letter[] = []

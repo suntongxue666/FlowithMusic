@@ -1,10 +1,10 @@
-import { supabase, User, AnonymousSession } from './supabase'
+import { supabase, User } from './supabase'
 import { ImprovedUserIdentity } from './improvedUserIdentity'
 
 // 生成匿名ID
 export function generateAnonymousId(): string {
   const timestamp = Date.now().toString()
-  const random = Math.random().toString(36).substr(2, 8)
+  const random = Math.random().toString(36).substring(2, 10)
   return `anon_${timestamp}_${random}`
 }
 
@@ -577,7 +577,7 @@ export class UserService {
     console.log('✅ UserService: 用户登出完成（本地状态已清除）')
   }
 
-  // 从数据库获取用户数据并缓存
+  // 从数据库获取用户数据并缓存 - 优化版本
   async fetchAndCacheUser(): Promise<User | null> {
     console.log('🔍 fetchAndCacheUser: 开始获取用户数据...')
     
@@ -587,119 +587,124 @@ export class UserService {
     }
 
     try {
-      // 1. 检查Supabase会话
-      console.log('🔍 fetchAndCacheUser: 检查Supabase会话...')
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      // 为整个方法设置总超时时间
+      const totalTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('fetchAndCacheUser总超时')), 8000)
+      )
+
+      const fetchProcess = async () => {
+        // 1. 检查Supabase会话 - 减少超时时间
+        console.log('🔍 fetchAndCacheUser: 检查Supabase会话...')
+        
+        const sessionPromise = supabase.auth.getSession()
+        const sessionTimeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session获取超时')), 3000)
+        )
+        
+        const sessionResult = await Promise.race([sessionPromise, sessionTimeout]) as any
+        const { data: { session }, error: sessionError } = sessionResult
+        
+        if (sessionError) {
+          console.error('❌ fetchAndCacheUser: 获取会话失败:', sessionError)
+          return null
+        }
+
+        if (!session) {
+          console.log('📱 fetchAndCacheUser: 无Supabase会话')
+          return null
+        }
+
+        console.log('✅ fetchAndCacheUser: 找到Supabase会话:', {
+          userId: session.user.id,
+          email: session.user.email
+        })
+
+        // 2. 获取认证用户 - 减少超时时间
+        const userPromise = supabase.auth.getUser()
+        const userTimeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('GetUser超时')), 2000)
+        )
+        
+        const userResult = await Promise.race([userPromise, userTimeout]) as any
+        const { data: { user: authUser }, error: userError } = userResult
+        
+        if (userError) {
+          console.error('❌ fetchAndCacheUser: 获取认证用户失败:', userError)
+          return null
+        }
+
+        if (!authUser) {
+          console.log('📱 fetchAndCacheUser: 无认证用户')
+          return null
+        }
+
+        console.log('✅ fetchAndCacheUser: 找到认证用户:', {
+          id: authUser.id,
+          email: authUser.email,
+          metadata: authUser.user_metadata
+        })
+
+        return authUser
+      }
+
+      const authUser = await Promise.race([fetchProcess(), totalTimeout]) as any
       
-      if (sessionError) {
-        console.error('❌ fetchAndCacheUser: 获取会话失败:', sessionError)
-        return null
-      }
-
-      if (!session) {
-        console.log('📱 fetchAndCacheUser: 无Supabase会话')
-        return null
-      }
-
-      console.log('✅ fetchAndCacheUser: 找到Supabase会话:', {
-        userId: session.user.id,
-        email: session.user.email
-      })
-
-      // 2. 获取认证用户
-      const { data: { user: authUser }, error: userError } = await supabase.auth.getUser()
-      
-      if (userError) {
-        console.error('❌ fetchAndCacheUser: 获取认证用户失败:', userError)
-        return null
-      }
-
       if (!authUser) {
-        console.log('📱 fetchAndCacheUser: 无认证用户')
         return null
       }
 
-      console.log('✅ fetchAndCacheUser: 找到认证用户:', {
-        id: authUser.id,
-        email: authUser.email,
-        metadata: authUser.user_metadata
-      })
-
-      // 3. 从数据库获取完整用户信息
+      // 3. 从数据库获取完整用户信息 - 优化查询逻辑
       console.log('🔍 fetchAndCacheUser: 查询数据库用户数据...', {
         查询字段: 'id',
         查询值: authUser.id,
         用户邮箱: authUser.email
       })
       
-      // 先测试数据库连接和权限 - 修复count查询语法
-      try {
-        const { count, error: testError } = await supabase
-          .from('users')
-          .select('*', { count: 'exact', head: true })
-        
-        console.log('🔍 数据库连接测试:', { count, testError })
-      } catch (testErr) {
-        console.warn('⚠️ 数据库连接测试失败:', testErr)
-      }
-      
-      // 尝试多种查询方式
+      // 优化的数据库查询 - 并行查询提高效率
       let userData = null
       let dbError = null
       
-      // 首先尝试用id查询 - 不使用single()，因为可能返回数组
-      const { data: userByIdArray, error: errorById } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authUser.id)
-      
-      if (userByIdArray && userByIdArray.length > 0) {
-        userData = userByIdArray[0] // 取数组的第一个元素
-        console.log('✅ fetchAndCacheUser: 通过id找到用户')
-      } else if (errorById && errorById.code !== 'PGRST116') {
-        console.warn('⚠️ fetchAndCacheUser: id查询出错:', errorById)
-      }
-      
-      // 如果id查询失败，尝试用google_id查询
-      if (!userData) {
-        console.log('🔍 fetchAndCacheUser: id查询失败，尝试google_id查询...')
-        const { data: userByGoogleIdArray, error: errorByGoogleId } = await supabase
-          .from('users')
-          .select('*')
-          .eq('google_id', authUser.id)
+      try {
+        // 并行执行多种查询方式，提高效率
+        const queryPromises = [
+          // 查询1: 通过id查询
+          supabase.from('users').select('*').eq('id', authUser.id).limit(1),
+          // 查询2: 通过google_id查询
+          supabase.from('users').select('*').eq('google_id', authUser.id).limit(1),
+          // 查询3: 通过email查询
+          supabase.from('users').select('*').eq('email', authUser.email).limit(1)
+        ]
         
-        if (userByGoogleIdArray && userByGoogleIdArray.length > 0) {
-          userData = userByGoogleIdArray[0]
-          console.log('✅ fetchAndCacheUser: 通过google_id找到用户')
-        } else if (errorByGoogleId && errorByGoogleId.code !== 'PGRST116') {
-          console.warn('⚠️ fetchAndCacheUser: google_id查询出错:', errorByGoogleId)
-        }
-      }
-      
-      // 如果还是没找到，尝试用email查询
-      if (!userData) {
-        console.log('🔍 fetchAndCacheUser: google_id查询失败，尝试email查询...')
-        const { data: userByEmailArray, error: errorByEmail } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', authUser.email)
+        // 为数据库查询设置超时
+        const dbTimeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('数据库查询超时')), 4000)
+        )
         
-        if (userByEmailArray && userByEmailArray.length > 0) {
-          userData = userByEmailArray[0]
-          console.log('✅ fetchAndCacheUser: 通过email找到用户')
-        } else if (errorByEmail && errorByEmail.code !== 'PGRST116') {
-          dbError = errorByEmail
-          console.warn('⚠️ fetchAndCacheUser: email查询出错:', errorByEmail)
+        const queryResults = await Promise.race([
+          Promise.allSettled(queryPromises),
+          dbTimeout
+        ]) as any
+        
+        // 检查查询结果
+        for (let i = 0; i < queryResults.length; i++) {
+          const result = queryResults[i]
+          if (result.status === 'fulfilled' && result.value.data && result.value.data.length > 0) {
+            userData = result.value.data[0]
+            const queryType = ['id', 'google_id', 'email'][i]
+            console.log(`✅ fetchAndCacheUser: 通过${queryType}找到用户`)
+            break
+          } else if (result.status === 'rejected') {
+            console.warn(`⚠️ fetchAndCacheUser: ${['id', 'google_id', 'email'][i]}查询失败:`, result.reason)
+          }
         }
-      }
-
-      if (dbError) {
-        console.error('❌ fetchAndCacheUser: 所有数据库查询都失败:', dbError)
-        return null
-      }
-
-      if (!userData) {
-        console.warn('⚠️ fetchAndCacheUser: 数据库中未找到用户数据，可能需要创建新用户')
+        
+        if (!userData) {
+          console.warn('⚠️ fetchAndCacheUser: 所有查询都未找到用户数据')
+          return null
+        }
+        
+      } catch (queryError) {
+        console.error('❌ fetchAndCacheUser: 数据库查询异常:', queryError)
         return null
       }
 
@@ -767,7 +772,7 @@ export class UserService {
     return null
   }
 
-  // 异步获取当前用户 - 直接使用Supabase Auth（简化版）
+  // 异步获取当前用户 - 优化版本，优先使用localStorage
   async getCurrentUserAsync(): Promise<User | null> {
     console.log('🔍 getCurrentUserAsync: 开始异步获取用户...')
     
@@ -777,11 +782,38 @@ export class UserService {
       return this.currentUser
     }
 
-    // 2. 直接从Supabase Auth获取，不再复杂校验
+    // 2. 优先检查localStorage（与Header保持一致）
+    if (typeof window !== 'undefined') {
+      try {
+        const storedUser = localStorage.getItem('user')
+        const storedAuth = localStorage.getItem('isAuthenticated')
+        
+        if (storedUser && storedAuth === 'true') {
+          const parsedUser = JSON.parse(storedUser)
+          if (parsedUser && parsedUser.email) {
+            console.log('✅ getCurrentUserAsync: 从localStorage恢复用户:', parsedUser.email)
+            this.currentUser = parsedUser
+            return parsedUser
+          }
+        }
+      } catch (parseError) {
+        console.warn('⚠️ getCurrentUserAsync: localStorage解析失败:', parseError)
+      }
+    }
+
+    // 3. 如果localStorage没有，再从Supabase Auth获取
     if (supabase) {
       try {
         console.log('🔍 getCurrentUserAsync: 从Supabase Auth获取用户...')
-        const { data: { user: authUser }, error } = await supabase.auth.getUser()
+        
+        // 为Auth查询设置超时
+        const authPromise = supabase.auth.getUser()
+        const authTimeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Auth查询超时')), 3000)
+        )
+        
+        const authResult = await Promise.race([authPromise, authTimeout]) as any
+        const { data: { user: authUser }, error } = authResult
         
         if (error) {
           console.warn('⚠️ getCurrentUserAsync: Supabase Auth获取失败:', error)
@@ -791,14 +823,22 @@ export class UserService {
         if (authUser) {
           console.log('✅ getCurrentUserAsync: 找到Supabase Auth用户:', authUser.email)
           
-          // 从数据库获取完整用户信息
-          const fullUser = await this.fetchAndCacheUser()
-          if (fullUser) {
-            return fullUser
+          // 尝试从数据库获取完整用户信息，但设置较短超时
+          try {
+            const dbPromise = this.fetchAndCacheUser()
+            const dbTimeout = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('数据库查询超时')), 4000)
+            )
+            
+            const fullUser = await Promise.race([dbPromise, dbTimeout]) as any
+            if (fullUser) {
+              return fullUser
+            }
+          } catch (dbError) {
+            console.warn('⚠️ getCurrentUserAsync: 数据库获取失败，使用Auth基本信息:', dbError)
           }
           
-          // 如果数据库获取失败，至少返回Auth用户信息
-          console.log('⚠️ 数据库获取失败，使用Auth用户信息')
+          // 如果数据库获取失败，使用Auth用户信息
           const basicUser = {
             id: authUser.id,
             email: authUser.email,
@@ -813,6 +853,17 @@ export class UserService {
           }
           
           this.currentUser = basicUser
+          
+          // 保存到localStorage
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('user', JSON.stringify(basicUser))
+              localStorage.setItem('isAuthenticated', 'true')
+            } catch (saveError) {
+              console.warn('⚠️ localStorage保存失败:', saveError)
+            }
+          }
+          
           return basicUser
         } else {
           console.log('📱 getCurrentUserAsync: Supabase Auth无用户')

@@ -15,7 +15,7 @@ function AuthCallbackComponent() {
     const handleAuthCallback = async () => {
       console.log('🚀 AuthCallback: 开始处理Google OAuth回调...')
       console.log('🔍 AuthCallback: 当前URL:', window.location.href)
-      
+
       try {
         if (!supabase) {
           throw new Error('Supabase客户端未初始化')
@@ -25,19 +25,19 @@ function AuthCallbackComponent() {
         console.log('🔍 AuthCallback: 检查URL参数...')
         const hashParams = new URLSearchParams(window.location.hash.substring(1))
         const urlParams = new URLSearchParams(window.location.search)
-        
+
         const accessToken = hashParams.get('access_token') || urlParams.get('access_token')
         const error = hashParams.get('error') || urlParams.get('error')
         const errorDescription = hashParams.get('error_description') || urlParams.get('error_description')
-        
+
         if (error) {
           console.error('❌ AuthCallback: OAuth返回错误:', error, errorDescription)
           throw new Error(`OAuth认证失败: ${errorDescription || error}`)
         }
-        
+
         if (accessToken) {
           console.log('✅ AuthCallback: 发现access_token，直接解析用户信息')
-          
+
           // 直接从token解析用户信息，跳过Supabase会话处理
           try {
             const tokenParts = accessToken.split('.')
@@ -48,7 +48,7 @@ function AuthCallbackComponent() {
                 email: payload.email,
                 name: payload.user_metadata?.full_name || payload.name
               })
-              
+
               if (payload.sub && payload.email) {
                 const user = {
                   id: payload.sub,
@@ -59,21 +59,21 @@ function AuthCallbackComponent() {
                     email: payload.email
                   }
                 }
-                
+
                 console.log('✅ AuthCallback: 直接解析成功，跳过Supabase会话检查')
-                
+
                 // 直接调用userService处理用户数据 - 简化版
                 console.log('🔄 AuthCallback: 调用userService处理用户数据...')
-                
+
                 try {
                   // 设置10秒超时
                   const userProcessPromise = userService.handleAuthCallback(user)
-                  const timeoutPromise = new Promise((_, reject) => 
+                  const timeoutPromise = new Promise((_, reject) =>
                     setTimeout(() => reject(new Error('用户处理超时')), 10000)
                   )
-                  
+
                   const processedUser = await Promise.race([userProcessPromise, timeoutPromise]) as any
-                  
+
                   console.log('✅ AuthCallback: 用户处理完成:', {
                     id: processedUser.id,
                     email: processedUser.email,
@@ -85,7 +85,7 @@ function AuthCallbackComponent() {
                   return
                 } catch (processError) {
                   console.warn('⚠️ AuthCallback: 用户处理失败，使用简化流程:', processError)
-                  
+
                   // 简化处理：直接保存基本用户信息到localStorage
                   const metadata = user.user_metadata as any
                   const simpleUser = {
@@ -100,10 +100,10 @@ function AuthCallbackComponent() {
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                   }
-                  
+
                   localStorage.setItem('user', JSON.stringify(simpleUser))
                   localStorage.setItem('isAuthenticated', 'true')
-                  
+
                   console.log('✅ AuthCallback: 简化登录完成，即将重定向...')
                   router.push('/history?login=success')
                   return
@@ -114,18 +114,18 @@ function AuthCallbackComponent() {
             console.warn('⚠️ 直接解析失败，使用原有流程:', parseError)
           }
         }
-        
+
         // 尝试获取当前会话 - 减少超时时间
         console.log('🔍 AuthCallback: 获取当前会话...')
-        
+
         let sessionData, sessionError
         try {
           // 减少超时时间到5秒，提高响应速度
           const sessionPromise = supabase.auth.getSession()
-          const timeoutPromise = new Promise((_, reject) => 
+          const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Session获取超时')), 5000)
           )
-          
+
           const result = await Promise.race([sessionPromise, timeoutPromise]) as any
           sessionData = result.data
           sessionError = result.error
@@ -133,7 +133,7 @@ function AuthCallbackComponent() {
           console.warn('⚠️ AuthCallback: Session获取超时，尝试备用方法')
           sessionError = timeoutError
         }
-        
+
         if (sessionError) {
           console.error('❌ AuthCallback: 获取会话失败:', sessionError)
           // 不要立即抛错，尝试备用方法
@@ -141,23 +141,23 @@ function AuthCallbackComponent() {
 
         let user: any
         let session = sessionData?.session
-        
+
         if (!session || sessionError) {
           console.warn('⚠️ AuthCallback: 没有有效会话或会话获取失败，尝试其他方法...')
-          
+
           // 如果有access_token，尝试备用认证方法
           if (accessToken) {
             console.log('🔄 AuthCallback: 尝试通过access_token直接获取用户...')
-            
+
             try {
               // 方法1: 尝试通过getUser获取
               const userPromise = supabase.auth.getUser()
-              const userTimeoutPromise = new Promise((_, reject) => 
+              const userTimeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('GetUser获取超时')), 5000)
               )
-              
+
               const userResult = await Promise.race([userPromise, userTimeoutPromise]) as any
-              
+
               if (userResult.data?.user && !userResult.error) {
                 console.log('✅ AuthCallback: 通过getUser成功获取用户')
                 user = userResult.data.user
@@ -166,7 +166,7 @@ function AuthCallbackComponent() {
               }
             } catch (getUserError) {
               console.warn('⚠️ AuthCallback: getUser方法失败，尝试手动解析token')
-              
+
               // 方法2: 手动解析access_token (兜底方案)
               try {
                 // 解析JWT token获取用户信息
@@ -174,7 +174,7 @@ function AuthCallbackComponent() {
                 if (tokenParts.length === 3) {
                   const payload = JSON.parse(atob(tokenParts[1]))
                   console.log('🔍 AuthCallback: 从token解析到用户信息:', payload)
-                  
+
                   if (payload.sub && payload.email) {
                     user = {
                       id: payload.sub,
@@ -204,18 +204,18 @@ function AuthCallbackComponent() {
           console.log('✅ AuthCallback: 会话验证成功')
           user = session.user
         }
-        
+
         // 调用userService处理用户数据和迁移 - 添加超时处理
         console.log('🔄 AuthCallback: 调用userService处理用户数据...')
-        
+
         // 设置15秒超时
         const userProcessPromise = userService.handleAuthCallback(user)
-        const timeoutPromise = new Promise((_, reject) => 
+        const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('用户数据处理超时')), 15000)
         )
-        
+
         const processedUser = await Promise.race([userProcessPromise, timeoutPromise]) as any
-        
+
         console.log('✅ AuthCallback: 用户处理完成:', {
           id: processedUser.id,
           email: processedUser.email,
@@ -225,17 +225,17 @@ function AuthCallbackComponent() {
         })
 
         console.log('🎉 AuthCallback: 登录成功，即将重定向...')
-        
+
         // 等待一下确保数据保存完成
         await new Promise(resolve => setTimeout(resolve, 500))
-        
+
         // 重定向到历史页面
         router.push('/history?login=success')
-        
+
       } catch (err: any) {
         console.error('💥 AuthCallback: 回调处理出错:', err)
         setError(err.message || '登录处理失败，请重试')
-        
+
         // 等待3秒后重定向到主页
         setTimeout(() => {
           router.push('/history?login=error')
@@ -247,7 +247,7 @@ function AuthCallbackComponent() {
 
     // 减少延迟到200ms，加快响应
     const timeoutId = setTimeout(handleAuthCallback, 200)
-    
+
     return () => clearTimeout(timeoutId)
   }, [router, searchParams])
 
@@ -256,11 +256,11 @@ function AuthCallbackComponent() {
       <div className="auth-callback-container">
         <div className="auth-callback-content">
           <div className="loading-spinner"></div>
-          <h2>正在验证登录...</h2>
-          <p>请稍候，我们正在处理您的Google登录信息</p>
-          <p className="auth-notice">🔐 正在建立安全连接</p>
+          <h2>Verifying Login...</h2>
+          <p>Please wait while we process your Google login information</p>
+          <p className="auth-notice">🔐 Establishing secure connection</p>
         </div>
-        
+
         <style jsx>{`
           .auth-callback-container {
             min-height: 100vh;
@@ -310,15 +310,15 @@ function AuthCallbackComponent() {
       <div className="auth-callback-container">
         <div className="auth-callback-content error">
           <div className="error-icon">❌</div>
-          <h2>登录失败</h2>
+          <h2>Login Failed</h2>
           <p>{error}</p>
-          <p>即将重定向到主页...</p>
-          
+          <p>Redirecting to homepage...</p>
+
           <button onClick={() => router.push('/')} className="retry-btn">
-            返回主页
+            Back to Home
           </button>
         </div>
-        
+
         <style jsx>{`
           .auth-callback-container {
             min-height: 100vh;
@@ -365,11 +365,11 @@ function AuthCallbackComponent() {
     <div className="auth-callback-container">
       <div className="auth-callback-content">
         <div className="success-icon">✅</div>
-        <h2>登录成功！</h2>
-        <p>正在为您准备个人化体验...</p>
-        <p>即将跳转到历史页面</p>
+        <h2>Login Successful!</h2>
+        <p>Preparing your personalized experience...</p>
+        <p>Redirecting to your history page</p>
       </div>
-      
+
       <style jsx>{`
         .auth-callback-container {
           min-height: 100vh;
@@ -403,10 +403,10 @@ export default function AuthCallback() {
       <div className="auth-callback-container">
         <div className="auth-callback-content">
           <div className="loading-spinner"></div>
-          <h2>正在加载...</h2>
-          <p>请稍候，我们正在处理您的登录信息</p>
+          <h2>Loading...</h2>
+          <p>Please wait while we process your login information</p>
         </div>
-        
+
         <style jsx>{`
           .auth-callback-container {
             min-height: 100vh;
