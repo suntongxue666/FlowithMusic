@@ -308,6 +308,44 @@ export class UserService {
               display_name: data.display_name,
               avatar_url: data.avatar_url
             })
+            
+            // 检查用户数据是否完整，如果不完整则更新
+            if (!data.email || !data.display_name || data.email === 'undefined') {
+              console.log('🔧 UserService: 检测到用户数据不完整，开始修复...')
+              
+              const metadata = user.user_metadata as any
+              const updateData = {
+                email: user.email,
+                display_name: metadata?.full_name || metadata?.name || user.email?.split('@')[0],
+                avatar_url: metadata?.avatar_url || metadata?.picture,
+                social_media_info: user.user_metadata || {}
+              }
+              
+              console.log('🔧 UserService: 更新用户数据:', updateData)
+              
+              try {
+                const { data: updatedData, error: updateError } = await supabase
+                  .from('users')
+                  .update(updateData)
+                  .eq('id', user.id)
+                  .select()
+                  .single()
+                
+                if (!updateError && updatedData) {
+                  existingUser = updatedData
+                  console.log('✅ UserService: 用户数据修复成功:', {
+                    email: updatedData.email,
+                    display_name: updatedData.display_name,
+                    avatar_url: updatedData.avatar_url
+                  })
+                } else {
+                  console.warn('⚠️ UserService: 用户数据修复失败:', updateError)
+                }
+              } catch (updateErr) {
+                console.warn('⚠️ UserService: 用户数据更新异常:', updateErr)
+              }
+            }
+            
             break
           }
           
