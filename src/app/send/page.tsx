@@ -83,10 +83,10 @@ export default function SendPage() {
       
       console.log('Creating letter with track:', selectedTrack.name)
 
-      // 为PC浏览器添加额外的超时保护（手机Safari不需要，因为它工作正常）
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      // 简化的letter创建逻辑，添加更短的超时保护
+      console.log('📝 开始创建letter...')
       
-      let letterPromise = letterService.createLetter({
+      const letterPromise = letterService.createLetter({
         to: recipient.trim(),
         message: message.trim(),
         song: {
@@ -99,18 +99,12 @@ export default function SendPage() {
         }
       })
       
-      // 只对PC浏览器添加超时保护
-      if (!isMobile) {
-        console.log('🖥️ PC browser detected, adding timeout protection')
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('PC browser timeout: Letter creation took too long')), 45000)
-        )
-        letterPromise = Promise.race([letterPromise, timeoutPromise]) as Promise<any>
-      } else {
-        console.log('📱 Mobile browser detected, using normal flow')
-      }
+      // 添加15秒超时保护，避免卡住
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Letter creation timeout after 15 seconds')), 15000)
+      )
       
-      const newLetter = await letterPromise
+      const newLetter = await Promise.race([letterPromise, timeoutPromise]) as any
 
       console.log('Letter created successfully:', newLetter)
       setCreatedLetter(newLetter)
@@ -149,16 +143,54 @@ export default function SendPage() {
     } catch (error) {
       console.error('Failed to submit:', error)
       
-      // 特别处理PC浏览器的超时错误
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-      if (!isMobile && error instanceof Error && error.message.includes('PC browser timeout')) {
-        console.warn('🖥️ PC browser timeout detected, showing specific error message')
-        setErrorMessage('⏰ PC浏览器提交超时了。请尝试刷新页面或切换到手机浏览器。手机Safari表现最佳！')
-      } else {
-        const errorMsg = error instanceof Error ? error.message : 'Failed to create letter. Please try again.'
-        setErrorMessage(`⚠️ ${errorMsg}`)
+      // 如果是超时错误，尝试简化的本地保存
+      if (error instanceof Error && error.message.includes('timeout')) {
+        console.log('⏰ 检测到超时，尝试简化的本地保存...')
+        
+        try {
+          // 创建简化的letter对象
+          const simpleLetter = {
+            id: `local-${Date.now()}`,
+            link_id: `local-${Date.now()}`,
+            user_id: userService.getCurrentUser()?.id || null,
+            anonymous_id: userService.getCurrentUser() ? null : userService.getAnonymousId(),
+            recipient_name: recipient.trim(),
+            message: message.trim(),
+            song_id: selectedTrack.id,
+            song_title: selectedTrack.name,
+            song_artist: selectedTrack.artists[0]?.name || 'Unknown Artist',
+            song_album_cover: selectedTrack.album.images[0]?.url || '',
+            song_preview_url: selectedTrack.preview_url || undefined,
+            song_spotify_url: selectedTrack.external_urls.spotify,
+            view_count: 0,
+            is_public: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+          
+          // 保存到localStorage
+          const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+          existingLetters.unshift(simpleLetter)
+          localStorage.setItem('letters', JSON.stringify(existingLetters))
+          
+          console.log('✅ 简化保存成功，letter已保存到本地')
+          setCreatedLetter(simpleLetter)
+          setShowToast(true)
+          
+          setTimeout(() => {
+            router.push('/history')
+          }, 1500)
+          
+          return // 成功处理，不显示错误
+          
+        } catch (localError) {
+          console.error('❌ 简化保存也失败:', localError)
+        }
       }
       
+      // 显示错误信息
+      const errorMsg = error instanceof Error ? error.message : 'Failed to create letter. Please try again.'
+      setErrorMessage(`⚠️ ${errorMsg}`)
       setShowErrorModal(true)
     } finally {
       setIsSubmitting(false)
