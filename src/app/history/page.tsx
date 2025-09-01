@@ -95,18 +95,34 @@ export default function HistoryPage() {
           return
         }
         
-        console.log('📊 History用户状态:', {
-          isAuth: isAuthenticated,
-          user: user?.email,
-          userId: user?.id,
-          hasUser: !!user,
-          userLoading
+        // 强制获取最新的用户状态，避免Hook状态滞后
+        const currentUser = userService.getCurrentUser()
+        const currentAuth = userService.isAuthenticated()
+        
+        console.log('📊 History用户状态对比:', {
+          Hook状态: {
+            isAuth: isAuthenticated,
+            user: user?.email,
+            userId: user?.id,
+            hasUser: !!user,
+            userLoading
+          },
+          Service状态: {
+            isAuth: currentAuth,
+            user: currentUser?.email,
+            userId: currentUser?.id,
+            hasUser: !!currentUser
+          }
         })
         
-        // Load letters based on authentication status
+        // 使用Service状态作为权威状态，避免Hook状态滞后问题
+        const finalUser = currentUser || user
+        const finalAuth = currentAuth || isAuthenticated
+        
+        // Load letters based on authentication status - 使用最新状态
         let userLetters: Letter[] = []
         
-        if (isAuthenticated && user) {
+        if (finalAuth && finalUser) {
           // Authenticated user - get from database and migrate if needed
           console.log('🔐 Authenticated user detected, calling getUserLetters...')
           try {
@@ -130,18 +146,18 @@ export default function HistoryPage() {
             const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
             console.log('📱 Fallback: found letters in localStorage:', localLetters.length)
             
-            // 为已登录用户过滤相关的letters
+            // 为已登录用户过滤相关的letters - 使用最新用户状态
             const relevantLetters = localLetters.filter((letter: any) => {
-              if (user?.id) {
+              if (finalUser?.id) {
                 // 匹配user_id或anonymous_id的letters
-                return letter.user_id === user.id || 
-                       (user.anonymous_id && letter.anonymous_id === user.anonymous_id) ||
-                       (!letter.user_id && letter.anonymous_id === user.anonymous_id)
+                return letter.user_id === finalUser.id || 
+                       (finalUser.anonymous_id && letter.anonymous_id === finalUser.anonymous_id) ||
+                       (!letter.user_id && letter.anonymous_id === finalUser.anonymous_id)
               }
               return false
             })
             
-            console.log(`📋 Filtered ${relevantLetters.length} relevant letters for user ${user?.email}`)
+            console.log(`📋 Filtered ${relevantLetters.length} relevant letters for user ${finalUser?.email}`)
             
             userLetters = relevantLetters.sort((a: any, b: any) => 
               new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -156,11 +172,12 @@ export default function HistoryPage() {
             console.log('🔄 检测到localStorage中有用户数据，但Hook状态未同步，强制使用用户模式')
             const parsedUser = JSON.parse(localUser)
             
-            // 使用localStorage中的用户数据获取letters
+            // 使用localStorage中的用户数据获取letters - 优先使用Service状态
             const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+            const userForFilter = finalUser || parsedUser
             userLetters = localLetters.filter((letter: any) => {
-              return letter.user_id === parsedUser.id || 
-                     (parsedUser.anonymous_id && letter.anonymous_id === parsedUser.anonymous_id)
+              return letter.user_id === userForFilter.id || 
+                     (userForFilter.anonymous_id && letter.anonymous_id === userForFilter.anonymous_id)
             })
             
             console.log(`📋 使用localStorage用户数据，找到${userLetters.length}个letters`)
@@ -333,15 +350,38 @@ export default function HistoryPage() {
         {isAuthenticated && (
           <div className="history-header">
             <h1>Your Message History</h1>
-            {letters.length > 0 && (
-              <div className="data-source-info">
-                <small style={{ color: '#666', fontSize: '12px' }}>
-                  {letters.some(l => l.id && typeof l.id === 'string' && l.id.includes('-')) 
-                    ? '📡 从数据库加载' 
-                    : '💾 从本地缓存加载'}
-                </small>
-              </div>
-            )}
+            <div className="header-actions">
+              {letters.length > 0 && (
+                <div className="data-source-info">
+                  <small style={{ color: '#666', fontSize: '12px' }}>
+                    {letters.some(l => l.id && typeof l.id === 'string' && l.id.includes('-')) 
+                      ? '📡 从数据库加载' 
+                      : '💾 从本地缓存加载'}
+                  </small>
+                </div>
+              )}
+              {letters.length === 0 && (
+                <button 
+                  className="emergency-fix-btn"
+                  onClick={async () => {
+                    console.log('🚨 紧急修复：强制显示所有letters')
+                    const allLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+                    const sortedLetters = allLetters.sort((a: any, b: any) => 
+                      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                    )
+                    setLetters(sortedLetters)
+                    
+                    // 设置永久标记，避免下次还是空白
+                    localStorage.setItem('force_show_all_letters', 'true')
+                    
+                    console.log('✅ 紧急修复完成，显示letters:', sortedLetters.length)
+                    alert(`紧急修复完成！显示了${sortedLetters.length}个letters`)
+                  }}
+                >
+                  🚨 紧急修复
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -665,6 +705,25 @@ export default function HistoryPage() {
           margin: 0;
           color: #333;
           font-weight: 600;
+        }
+
+        .emergency-fix-btn {
+          background: #dc3545;
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 6px;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .emergency-fix-btn:hover {
+          background: #c82333;
+          transform: translateY(-1px);
         }
 
         .header-actions {
