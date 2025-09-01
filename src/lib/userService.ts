@@ -340,9 +340,29 @@ export class UserService {
                   })
                 } else {
                   console.warn('⚠️ UserService: 用户数据修复失败:', updateError)
+                  
+                  // 如果数据库更新失败，手动合并数据
+                  existingUser = {
+                    ...data,
+                    ...updateData,
+                    updated_at: new Date().toISOString()
+                  }
+                  console.log('🔧 UserService: 使用手动合并的用户数据:', {
+                    email: existingUser.email,
+                    display_name: existingUser.display_name,
+                    avatar_url: existingUser.avatar_url
+                  })
                 }
               } catch (updateErr) {
                 console.warn('⚠️ UserService: 用户数据更新异常:', updateErr)
+                
+                // 异常情况下也使用手动合并
+                existingUser = {
+                  ...data,
+                  ...updateData,
+                  updated_at: new Date().toISOString()
+                }
+                console.log('🔧 UserService: 异常情况下使用手动合并数据')
               }
             }
             
@@ -367,7 +387,23 @@ export class UserService {
 
       if (existingUser) {
         console.log('✅ UserService: 找到触发器创建的用户记录')
-        finalUser = existingUser
+        
+        // 确保用户数据完整性，强制填充缺失字段
+        const metadata = user.user_metadata as any
+        finalUser = {
+          ...existingUser,
+          // 强制确保关键字段不为undefined
+          email: existingUser.email || user.email,
+          display_name: existingUser.display_name || metadata?.full_name || metadata?.name || user.email?.split('@')[0],
+          avatar_url: existingUser.avatar_url || metadata?.avatar_url || metadata?.picture,
+          social_media_info: existingUser.social_media_info || user.user_metadata || {}
+        }
+        
+        console.log('🔧 UserService: 确保数据完整性后的用户:', {
+          email: finalUser.email,
+          display_name: finalUser.display_name,
+          avatar_url: finalUser.avatar_url
+        })
       } else {
         console.log('⚠️ UserService: 触发器未创建用户记录，尝试手动创建')
         
