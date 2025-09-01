@@ -13,16 +13,20 @@ interface HeaderProps {
 export default function Header({ currentPage }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isUserModalOpen, setIsUserModalOpen] = useState(false)
+  const [localLoading, setLocalLoading] = useState(false)
   
   // 使用统一的用户状态管理
-  const { user, isAuthenticated, isLoading: loading, signOut: globalSignOut } = useUserState()
+  const { user, isAuthenticated, isLoading: globalLoading, signOut: globalSignOut } = useUserState()
+  
+  // 合并全局loading和本地loading状态
+  const loading = globalLoading || localLoading
 
   // Header组件现在使用统一的用户状态管理，不需要复杂的初始化逻辑
 
   const handleSignIn = async () => {
     try {
       console.log('🔗 Header: 开始Google OAuth登录...')
-      setLoading(true)
+      setLocalLoading(true)
       
       // 详细的错误检查
       console.log('🔧 检查Supabase配置...')
@@ -51,7 +55,7 @@ export default function Header({ currentPage }: HeaderProps) {
       
       alert(errorMessage)
     } finally {
-      setLoading(false)
+      setLocalLoading(false)
     }
   }
 
