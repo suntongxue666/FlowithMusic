@@ -7,11 +7,24 @@ export default function FixSunweiLettersPage() {
 
   const addTestLetters = () => {
     try {
+      // 获取当前登录用户的ID
+      const currentUser = localStorage.getItem('user')
+      const parsedUser = currentUser ? JSON.parse(currentUser) : null
+      const currentUserId = parsedUser?.id
+      
+      if (!currentUserId) {
+        setResult('❌ 未找到当前登录用户ID，请先登录')
+        return
+      }
+      
+      console.log('🔧 当前用户ID:', currentUserId)
+      console.log('🔧 当前用户邮箱:', parsedUser?.email)
+      
       const testLetters = [
         {
-          id: `sunwei-letter-${Date.now()}-1`,
-          link_id: `sunwei-${Date.now()}-1`,
-          user_id: 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981', // sunwei的user_id
+          id: `user-letter-${Date.now()}-1`,
+          link_id: `user-${Date.now()}-1`,
+          user_id: currentUserId, // 使用当前登录用户的ID
           anonymous_id: null,
           recipient_name: 'Dear Friend',
           song_title: 'Shape of You',
@@ -19,16 +32,16 @@ export default function FixSunweiLettersPage() {
           song_album_cover: 'https://i.scdn.co/image/ab67616d0000b2735755e164993798e0c9ef7d82',
           song_preview_url: 'https://p.scdn.co/mp3-preview/c454359d28a61e8c5c8b0b1d5c6e5c6e5c6e5c6e',
           song_spotify_url: 'https://open.spotify.com/track/7qiZfU4dY1lWllzX7mkmht',
-          message: 'This is a test letter to verify that sunwei7482@gmail.com can see letters in the history page. The music and message should display correctly.',
+          message: `This is a test letter for ${parsedUser?.email}. The music and message should display correctly in the history page.`,
           view_count: 0,
           is_public: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         },
         {
-          id: `sunwei-letter-${Date.now()}-2`,
-          link_id: `sunwei-${Date.now()}-2`,
-          user_id: 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981', // sunwei的user_id
+          id: `user-letter-${Date.now()}-2`,
+          link_id: `user-${Date.now()}-2`,
+          user_id: currentUserId, // 使用当前登录用户的ID
           anonymous_id: null,
           recipient_name: 'My Love',
           song_title: 'Perfect',
@@ -36,7 +49,7 @@ export default function FixSunweiLettersPage() {
           song_album_cover: 'https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96',
           song_preview_url: 'https://p.scdn.co/mp3-preview/9a4b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b',
           song_spotify_url: 'https://open.spotify.com/track/0tgVpDi06FyKpA1z0VMD4v',
-          message: 'Another test letter for sunwei user. This one was created yesterday to test the date sorting functionality.',
+          message: `Another test letter for ${parsedUser?.email}. This one was created yesterday to test the date sorting functionality.`,
           view_count: 0,
           is_public: true,
           created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1天前
@@ -47,13 +60,13 @@ export default function FixSunweiLettersPage() {
       // 获取现有letters
       const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
       
-      // 检查是否已经存在sunwei的letters
-      const sunweiLetters = existingLetters.filter((l: any) => 
-        l.user_id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981'
+      // 检查是否已经存在当前用户的letters
+      const userLetters = existingLetters.filter((l: any) => 
+        l.user_id === currentUserId
       )
       
-      if (sunweiLetters.length > 0) {
-        setResult(`已存在${sunweiLetters.length}个sunwei的letters，无需添加`)
+      if (userLetters.length > 0) {
+        setResult(`已存在${userLetters.length}个当前用户的letters，无需添加`)
         return
       }
       
