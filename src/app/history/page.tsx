@@ -89,7 +89,12 @@ export default function HistoryPage() {
       try {
         setLoading(true)
         
-        // 使用统一的用户状态，避免竞态条件
+        // 等待用户状态稳定，避免竞态条件
+        if (userLoading) {
+          console.log('⏳ 用户状态还在加载中，等待稳定...')
+          return
+        }
+        
         console.log('📊 History用户状态:', {
           isAuth: isAuthenticated,
           user: user?.email,
@@ -143,63 +148,82 @@ export default function HistoryPage() {
             )
           }
         } else {
-          // Anonymous user - get from localStorage only
-          console.log('👤 Anonymous user detected, checking localStorage...')
-          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-          const anonymousId = userService.getAnonymousId()
+          // 检查是否是用户状态还未同步的情况
+          const localUser = localStorage.getItem('user')
+          const localAuth = localStorage.getItem('isAuthenticated')
           
-          console.log('👤 Anonymous user data:', {
-            anonymousId,
-            totalLocalLetters: localLetters.length,
-            localLettersDetails: localLetters.map((l: any) => ({
-              linkId: l.link_id,
-              anonymousId: l.anonymous_id,
-              userId: l.user_id,
-              recipient: l.recipient_name,
-              created: l.created_at
-            }))
-          })
-          
-          // Filter by anonymous ID if available
-          if (anonymousId) {
-            userLetters = localLetters.filter((letter: any) => 
-              letter.anonymous_id === anonymousId
-            )
-            console.log(`👤 Filtered ${userLetters.length} letters for anonymous ID: ${anonymousId}`)
+          if (localUser && localAuth === 'true') {
+            console.log('🔄 检测到localStorage中有用户数据，但Hook状态未同步，强制使用用户模式')
+            const parsedUser = JSON.parse(localUser)
             
-            // 如果当前匿名ID没有找到Letter，但localStorage中有Letter，可能是匿名ID变化了
-            if (userLetters.length === 0 && localLetters.length > 0) {
-              console.warn('⚠️ 匿名ID不匹配，检查是否有其他匿名Letter...')
-              const anonymousLetters = localLetters.filter((letter: any) => 
-                letter.anonymous_id && !letter.user_id
-              )
-              
-              if (anonymousLetters.length > 0) {
-                console.log('🔄 找到其他匿名Letter，显示所有匿名Letter以恢复数据')
-                userLetters = anonymousLetters
-                
-                // 更新这些Letter的匿名ID为当前ID，以便后续正常工作
-                const updatedLetters = localLetters.map((letter: any) => {
-                  if (letter.anonymous_id && !letter.user_id) {
-                    return { ...letter, anonymous_id: anonymousId }
-                  }
-                  return letter
-                })
-                localStorage.setItem('letters', JSON.stringify(updatedLetters))
-                console.log('✅ 已更新匿名Letter的ID为当前匿名ID')
-              }
-            }
+            // 使用localStorage中的用户数据获取letters
+            const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+            userLetters = localLetters.filter((letter: any) => {
+              return letter.user_id === parsedUser.id || 
+                     (parsedUser.anonymous_id && letter.anonymous_id === parsedUser.anonymous_id)
+            })
+            
+            console.log(`📋 使用localStorage用户数据，找到${userLetters.length}个letters`)
+            
           } else {
-            // Show all local letters if no anonymous ID
-            userLetters = localLetters
-            console.log('👤 No anonymous ID, showing all local letters:', userLetters.length)
+            // Anonymous user - get from localStorage only
+            console.log('👤 Anonymous user detected, checking localStorage...')
+            const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+            const anonymousId = userService.getAnonymousId()
+            
+            console.log('👤 Anonymous user data:', {
+              anonymousId,
+              totalLocalLetters: localLetters.length,
+              localLettersDetails: localLetters.map((l: any) => ({
+                linkId: l.link_id,
+                anonymousId: l.anonymous_id,
+                userId: l.user_id,
+                recipient: l.recipient_name,
+                created: l.created_at
+              }))
+            })
+            
+            // Filter by anonymous ID if available
+            if (anonymousId) {
+              userLetters = localLetters.filter((letter: any) => 
+                letter.anonymous_id === anonymousId
+              )
+              console.log(`👤 Filtered ${userLetters.length} letters for anonymous ID: ${anonymousId}`)
+              
+              // 如果当前匿名ID没有找到Letter，但localStorage中有Letter，可能是匿名ID变化了
+              if (userLetters.length === 0 && localLetters.length > 0) {
+                console.warn('⚠️ 匿名ID不匹配，检查是否有其他匿名Letter...')
+                const anonymousLetters = localLetters.filter((letter: any) => 
+                  letter.anonymous_id && !letter.user_id
+                )
+                
+                if (anonymousLetters.length > 0) {
+                  console.log('🔄 找到其他匿名Letter，显示所有匿名Letter以恢复数据')
+                  userLetters = anonymousLetters
+                  
+                  // 更新这些Letter的匿名ID为当前ID，以便后续正常工作
+                  const updatedLetters = localLetters.map((letter: any) => {
+                    if (letter.anonymous_id && !letter.user_id) {
+                      return { ...letter, anonymous_id: anonymousId }
+                    }
+                    return letter
+                  })
+                  localStorage.setItem('letters', JSON.stringify(updatedLetters))
+                  console.log('✅ 已更新匿名Letter的ID为当前匿名ID')
+                }
+              }
+            } else {
+              // Show all local letters if no anonymous ID
+              userLetters = localLetters
+              console.log('👤 No anonymous ID, showing all local letters:', userLetters.length)
+            }
+            
+            userLetters = userLetters.sort((a: any, b: any) => 
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )
+            
+            console.log(`📋 Final anonymous user letters:`, userLetters.length)
           }
-          
-          userLetters = userLetters.sort((a: any, b: any) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          )
-          
-          console.log(`📋 Final anonymous user letters:`, userLetters.length)
         }
         
         setLetters(userLetters)
@@ -414,6 +438,48 @@ export default function HistoryPage() {
                 }}
               >
                 🚨 紧急模式
+              </button>
+              <button 
+                className="fix-sunwei-btn"
+                onClick={() => {
+                  console.log('🔧 修复Sunwei用户状态同步问题...')
+                  
+                  // 强制从localStorage恢复用户状态和letters
+                  const localUser = localStorage.getItem('user')
+                  const localAuth = localStorage.getItem('isAuthenticated')
+                  const allLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+                  
+                  if (localUser && localAuth === 'true') {
+                    const parsedUser = JSON.parse(localUser)
+                    console.log('🔧 强制使用localStorage用户:', parsedUser.email)
+                    
+                    // 过滤用户的letters
+                    const userLetters = allLetters.filter((letter: any) => {
+                      return letter.user_id === parsedUser.id || 
+                             (parsedUser.anonymous_id && letter.anonymous_id === parsedUser.anonymous_id)
+                    })
+                    
+                    console.log(`🔧 找到${userLetters.length}个用户letters`)
+                    
+                    // 立即显示letters
+                    const sortedLetters = userLetters.sort((a: any, b: any) => 
+                      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                    )
+                    setLetters(sortedLetters)
+                    
+                    // 清除可能的错误标记
+                    localStorage.removeItem('last_db_timeout')
+                    localStorage.removeItem('supabase_auth_error')
+                    
+                    console.log('✅ Sunwei用户状态修复完成')
+                    alert(`修复完成！显示了${sortedLetters.length}个letters`)
+                  } else {
+                    console.log('❌ localStorage中没有用户数据')
+                    alert('localStorage中没有找到用户数据')
+                  }
+                }}
+              >
+                🔧 修复Sunwei
               </button>
             </div>
           </div>
@@ -726,6 +792,15 @@ export default function HistoryPage() {
 
         .emergency-mode-btn:hover {
           background: #c82333;
+        }
+        
+        .fix-sunwei-btn {
+          background: #ff6b35;
+          color: white;
+        }
+
+        .fix-sunwei-btn:hover {
+          background: #e55a2b;
         }
 
         .modal-overlay {
