@@ -69,12 +69,9 @@ export default function HistoryPage() {
       const recoveredLetters = await letterService.emergencyRecoverLetters()
       setLetters(recoveredLetters)
       
-      // 刷新用户状态
+      // 刷新用户状态 - 由useUserState Hook自动管理
       await userService.initializeUser()
-      const refreshedUser = userService.getCurrentUser()
-      const refreshedAuth = userService.isAuthenticated()
-      setUser(refreshedUser)
-      setIsAuthenticated(refreshedAuth)
+      // 用户状态会通过useUserState Hook自动更新，无需手动设置
       
       console.log('✅ 数据恢复完成，找回Letters:', recoveredLetters.length)
       alert(`数据恢复完成！找回了 ${recoveredLetters.length} 个Letters`)
@@ -334,10 +331,7 @@ export default function HistoryPage() {
                 onClick={async () => {
                   console.log('🔄 手动同步用户状态...')
                   await userService.initializeUser()
-                  const refreshedUser = userService.getCurrentUser()
-                  const refreshedAuth = userService.isAuthenticated()
-                  setUser(refreshedUser)
-                  setIsAuthenticated(refreshedAuth)
+                  // 用户状态会通过useUserState Hook自动更新
                   console.log('✅ 状态同步完成')
                 }}
               >
@@ -394,10 +388,7 @@ export default function HistoryPage() {
                   
                   // 重新初始化用户状态
                   await userService.initializeUser()
-                  const refreshedUser = userService.getCurrentUser()
-                  const refreshedAuth = userService.isAuthenticated()
-                  setUser(refreshedUser)
-                  setIsAuthenticated(refreshedAuth)
+                  // 用户状态会通过useUserState Hook自动更新
                   
                   console.log('✅ 数据同步完成，将重新从数据库加载')
                   window.location.reload()
