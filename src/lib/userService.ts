@@ -763,16 +763,41 @@ export class UserService {
     }
   }
 
-  // 获取当前用户 - 直接使用Supabase Auth（简化版）
+  // 获取当前用户 - 优先检查localStorage
   getCurrentUser(): User | null {
-    // 只检查内存缓存，不再依赖localStorage的复杂校验
+    // 1. 检查内存缓存
     if (this.currentUser && this.currentUser.email) {
       console.log('🎯 从内存获取用户:', this.currentUser.email)
       return this.currentUser
     }
     
-    console.log('📱 内存中无用户，需要异步获取')
+    // 2. 检查localStorage作为fallback
+    if (typeof window !== 'undefined') {
+      try {
+        const storedUser = localStorage.getItem('user')
+        const storedAuth = localStorage.getItem('isAuthenticated')
+        
+        if (storedUser && storedAuth === 'true') {
+          const parsedUser = JSON.parse(storedUser)
+          if (parsedUser && parsedUser.email) {
+            console.log('🎯 从localStorage获取用户并同步到内存:', parsedUser.email)
+            this.currentUser = parsedUser // 同步到内存
+            return parsedUser
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ getCurrentUser: localStorage解析失败:', error)
+      }
+    }
+    
+    console.log('📱 内存和localStorage中都无用户')
     return null
+  }
+
+  // 设置当前用户到内存（用于状态同步）
+  setCurrentUser(user: User | null): void {
+    console.log('🔄 setCurrentUser: 设置用户到内存:', user?.email || 'null')
+    this.currentUser = user
   }
 
   // 异步获取当前用户 - 优化版本，优先使用localStorage
@@ -889,9 +914,33 @@ export class UserService {
     return this.anonymousId || localStorage.getItem('anonymous_id')
   }
 
-  // 检查是否已登录 - 简化版，只检查内存状态
+  // 检查是否已登录 - 同步检查内存和localStorage
   isAuthenticated(): boolean {
-    return !!(this.currentUser && this.currentUser.email)
+    // 1. 检查内存状态
+    if (this.currentUser && this.currentUser.email) {
+      return true
+    }
+    
+    // 2. 检查localStorage状态
+    if (typeof window !== 'undefined') {
+      try {
+        const storedAuth = localStorage.getItem('isAuthenticated')
+        const storedUser = localStorage.getItem('user')
+        
+        if (storedAuth === 'true' && storedUser) {
+          const parsedUser = JSON.parse(storedUser)
+          if (parsedUser && parsedUser.email) {
+            // 同步到内存
+            this.currentUser = parsedUser
+            return true
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ isAuthenticated: localStorage检查失败:', error)
+      }
+    }
+    
+    return false
   }
 
   // 更新用户资料

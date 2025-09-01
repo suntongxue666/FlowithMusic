@@ -7,17 +7,19 @@ import Toast from '@/components/Toast'
 import { letterService } from '@/lib/letterService'
 import { userService } from '@/lib/userService'
 import { Letter } from '@/lib/supabase'
+import { useUserState } from '@/hooks/useUserState'
 
 export default function HistoryPage() {
   const router = useRouter()
   const [letters, setLetters] = useState<Letter[]>([])
   const [loading, setLoading] = useState(true)
   const [showToast, setShowToast] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [showRecoveryModal, setShowRecoveryModal] = useState(false)
   const [isRecovering, setIsRecovering] = useState(false)
   const [showDebugInfo, setShowDebugInfo] = useState(false)
+  
+  // 使用统一的用户状态管理
+  const { user, isAuthenticated, isLoading: userLoading } = useUserState()
 
   // 调试信息收集
   const getDebugInfo = () => {
@@ -90,60 +92,19 @@ export default function HistoryPage() {
       try {
         setLoading(true)
         
-        // 紧急用户状态恢复 - 优先使用localStorage，避免数据库超时
-        let currentUser = null
-        
-        // 首先检查localStorage中的用户
-        if (typeof window !== 'undefined') {
-          try {
-            const storedUser = localStorage.getItem('user')
-            const storedAuth = localStorage.getItem('isAuthenticated')
-            
-            if (storedUser && storedAuth === 'true') {
-              currentUser = JSON.parse(storedUser)
-              console.log('✅ History: 从localStorage直接恢复用户:', currentUser?.email)
-            }
-          } catch (parseError) {
-            console.warn('⚠️ History: localStorage解析失败:', parseError)
-          }
-        }
-        
-        // 如果localStorage没有用户，再尝试异步获取（设置短超时）
-        if (!currentUser) {
-          try {
-            console.log('🔍 History: localStorage无用户，尝试异步获取...')
-            const userPromise = userService.getCurrentUserAsync()
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('用户获取超时')), 2000) // 减少到2秒
-            )
-            
-            currentUser = await Promise.race([userPromise, timeoutPromise]) as any
-            console.log('✅ History: 异步获取用户成功:', currentUser?.email)
-          } catch (userError) {
-            console.warn('⚠️ History: 异步用户获取失败:', userError)
-            // 标记数据库超时，下次直接使用localStorage
-            localStorage.setItem('last_db_timeout', Date.now().toString())
-          }
-        }
-        
-        const isAuth = userService.isAuthenticated() || !!currentUser
-        
+        // 使用统一的用户状态，避免竞态条件
         console.log('📊 History用户状态:', {
-          isAuth,
-          user: currentUser?.email,
-          userId: currentUser?.id,
-          hasUser: !!currentUser
+          isAuth: isAuthenticated,
+          user: user?.email,
+          userId: user?.id,
+          hasUser: !!user,
+          userLoading
         })
-        
-        // 立即设置状态，确保与Header同步
-        setUser(currentUser)
-        setIsAuthenticated(isAuth)
         
         // Load letters based on authentication status
         let userLetters: Letter[] = []
-        const finalIsAuth = !!currentUser // 基于用户数据判断认证状态
         
-        if (finalIsAuth && currentUser) {
+        if (isAuthenticated && user) {
           // Authenticated user - get from database and migrate if needed
           console.log('🔐 Authenticated user detected, calling getUserLetters...')
           try {
@@ -169,16 +130,16 @@ export default function HistoryPage() {
             
             // 为已登录用户过滤相关的letters
             const relevantLetters = localLetters.filter((letter: any) => {
-              if (currentUser?.id) {
+              if (user?.id) {
                 // 匹配user_id或anonymous_id的letters
-                return letter.user_id === currentUser.id || 
-                       (currentUser.anonymous_id && letter.anonymous_id === currentUser.anonymous_id) ||
-                       (!letter.user_id && letter.anonymous_id === currentUser.anonymous_id)
+                return letter.user_id === user.id || 
+                       (user.anonymous_id && letter.anonymous_id === user.anonymous_id) ||
+                       (!letter.user_id && letter.anonymous_id === user.anonymous_id)
               }
               return false
             })
             
-            console.log(`📋 Filtered ${relevantLetters.length} relevant letters for user ${currentUser?.email}`)
+            console.log(`📋 Filtered ${relevantLetters.length} relevant letters for user ${user?.email}`)
             
             userLetters = relevantLetters.sort((a: any, b: any) => 
               new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -245,10 +206,7 @@ export default function HistoryPage() {
         }
         
         setLetters(userLetters)
-        
-        // 确保最终状态一致
-        setUser(currentUser)
-        setIsAuthenticated(!!currentUser)
+
         
         // Check for login success callback
         const urlParams = new URLSearchParams(window.location.search)
@@ -262,20 +220,8 @@ export default function HistoryPage() {
           // Trigger letter migration for newly logged in user with enhanced user state refresh
           setTimeout(async () => {
             try {
-              // 重新获取用户状态以确保同步
-              await userService.initializeUser()
-              const refreshedUser = userService.getCurrentUser()
-              const refreshedAuth = userService.isAuthenticated()
-              
-              console.log('🔄 History: 刷新后的用户状态:', {
-                user: refreshedUser?.email || refreshedUser?.display_name,
-                avatar: refreshedUser?.avatar_url,
-                isAuth: refreshedAuth
-              })
-              
-              // 更新本地状态
-              setUser(refreshedUser)
-              setIsAuthenticated(refreshedAuth)
+              // 用户状态由统一的Hook管理，不需要手动更新
+              console.log('🔄 History: 登录成功，用户状态将自动更新')
               
               // 重新加载Letters
               const updatedLetters = await letterService.getUserLetters(50, 0)
@@ -303,31 +249,7 @@ export default function HistoryPage() {
     }
 
     loadLettersAndUser()
-    
-    // 监听localStorage变化，确保与Header组件状态同步
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'user' || e.key === 'isAuthenticated') {
-        console.log('🔄 History: 检测到用户状态变化，重新加载...')
-        
-        const currentUser = userService.getCurrentUser()
-        
-        console.log('📊 History: 用户状态同步更新:', {
-          user: currentUser?.email || currentUser?.display_name,
-          avatar: currentUser?.avatar_url,
-          hasUser: !!currentUser
-        })
-        
-        setUser(currentUser)
-        setIsAuthenticated(!!currentUser) // 基于用户数据判断认证状态
-      }
-    }
-    
-    window.addEventListener('storage', handleStorageChange)
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-    }
-  }, [])
+  }, [user, isAuthenticated, userLoading]) // 依赖统一的用户状态，避免竞态条件
 
   const handleLetterClick = (linkId: string) => {
     router.push(`/letter/${linkId}`)
