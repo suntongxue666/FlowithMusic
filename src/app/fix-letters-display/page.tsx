@@ -131,7 +131,7 @@ export default function FixLettersDisplay() {
           localStorage总数: localLetters.length,
           用户匹配数: userLetters.length,
           最终显示数: sortedLetters.length,
-          数据源: sortedLetters.some(l => l.id && typeof l.id === 'string' && l.id.includes('-')) 
+          数据源: sortedLetters.some((l: any) => l.id && typeof l.id === 'string' && l.id.includes('-')) 
             ? '数据库' : 'localStorage'
         },
         修复建议: userLetters.length === 0 ? [
