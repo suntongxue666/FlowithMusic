@@ -6,7 +6,7 @@ import Header from '@/components/Header'
 import Toast from '@/components/Toast'
 import { letterService } from '@/lib/letterService'
 import { userService } from '@/lib/userService'
-import { Letter } from '@/lib/supabase'
+import { supabase, Letter } from '@/lib/supabase'
 import { useUserState } from '@/hooks/useUserState'
 
 export default function HistoryPage() {
@@ -133,43 +133,44 @@ export default function HistoryPage() {
         let userLetters: Letter[] = []
         
         if (finalAuth && finalUser) {
-          // Authenticated user - get from database and migrate if needed
-          console.log('🔐 Authenticated user detected, calling getUserLetters...')
+          // Authenticated user - 直接查询数据库，简化逻辑
+          console.log('🔐 已认证用户，直接查询数据库，用户ID:', finalUser.id)
           try {
-            // 优化超时保护，减少等待时间，优先显示数据
-            const lettersPromise = letterService.getUserLetters(50, 0)
-            const timeoutPromise = new Promise<Letter[]>((_, reject) => 
-              setTimeout(() => reject(new Error('获取Letters超时')), 4000) // 减少到4秒
-            )
-            
-            userLetters = await Promise.race([lettersPromise, timeoutPromise])
-            console.log(`✅ Loaded ${userLetters.length} letters for authenticated user:`, 
-              userLetters.map(l => ({
-                linkId: l.link_id,
-                recipient: l.recipient_name,
-                created: l.created_at
-              }))
-            )
-          } catch (error) {
-            console.warn('❌ Failed to load from database, falling back to localStorage:', error)
-            // 优化的localStorage fallback - 确保已登录用户能看到所有相关letters
-            const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-            console.log('📱 Fallback: found letters in localStorage:', localLetters.length)
-            
-            // 为已登录用户过滤相关的letters - 使用最新用户状态
-            const relevantLetters = localLetters.filter((letter: any) => {
-              if (finalUser?.id) {
-                // 匹配user_id或anonymous_id的letters
-                return letter.user_id === finalUser.id || 
-                       (finalUser.anonymous_id && letter.anonymous_id === finalUser.anonymous_id) ||
-                       (!letter.user_id && letter.anonymous_id === finalUser.anonymous_id)
+            if (supabase && finalUser.id) {
+              const { data: dbLetters, error } = await supabase
+                .from('letters')
+                .select('*')
+                .eq('user_id', finalUser.id)
+                .order('created_at', { ascending: false })
+                .limit(50)
+              
+              if (error) {
+                console.error('❌ 数据库查询错误:', error)
+              } else {
+                console.log(`✅ 数据库查询成功 - 用户${finalUser.email}的letters:`, dbLetters?.length || 0)
+                userLetters = dbLetters || []
               }
-              return false
-            })
+            }
             
-            console.log(`📋 Filtered ${relevantLetters.length} relevant letters for user ${finalUser?.email}`)
-            
-            userLetters = relevantLetters.sort((a: any, b: any) => 
+            // 如果数据库查询失败或无结果，回退到localStorage
+            if (userLetters.length === 0) {
+              console.log('🔄 数据库无结果，回退到localStorage')
+              const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+              userLetters = localLetters.filter((letter: any) => {
+                return letter.user_id === finalUser.id || 
+                       (finalUser.anonymous_id && letter.anonymous_id === finalUser.anonymous_id)
+              }).sort((a: any, b: any) => 
+                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+              )
+              console.log(`📱 localStorage找到${userLetters.length}个用户letters`)
+            }
+          } catch (error) {
+            console.error('💥 查询异常，使用localStorage:', error)
+            const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+            userLetters = localLetters.filter((letter: any) => {
+              return letter.user_id === finalUser.id || 
+                     (finalUser.anonymous_id && letter.anonymous_id === finalUser.anonymous_id)
+            }).sort((a: any, b: any) => 
               new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             )
           }
