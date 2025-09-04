@@ -1,4 +1,4 @@
-import { supabase, Letter } from './supabase'
+import { supabase, Letter, User } from './supabase'
 import { supabaseProxy } from './supabaseProxy'
 import { userService } from './userService'
 import { fallbackStorage } from './fallbackStorage'
