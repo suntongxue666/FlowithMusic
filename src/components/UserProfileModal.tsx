@@ -8,6 +8,7 @@ interface UserProfileModalProps {
   onClose: () => void
   onSignOut?: () => void
   user: {
+    id?: string
     avatar_url?: string
     display_name?: string
     email?: string
