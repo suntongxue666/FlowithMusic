@@ -101,7 +101,7 @@ export default function DebugLettersFlow() {
       
     } catch (error) {
       console.error('❌ 调试过程出错:', error)
-      setDebugInfo({ error: error.message })
+      setDebugInfo({ error: error instanceof Error ? error.message : String(error) })
     } finally {
       setLoading(false)
     }

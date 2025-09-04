@@ -89,10 +89,20 @@ export default function HistoryPage() {
       try {
         setLoading(true)
         
-        // 等待用户状态稳定，避免竞态条件
+        // 等待用户状态稳定，避免竞态条件 - 但也要检查localStorage作为fallback
         if (userLoading) {
-          console.log('⏳ 用户状态还在加载中，等待稳定...')
-          return
+          console.log('⏳ 用户状态还在加载中，检查localStorage状态...')
+          
+          // 检查localStorage是否有用户数据
+          const localUser = localStorage.getItem('user')
+          const localAuth = localStorage.getItem('isAuthenticated')
+          
+          if (localUser && localAuth === 'true') {
+            console.log('✅ localStorage中有用户数据，继续加载')
+          } else {
+            console.log('⏳ localStorage也无用户数据，等待Hook稳定...')
+            return
+          }
         }
         
         // 强制获取最新的用户状态，避免Hook状态滞后
@@ -318,8 +328,18 @@ export default function HistoryPage() {
     <main>
       <Header currentPage="history" />
       <div className="history-container">
-        {/* Sign in section at top - 只在未登录时显示 */}
-        {!isAuthenticated && (
+        {/* 认证状态检查 - 添加localStorage检查避免状态不同步 */}
+        {(() => {
+          // 检查localStorage作为备用认证状态
+          const localUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null
+          const localAuth = typeof window !== 'undefined' ? localStorage.getItem('isAuthenticated') : null
+          const hasLocalAuth = localUser && localAuth === 'true'
+          
+          // 只有在所有认证状态都为false时才显示登录按钮
+          const shouldShowSignIn = !isAuthenticated && !user && !hasLocalAuth
+          
+          return shouldShowSignIn
+        })() && (
           <div className="signin-section">
             <div className="user-avatar">
               <div className="default-avatar">
@@ -346,8 +366,14 @@ export default function HistoryPage() {
           </div>
         )}
 
-        {/* 只在已登录时显示标题 */}
-        {isAuthenticated && (
+        {/* 已登录时显示标题 - 添加localStorage检查 */}
+        {(() => {
+          const localUser = typeof window !== 'undefined' ? localStorage.getItem('user') : null
+          const localAuth = typeof window !== 'undefined' ? localStorage.getItem('isAuthenticated') : null
+          const hasLocalAuth = localUser && localAuth === 'true'
+          
+          return (isAuthenticated || user || hasLocalAuth)
+        })() && (
           <div className="history-header">
             <h1>Your Message History</h1>
             <div className="header-actions">

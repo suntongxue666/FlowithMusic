@@ -150,7 +150,7 @@ export default function FixLettersDisplay() {
       
     } catch (error) {
       console.error('💥 诊断过程出错:', error)
-      setStatus(`❌ 诊断失败: ${error.message}`)
+      setStatus(`❌ 诊断失败: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
@@ -184,7 +184,7 @@ export default function FixLettersDisplay() {
       }, 1000)
       
     } catch (error) {
-      setStatus(`❌ 修复失败: ${error.message}`)
+      setStatus(`❌ 修复失败: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
