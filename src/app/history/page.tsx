@@ -453,18 +453,67 @@ export default function HistoryPage() {
                 <button 
                   className="emergency-fix-btn"
                   onClick={async () => {
-                    console.log('🚨 紧急修复：强制显示所有letters')
-                    const allLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-                    const sortedLetters = allLetters.sort((a: any, b: any) => 
-                      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                    )
-                    setLetters(sortedLetters)
+                    console.log('🚨 紧急修复：直接从数据库查询用户letters')
                     
-                    // 设置永久标记，避免下次还是空白
-                    localStorage.setItem('force_show_all_letters', 'true')
+                    // 获取用户ID - 使用相同的检测逻辑
+                    let userId = null
+                    if (user?.id) {
+                      userId = user.id
+                    } else {
+                      const currentUser = userService.getCurrentUser()
+                      if (currentUser?.id) {
+                        userId = currentUser.id
+                      } else {
+                        const localUser = localStorage.getItem('user')
+                        if (localUser) {
+                          try {
+                            const parsedUser = JSON.parse(localUser)
+                            userId = parsedUser?.id
+                          } catch (e) {
+                            console.warn('localStorage解析失败:', e)
+                          }
+                        }
+                        
+                        // 最后的已知用户ID fallback
+                        if (!userId) {
+                          const localAuth = localStorage.getItem('isAuthenticated')
+                          if (localAuth === 'true') {
+                            userId = 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981'
+                          }
+                        }
+                      }
+                    }
                     
-                    console.log('✅ 紧急修复完成，显示letters:', sortedLetters.length)
-                    alert(`紧急修复完成！显示了${sortedLetters.length}个letters`)
+                    if (!userId) {
+                      alert('无法获取用户ID')
+                      return
+                    }
+                    
+                    console.log('🔍 紧急修复使用用户ID:', userId)
+                    
+                    if (supabase) {
+                      try {
+                        const { data: userLetters, error } = await supabase
+                          .from('letters')
+                          .select('*')
+                          .eq('user_id', userId)
+                          .order('created_at', { ascending: false })
+                        
+                        if (error) {
+                          console.error('❌ 紧急修复查询失败:', error)
+                          alert('数据库查询失败: ' + error.message)
+                        } else {
+                          console.log(`✅ 紧急修复成功，找到${userLetters?.length || 0}个用户letters`)
+                          setLetters(userLetters || [])
+                          alert(`紧急修复完成！找到${userLetters?.length || 0}个属于您的letters`)
+                        }
+                      } catch (err) {
+                        console.error('💥 紧急修复异常:', err)
+                        alert('紧急修复异常')
+                      }
+                    } else {
+                      alert('数据库不可用')
+                    }
                   }}
                 >
                   🚨 紧急修复
