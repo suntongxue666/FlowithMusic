@@ -76,23 +76,10 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
       // 立即关闭弹窗，让用户看到变化
       onClose()
       
-      // 优先执行本地状态清除，确保界面立即更新为未登录状态
+      // 立即执行本地状态清除，确保界面立即更新为未登录状态
       if (onSignOut) {
-        onSignOut()
+        await onSignOut()
       }
-      
-      // 后台执行完整的注销流程
-      try {
-        await userService.signOut()
-        console.log('✅ 注销完成')
-      } catch (signOutError) {
-        console.warn('⚠️ 后台注销过程中出现错误，但用户界面已更新:', signOutError)
-      }
-      
-      // 刷新页面以确保完全清除状态
-      setTimeout(() => {
-        window.location.reload()
-      }, 100)
       
     } catch (error) {
       console.error('❌ Sign out操作失败:', error)
@@ -113,25 +100,39 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
       console.log('🔄 开始保存社交媒体信息:', { index, value, mediaName: socialMedias[index].name })
       
       const mediaName = socialMedias[index].name.toLowerCase()
-      const updatedUser = await userService.updateSocialMedia({
-        [mediaName]: value
-      })
       
-      console.log('✅ 社交媒体信息保存成功:', updatedUser.social_media_info)
-      
-      // 更新本地状态
+      // 立即更新UI状态，给用户即时反馈
       setSocialMedias(prev => prev.map((media, i) => 
         i === index ? { ...media, value, isEditing: false } : media
       ))
       
-      // 强制刷新用户数据（通过触发父组件重新获取用户信息）
-      setTimeout(() => {
-        window.location.reload()
-      }, 1000)
+      // 异步保存到服务器
+      const updatePromise = userService.updateSocialMedia({
+        [mediaName]: value
+      })
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Save timeout, please try again')), 3000)
+      )
+      
+      try {
+        const updatedUser = await Promise.race([updatePromise, timeoutPromise]) as any
+        console.log('✅ 社交媒体信息保存成功:', updatedUser.social_media_info)
+      } catch (saveError) {
+        console.error('❌ 后台保存失败，但UI已更新:', saveError)
+        // UI已更新，不回滚，让用户知道保存可能失败
+        if (saveError instanceof Error && saveError.message.includes('timeout')) {
+          console.log('⏰ 保存超时，但UI已更新')
+        }
+      }
       
     } catch (error) {
       console.error('❌ 保存社交媒体信息失败:', error)
-      alert(`保存失败: ${error instanceof Error ? error.message : String(error)}`)
+      // 如果出错，回滚UI状态
+      setSocialMedias(prev => prev.map((media, i) => 
+        i === index ? { ...media, isEditing: true } : media
+      ))
+      alert(`Save failed: ${error instanceof Error ? error.message : String(error)}`)
     } finally {
       setSaving(false)
     }
@@ -175,7 +176,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
                 <button 
                   className="edit-btn"
                   onClick={() => media.isEditing ? handleSave(index, media.value) : toggleEdit(index)}
-                  disabled={saving}
+                  disabled={saving && media.isEditing}
                 >
                   {saving && media.isEditing ? (
                     <div className="loading-spinner"></div>

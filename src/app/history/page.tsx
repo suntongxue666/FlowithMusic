@@ -16,7 +16,7 @@ export default function HistoryPage() {
   const [showToast, setShowToast] = useState(false)
   const [showRecoveryModal, setShowRecoveryModal] = useState(false)
   const [isRecovering, setIsRecovering] = useState(false)
-  const [showDebugInfo, setShowDebugInfo] = useState(false)
+  const [showEmergencyButton, setShowEmergencyButton] = useState(false)
   
   // 使用统一的用户状态管理
   const { user, isAuthenticated, isLoading: userLoading } = useUserState()
@@ -207,9 +207,13 @@ export default function HistoryPage() {
               
               if (error) {
                 console.error('❌ 数据库查询错误:', error)
+                setShowEmergencyButton(true) // 查询出错时显示紧急修复按钮
               } else {
                 console.log(`✅ 数据库查询成功 - 用户${finalUser?.email || finalUserId}的letters:`, dbLetters?.length || 0)
                 userLetters = dbLetters || []
+                if (userLetters.length > 0) {
+                  setShowEmergencyButton(false) // 成功加载数据时隐藏紧急修复按钮
+                }
               }
             }
             
@@ -227,6 +231,7 @@ export default function HistoryPage() {
             }
           } catch (error) {
             console.error('💥 查询异常，使用localStorage:', error)
+            setShowEmergencyButton(true) // 只有在查询失败时才显示紧急修复按钮
             const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
             userLetters = localLetters.filter((letter: any) => {
               return letter.user_id === finalUserId || 
@@ -449,7 +454,7 @@ export default function HistoryPage() {
                   </small>
                 </div>
               )}
-              {letters.length === 0 && (
+              {letters.length === 0 && showEmergencyButton && (
                 <button 
                   className="emergency-fix-btn"
                   onClick={async () => {
@@ -505,7 +510,8 @@ export default function HistoryPage() {
                         } else {
                           console.log(`✅ 紧急修复成功，找到${userLetters?.length || 0}个用户letters`)
                           setLetters(userLetters || [])
-                          alert(`紧急修复完成！找到${userLetters?.length || 0}个属于您的letters`)
+                          setShowEmergencyButton(false) // 成功修复后隐藏按钮
+                          alert(`Emergency fix completed! Found ${userLetters?.length || 0} of your letters`)
                         }
                       } catch (err) {
                         console.error('💥 紧急修复异常:', err)
@@ -516,7 +522,7 @@ export default function HistoryPage() {
                     }
                   }}
                 >
-                  🚨 紧急修复
+                  🚨 Emergency Fix
                 </button>
               )}
             </div>
@@ -716,7 +722,7 @@ export default function HistoryPage() {
 
       {showToast && (
         <Toast 
-          message="登录成功！欢迎使用FlowithMusic" 
+          message="Login successful! Welcome to FlowithMusic" 
           isVisible={showToast}
           onClose={handleToastClose}
         />

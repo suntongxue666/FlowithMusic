@@ -613,42 +613,50 @@ export class UserService {
 
   // 登出
   async signOut(): Promise<void> {
-    console.log('🚪 UserService: 开始用户登出...')
+    console.log('🚪 UserService: 开始快速登出...')
     
-    // 立即清除内存状态
+    // 立即清除内存状态，减少等待时间
     this.currentUser = null
     
-    // 清理localStorage中的用户数据
+    // 快速清理localStorage中的用户数据
     if (typeof window !== 'undefined') {
-      console.log('🧹 清理localStorage用户数据...')
-      localStorage.removeItem('user')
-      localStorage.removeItem('isAuthenticated')
-      localStorage.removeItem('supabase_auth_error')
+      console.log('🧹 快速清理localStorage用户数据...')
+      const keysToRemove = ['user', 'isAuthenticated', 'supabase_auth_error']
+      keysToRemove.forEach(key => localStorage.removeItem(key))
       
-      // 清除所有Supabase会话数据
-      const supabaseKeys = []
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        if (key && key.startsWith('sb-')) {
-          supabaseKeys.push(key)
+      // 异步清除Supabase会话数据，不阻塞主流程
+      setTimeout(() => {
+        try {
+          const supabaseKeys = []
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key && key.startsWith('sb-')) {
+              supabaseKeys.push(key)
+            }
+          }
+          supabaseKeys.forEach(key => localStorage.removeItem(key))
+          console.log(`🧹 异步清除了 ${supabaseKeys.length} 个Supabase会话项目`)
+        } catch (error) {
+          console.warn('清除Supabase会话数据时出错:', error)
         }
-      }
-      supabaseKeys.forEach(key => localStorage.removeItem(key))
+      }, 0)
       
-      console.log(`🧹 已清除 ${supabaseKeys.length + 3} 个localStorage项目`)
+      console.log(`🧹 快速清除了 ${keysToRemove.length} 个关键localStorage项目`)
     }
     
-    // 尝试清除Supabase会话（异步，不阻塞）
+    // 异步清除Supabase会话，不阻塞用户界面
     if (supabase) {
-      try {
-        await supabase.auth.signOut()
-        console.log('✅ Supabase登出成功')
-      } catch (error) {
-        console.warn('⚠️ Supabase登出失败（但本地状态已清除）:', error)
-      }
+      setTimeout(async () => {
+        try {
+          await supabase!.auth.signOut()
+          console.log('✅ 异步Supabase登出成功')
+        } catch (error) {
+          console.warn('⚠️ 异步Supabase登出失败（不影响本地状态）:', error)
+        }
+      }, 0)
     }
     
-    console.log('✅ UserService: 用户登出完成（本地状态已清除）')
+    console.log('✅ UserService: 快速登出完成（本地状态已清除）')
   }
 
   // 从数据库获取用户数据并缓存 - 优化版本
@@ -739,7 +747,6 @@ export class UserService {
       
       // 优化的数据库查询 - 并行查询提高效率
       let userData = null
-      let dbError = null
       
       try {
         // 并行执行多种查询方式，提高效率
