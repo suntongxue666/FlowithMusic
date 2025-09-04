@@ -115,39 +115,73 @@ export default function HistoryPage() {
             user: user?.email,
             userId: user?.id,
             hasUser: !!user,
-            userLoading
+            userLoading,
+            完整用户对象: user
           },
           Service状态: {
             isAuth: currentAuth,
             user: currentUser?.email,
             userId: currentUser?.id,
-            hasUser: !!currentUser
-          }
+            hasUser: !!currentUser,
+            完整用户对象: currentUser
+          },
+          localStorage状态: (() => {
+            const localUser = localStorage.getItem('user')
+            const parsedUser = localUser ? JSON.parse(localUser) : null
+            return {
+              hasLocalUser: !!localUser,
+              localUserId: parsedUser?.id,
+              localUserEmail: parsedUser?.email,
+              完整localStorage用户: parsedUser
+            }
+          })()
         })
         
-        // 使用Service状态作为权威状态，避免Hook状态滞后问题
-        const finalUser = currentUser || user
+        // 使用最可靠的用户ID来源
+        let finalUserId = null
+        let finalUser = currentUser || user
+        
+        // 如果Service和Hook都没有用户ID，检查localStorage
+        if (!finalUser?.id) {
+          const localUser = localStorage.getItem('user')
+          if (localUser) {
+            try {
+              const parsedUser = JSON.parse(localUser)
+              if (parsedUser?.id) {
+                finalUserId = parsedUser.id
+                finalUser = parsedUser
+                console.log('🔄 使用localStorage中的用户ID:', finalUserId)
+              }
+            } catch (e) {
+              console.warn('localStorage解析失败:', e)
+            }
+          }
+        } else {
+          finalUserId = finalUser.id
+        }
+        
+        console.log('🎯 最终使用的用户ID:', finalUserId)
         const finalAuth = currentAuth || isAuthenticated
         
         // Load letters based on authentication status - 使用最新状态
         let userLetters: Letter[] = []
         
-        if (finalAuth && finalUser) {
+        if (finalAuth && finalUserId) {
           // Authenticated user - 直接查询数据库，简化逻辑
-          console.log('🔐 已认证用户，直接查询数据库，用户ID:', finalUser.id)
+          console.log('🔐 已认证用户，直接查询数据库，用户ID:', finalUserId)
           try {
-            if (supabase && finalUser.id) {
+            if (supabase && finalUserId) {
               const { data: dbLetters, error } = await supabase
                 .from('letters')
                 .select('*')
-                .eq('user_id', finalUser.id)
+                .eq('user_id', finalUserId)
                 .order('created_at', { ascending: false })
                 .limit(50)
               
               if (error) {
                 console.error('❌ 数据库查询错误:', error)
               } else {
-                console.log(`✅ 数据库查询成功 - 用户${finalUser.email}的letters:`, dbLetters?.length || 0)
+                console.log(`✅ 数据库查询成功 - 用户${finalUser?.email}(${finalUserId})的letters:`, dbLetters?.length || 0)
                 userLetters = dbLetters || []
               }
             }
@@ -157,8 +191,8 @@ export default function HistoryPage() {
               console.log('🔄 数据库无结果，回退到localStorage')
               const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
               userLetters = localLetters.filter((letter: any) => {
-                return letter.user_id === finalUser.id || 
-                       (finalUser.anonymous_id && letter.anonymous_id === finalUser.anonymous_id)
+                return letter.user_id === finalUserId || 
+                       (finalUser?.anonymous_id && letter.anonymous_id === finalUser.anonymous_id)
               }).sort((a: any, b: any) => 
                 new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
               )
@@ -168,8 +202,8 @@ export default function HistoryPage() {
             console.error('💥 查询异常，使用localStorage:', error)
             const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
             userLetters = localLetters.filter((letter: any) => {
-              return letter.user_id === finalUser.id || 
-                     (finalUser.anonymous_id && letter.anonymous_id === finalUser.anonymous_id)
+              return letter.user_id === finalUserId || 
+                     (finalUser?.anonymous_id && letter.anonymous_id === finalUser.anonymous_id)
             }).sort((a: any, b: any) => 
               new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             )
@@ -388,25 +422,61 @@ export default function HistoryPage() {
                 </div>
               )}
               {letters.length === 0 && (
-                <button 
-                  className="emergency-fix-btn"
-                  onClick={async () => {
-                    console.log('🚨 紧急修复：强制显示所有letters')
-                    const allLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-                    const sortedLetters = allLetters.sort((a: any, b: any) => 
-                      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                    )
-                    setLetters(sortedLetters)
-                    
-                    // 设置永久标记，避免下次还是空白
-                    localStorage.setItem('force_show_all_letters', 'true')
-                    
-                    console.log('✅ 紧急修复完成，显示letters:', sortedLetters.length)
-                    alert(`紧急修复完成！显示了${sortedLetters.length}个letters`)
-                  }}
-                >
-                  🚨 紧急修复
-                </button>
+                <>
+                  <button 
+                    className="emergency-fix-btn"
+                    onClick={async () => {
+                      console.log('🚨 紧急修复：强制显示所有letters')
+                      const allLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+                      const sortedLetters = allLetters.sort((a: any, b: any) => 
+                        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                      )
+                      setLetters(sortedLetters)
+                      
+                      // 设置永久标记，避免下次还是空白
+                      localStorage.setItem('force_show_all_letters', 'true')
+                      
+                      console.log('✅ 紧急修复完成，显示letters:', sortedLetters.length)
+                      alert(`紧急修复完成！显示了${sortedLetters.length}个letters`)
+                    }}
+                  >
+                    🚨 紧急修复
+                  </button>
+                  
+                  <button 
+                    className="direct-query-btn"
+                    onClick={async () => {
+                      console.log('🔍 直接查询特定用户ID的letters')
+                      const targetUserId = 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981'
+                      
+                      if (supabase) {
+                        try {
+                          const { data: directLetters, error } = await supabase
+                            .from('letters')
+                            .select('*')
+                            .eq('user_id', targetUserId)
+                            .order('created_at', { ascending: false })
+                          
+                          if (error) {
+                            console.error('❌ 直接查询失败:', error)
+                            alert('直接查询失败: ' + error.message)
+                          } else {
+                            console.log(`✅ 直接查询成功，找到${directLetters?.length || 0}个letters`)
+                            setLetters(directLetters || [])
+                            alert(`直接查询成功！找到${directLetters?.length || 0}个letters`)
+                          }
+                        } catch (err) {
+                          console.error('💥 直接查询异常:', err)
+                          alert('直接查询异常')
+                        }
+                      } else {
+                        alert('Supabase不可用')
+                      }
+                    }}
+                  >
+                    🎯 直接查询
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -748,8 +818,27 @@ export default function HistoryPage() {
           gap: 0.5rem;
         }
 
+        .direct-query-btn {
+          background: #007bff;
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 6px;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
         .emergency-fix-btn:hover {
           background: #c82333;
+          transform: translateY(-1px);
+        }
+
+        .direct-query-btn:hover {
+          background: #0056b3;
           transform: translateY(-1px);
         }
 
