@@ -415,10 +415,20 @@ export class LetterService {
       recentlyRecovered
     })
     
-    // 如果用户状态异常（已认证但无用户信息），跳过复杂处理，直接使用localStorage
+    // 如果用户状态异常（已认证但无用户信息），强制重新获取用户再处理
     if (userService.isAuthenticated() && !user?.id) {
-      console.warn('⚠️ 检测到用户状态异常，跳过复杂处理，使用localStorage数据')
-      return this.getLettersFromLocalStorage(user, anonymousId, limit, offset)
+      console.warn('⚠️ 检测到用户状态异常，尝试强制重新获取用户信息')
+      
+      // 尝试强制从localStorage或Supabase重新获取完整用户信息
+      const refreshedUser = userService.getCurrentUser()
+      if (refreshedUser?.id) {
+        console.log('✅ 成功获取完整用户信息:', refreshedUser.email, 'ID:', refreshedUser.id)
+        // 使用refreshedUser继续正常流程
+        return this.getUserLettersWithUser(refreshedUser, anonymousId, limit, offset)
+      } else {
+        console.warn('⚠️ 无法获取完整用户信息，使用localStorage数据')
+        return this.getLettersFromLocalStorage(user, anonymousId, limit, offset)
+      }
     }
     
     // 重新获取用户状态
@@ -614,6 +624,54 @@ export class LetterService {
     }
     
     return letters
+  }
+
+  // 使用指定用户获取Letters（解决用户状态不一致问题）
+  private async getUserLettersWithUser(user: User, anonymousId: string | null, limit: number, offset: number): Promise<Letter[]> {
+    console.log('🎯 使用指定用户获取Letters:', { userId: user.id, email: user.email, anonymousId })
+    
+    // 生成缓存键
+    const cacheKey = cacheManager.generateKey('user_letters', {
+      userId: user.id,
+      anonymousId: anonymousId || 'none',
+      limit,
+      offset
+    })
+    
+    let letters: Letter[] = []
+    
+    // 优先尝试数据库查询
+    if (supabase && user.id) {
+      try {
+        console.log('📊 查询数据库Letters，用户ID:', user.id)
+        const { data: dbLetters, error } = await supabase
+          .from('letters')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1)
+        
+        if (error) {
+          console.error('❌ 数据库查询失败:', error)
+        } else {
+          letters = dbLetters || []
+          console.log('✅ 数据库查询成功，获得Letters:', letters.length)
+          
+          // 缓存结果
+          if (letters.length > 0) {
+            cacheManager.set(cacheKey, letters, 3 * 60 * 1000)
+          }
+          
+          return letters
+        }
+      } catch (dbError) {
+        console.error('💥 数据库查询异常:', dbError)
+      }
+    }
+    
+    // 如果数据库查询失败，使用localStorage
+    console.log('🔄 回退到localStorage数据')
+    return this.getLettersFromLocalStorage(user, anonymousId, limit, offset)
   }
 
   // 紧急数据恢复 - 帮助用户找回所有可能的Letters

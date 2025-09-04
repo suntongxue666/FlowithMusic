@@ -847,8 +847,8 @@ export class UserService {
   // 获取当前用户 - 优先检查localStorage
   getCurrentUser(): User | null {
     // 1. 检查内存缓存
-    if (this.currentUser && this.currentUser.email) {
-      console.log('🎯 从内存获取用户:', this.currentUser.email)
+    if (this.currentUser && this.currentUser.email && this.currentUser.id) {
+      console.log('🎯 从内存获取用户:', this.currentUser.email, 'ID:', this.currentUser.id)
       return this.currentUser
     }
     
@@ -860,10 +860,16 @@ export class UserService {
         
         if (storedUser && storedAuth === 'true') {
           const parsedUser = JSON.parse(storedUser)
-          if (parsedUser && parsedUser.email) {
-            console.log('🎯 从localStorage获取用户并同步到内存:', parsedUser.email)
+          if (parsedUser && parsedUser.email && parsedUser.id) {
+            console.log('🎯 从localStorage获取用户并同步到内存:', parsedUser.email, 'ID:', parsedUser.id)
             this.currentUser = parsedUser // 同步到内存
             return parsedUser
+          } else {
+            console.warn('⚠️ localStorage用户数据不完整:', {
+              hasEmail: !!parsedUser?.email,
+              hasId: !!parsedUser?.id,
+              userData: parsedUser
+            })
           }
         }
       } catch (error) {
@@ -871,7 +877,7 @@ export class UserService {
       }
     }
     
-    console.log('📱 内存和localStorage中都无用户')
+    console.log('📱 内存和localStorage中都无有效用户')
     return null
   }
 

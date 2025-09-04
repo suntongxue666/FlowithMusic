@@ -36,7 +36,12 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
 
   // 初始化社交媒体数据
   useEffect(() => {
-    console.log('🔄 初始化社交媒体数据:', user?.social_media_info)
+    console.log('🔄 初始化社交媒体数据:', { 
+      userObj: user,
+      socialMediaInfo: user?.social_media_info,
+      hasUserId: !!user?.id,
+      userEmail: user?.email 
+    })
     if (user?.social_media_info) {
       setSocialMedias(prev => prev.map(media => ({
         ...media,

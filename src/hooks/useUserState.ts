@@ -53,14 +53,25 @@ const initializeUserState = async (): Promise<void> => {
           
           if (storedUser && storedAuth === 'true') {
             user = JSON.parse(storedUser)
-            console.log('✅ useUserState: 从localStorage恢复用户:', user?.email)
-            
-            // 立即更新状态，避免竞态条件
-            updateGlobalState({
-              user,
-              isAuthenticated: true,
-              isLoading: false
+            console.log('✅ useUserState: 从localStorage恢复用户:', {
+              email: user?.email,
+              id: user?.id,
+              hasId: !!user?.id,
+              userData: user
             })
+            
+            // 验证用户数据完整性
+            if (user && user.email && user.id) {
+              // 立即更新状态，避免竞态条件
+              updateGlobalState({
+                user,
+                isAuthenticated: true,
+                isLoading: false
+              })
+            } else {
+              console.warn('⚠️ useUserState: localStorage用户数据不完整，需要重新获取')
+              user = null
+            }
           }
         } catch (parseError) {
           console.warn('⚠️ useUserState: localStorage解析失败:', parseError)
