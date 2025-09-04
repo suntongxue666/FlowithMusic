@@ -1034,19 +1034,24 @@ export class UserService {
 
     // 优化的用户检查 - 如果内存中没有用户，尝试获取
     let currentUser = this.currentUser
-    if (!currentUser) {
-      console.log('⚠️ updateProfile: 内存中无用户，尝试获取...')
+    if (!currentUser || !currentUser.id) {
+      console.log('⚠️ updateProfile: 内存中无用户或用户ID缺失，尝试获取...')
       currentUser = await this.getCurrentUserAsync()
       
-      if (!currentUser) {
-        console.error('❌ updateProfile: 无法获取用户信息')
-        throw new Error('用户未登录')
+      if (!currentUser || !currentUser.id) {
+        console.error('❌ updateProfile: 无法获取用户信息或用户ID')
+        throw new Error('用户未登录或用户ID缺失')
       }
       
-      console.log('✅ updateProfile: 成功获取用户:', currentUser.email)
+      console.log('✅ updateProfile: 成功获取用户:', currentUser.email, 'ID:', currentUser.id)
     }
 
     console.log('📡 UserService: 发送数据库更新请求, 用户ID:', currentUser.id)
+    
+    if (!currentUser.id) {
+      console.error('❌ updateProfile: 用户ID仍为undefined')
+      throw new Error('用户ID无效，无法更新资料')
+    }
 
     const { data, error } = await supabase
       .from('users')
