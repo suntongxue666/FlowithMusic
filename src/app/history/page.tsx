@@ -17,6 +17,7 @@ export default function HistoryPage() {
   const [showRecoveryModal, setShowRecoveryModal] = useState(false)
   const [isRecovering, setIsRecovering] = useState(false)
   const [showEmergencyButton, setShowEmergencyButton] = useState(false)
+  const [showDebugInfo, setShowDebugInfo] = useState(false)
   
   // 使用统一的用户状态管理
   const { user, isAuthenticated, isLoading: userLoading } = useUserState()
