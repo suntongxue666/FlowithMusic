@@ -13,9 +13,50 @@ export default function TestSocialMediaFixPage() {
   }, [])
 
   const checkUserStatus = () => {
+    console.log('=== 开始检查用户状态 ===')
+    
+    // 检查localStorage中的原始数据
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('user')
+      const storedAuth = localStorage.getItem('isAuthenticated')
+      const anonymousId = localStorage.getItem('anonymous_id')
+      
+      console.log('🗄️ localStorage原始数据:', {
+        hasStoredUser: !!storedUser,
+        storedAuth,
+        hasAnonymousId: !!anonymousId,
+        storedUserLength: storedUser?.length || 0
+      })
+      
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser)
+          console.log('📋 解析后的用户数据:', {
+            hasEmail: !!parsedUser?.email,
+            hasId: !!parsedUser?.id,
+            hasGoogleId: !!parsedUser?.google_id,
+            email: parsedUser?.email,
+            id: parsedUser?.id?.substring(0, 8) + '...' || '无',
+            googleId: parsedUser?.google_id?.substring(0, 8) + '...' || '无',
+            allKeys: Object.keys(parsedUser || {})
+          })
+        } catch (e) {
+          console.error('❌ localStorage用户数据解析失败:', e)
+        }
+      }
+    }
+    
+    // 使用userService获取用户
     const currentUser = userService.getCurrentUser()
+    console.log('🎯 userService.getCurrentUser()结果:', {
+      hasUser: !!currentUser,
+      email: currentUser?.email,
+      hasId: !!currentUser?.id,
+      user: currentUser
+    })
+    
     setUser(currentUser)
-    console.log('当前用户状态:', currentUser)
+    console.log('=== 用户状态检查完成 ===')
   }
 
   const testAPI = async (method: string, endpoint: string, description: string) => {
@@ -56,38 +97,73 @@ export default function TestSocialMediaFixPage() {
     }
   }
 
-  const fixUserID = async () => {
+  const forceRestoreUser = async () => {
     setLoading(true)
     try {
-      console.log('🔧 开始修复用户ID...')
+      console.log('🔄 开始强制恢复用户状态...')
       
-      // 强制重新获取用户数据
-      await userService.cleanupCorruptedSession()
-      const updatedUser = await userService.fetchAndCacheUser()
+      // 1. 先尝试从localStorage修复
+      if (typeof window !== 'undefined') {
+        const storedUser = localStorage.getItem('user')
+        const storedAuth = localStorage.getItem('isAuthenticated')
+        
+        if (storedUser && storedAuth === 'true') {
+          try {
+            const parsedUser = JSON.parse(storedUser)
+            console.log('📋 发现localStorage用户数据:', parsedUser)
+            
+            // 如果有email但没有id，尝试用google_id修复
+            if (parsedUser.email && !parsedUser.id && parsedUser.google_id) {
+              parsedUser.id = parsedUser.google_id
+              console.log('🔧 修复ID字段:', parsedUser.id)
+              localStorage.setItem('user', JSON.stringify(parsedUser))
+            }
+            
+            if (parsedUser.email && parsedUser.id) {
+              console.log('✅ localStorage用户数据完整，恢复到内存')
+              userService.setCurrentUser(parsedUser)
+              setUser(parsedUser)
+              setResult({ 
+                action: '强制恢复用户',
+                success: true, 
+                source: 'localStorage',
+                user: parsedUser 
+              })
+              setLoading(false)
+              return
+            }
+          } catch (e) {
+            console.error('❌ localStorage数据解析失败:', e)
+          }
+        }
+      }
       
-      if (updatedUser) {
-        setUser(updatedUser)
-        console.log('✅ 用户ID修复成功:', updatedUser.id)
+      // 2. 如果localStorage失败，尝试从Supabase Auth获取
+      console.log('🔍 localStorage恢复失败，尝试从Supabase Auth获取...')
+      
+      const restored = await userService.fetchAndCacheUser()
+      if (restored) {
+        console.log('✅ 从Supabase Auth恢复成功:', restored)
+        setUser(restored)
         setResult({ 
-          action: '修复用户ID',
+          action: '强制恢复用户',
           success: true, 
-          user: updatedUser 
+          source: 'Supabase Auth',
+          user: restored 
         })
       } else {
-        console.log('⚠️ 从数据库获取失败，检查localStorage...')
-        const currentUser = userService.getCurrentUser()
-        setUser(currentUser)
+        console.log('❌ 所有恢复方法都失败')
         setResult({ 
-          action: '修复用户ID',
-          success: !!currentUser?.id,
-          user: currentUser 
+          action: '强制恢复用户',
+          success: false, 
+          error: '无法从任何来源恢复用户数据，可能需要重新登录' 
         })
       }
       
     } catch (error) {
-      console.error('❌ 修复失败:', error)
+      console.error('❌ 强制恢复失败:', error)
       setResult({ 
-        action: '修复用户ID',
+        action: '强制恢复用户',
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 
       })
@@ -196,7 +272,7 @@ export default function TestSocialMediaFixPage() {
         <h2>修复操作</h2>
         <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
           <button 
-            onClick={fixUserID}
+            onClick={forceRestoreUser}
             disabled={loading}
             style={{ 
               padding: '12px', 
@@ -208,7 +284,7 @@ export default function TestSocialMediaFixPage() {
               opacity: loading ? 0.6 : 1
             }}
           >
-            {loading ? '🔧 修复中...' : '🔧 修复用户ID'}
+            {loading ? '🔄 恢复中...' : '🔄 强制恢复用户'}
           </button>
           
           <button 
