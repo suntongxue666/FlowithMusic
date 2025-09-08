@@ -44,10 +44,14 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
       userEmail: user?.email 
     })
     if (user?.social_media_info) {
-      setSocialMedias(prev => prev.map(media => ({
-        ...media,
-        value: user.social_media_info?.[media.name.toLowerCase()] || ''
-      })))
+      setSocialMedias(prev => prev.map(media => {
+        // 将显示名称转换为数据库字段名称
+        const fieldName = media.name.toLowerCase() === 'x' ? 'x' : media.name.toLowerCase()
+        return {
+          ...media,
+          value: user.social_media_info?.[fieldName] || ''
+        }
+      }))
     } else {
       // 如果没有社交媒体信息，重置为空
       setSocialMedias(prev => prev.map(media => ({
@@ -105,7 +109,8 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
     try {
       console.log('🔄 开始保存社交媒体信息:', { index, value, mediaName: socialMedias[index].name })
       
-      const mediaName = socialMedias[index].name.toLowerCase()
+      // 将显示名称转换为数据库字段名称
+      const mediaName = socialMedias[index].name.toLowerCase() === 'x' ? 'x' : socialMedias[index].name.toLowerCase()
       
       // 立即更新UI状态，给用户即时反馈
       setSocialMedias(prev => prev.map((media, i) => 
@@ -123,7 +128,7 @@ export default function UserProfileModal({ isOpen, onClose, user, onSignOut }: U
       
       try {
         const updatedUser = await Promise.race([updatePromise, timeoutPromise]) as any
-        console.log('✅ 社交媒体信息保存成功:', updatedUser.social_media_info)
+        console.log('✅ 社交媒体信息保存成功:', updatedUser?.social_media_info)
       } catch (saveError) {
         console.error('❌ 后台保存失败，但UI已更新:', saveError)
         // UI已更新，不回滚，让用户知道保存可能失败

@@ -341,7 +341,7 @@ export class UserService {
                 email: normalizedUser.email,
                 display_name: metadata?.full_name || metadata?.name || normalizedUser.email?.split('@')[0],
                 avatar_url: metadata?.avatar_url || metadata?.picture,
-                social_media_info: normalizedUser.user_metadata || {}
+                // 保持现有的social_media_info不变，不更新这个字段
               }
               
               console.log('🔧 UserService: 更新用户数据:', updateData)
@@ -425,7 +425,7 @@ export class UserService {
               coins: 10,
               is_premium: false,
               user_agent: getUserAgent(),
-              social_media_info: normalizedUser.user_metadata || {}
+              social_media_info: {} // 初始化为空对象，不使用Google OAuth数据
             }
             console.log('🔧 UserService: 创建临时用户记录用于继续登录流程')
             break
@@ -447,7 +447,7 @@ export class UserService {
           email: existingUser.email || normalizedUser.email,
           display_name: existingUser.display_name || metadata?.full_name || metadata?.name || normalizedUser.email?.split('@')[0],
           avatar_url: existingUser.avatar_url || metadata?.avatar_url || metadata?.picture,
-          social_media_info: existingUser.social_media_info || normalizedUser.user_metadata || {}
+          social_media_info: existingUser.social_media_info || {} // 保持现有社交媒体信息或初始化为空
         }
         
         console.log('🔧 UserService: 确保数据完整性后的用户:', {
@@ -1164,7 +1164,95 @@ export class UserService {
     return data
   }
 
-  // 更新社交媒体信息
+  // 社交媒体平台常量
+  private static readonly SOCIAL_PLATFORMS = ['whatsapp', 'tiktok', 'instagram', 'facebook', 'x'] as const
+
+  // 提取纯社交媒体信息（排除Google OAuth数据）
+  private extractSocialMediaOnly(data: any): any {
+    if (!data || typeof data !== 'object') {
+      return {}
+    }
+    
+    const result: any = {}
+    
+    UserService.SOCIAL_PLATFORMS.forEach(field => {
+      if (data[field] && typeof data[field] === 'string' && data[field].trim() !== '') {
+        result[field] = data[field].trim()
+      }
+    })
+    
+    console.log('🔍 提取社交媒体信息:', {
+      原始数据字段数: Object.keys(data).length,
+      提取后字段数: Object.keys(result).length,
+      提取结果: result
+    })
+    
+    return result
+  }
+
+  // 验证社交媒体平台是否有效
+  private isValidSocialPlatform(platform: string): boolean {
+    return UserService.SOCIAL_PLATFORMS.includes(platform as any)
+  }
+
+  // 清理用户的社交媒体数据（移除Google OAuth污染）
+  async cleanupUserSocialMediaData(userId?: string): Promise<void> {
+    const targetUserId = userId || this.currentUser?.id
+    
+    if (!targetUserId) {
+      throw new Error('无法获取用户ID进行数据清理')
+    }
+    
+    console.log('🧹 开始清理用户社交媒体数据，用户ID:', targetUserId)
+    
+    if (!supabase) {
+      console.warn('⚠️ Supabase不可用，无法清理数据库数据')
+      return
+    }
+    
+    try {
+      // 获取当前用户数据
+      const { data: currentUserData, error: fetchError } = await supabase
+        .from('users')
+        .select('social_media_info')
+        .eq('id', targetUserId)
+        .single()
+        
+      if (fetchError) {
+        console.error('❌ 获取用户数据失败:', fetchError)
+        return
+      }
+      
+      // 提取纯社交媒体信息
+      const cleanSocialMedia = this.extractSocialMediaOnly(currentUserData.social_media_info)
+      
+      // 更新数据库
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          social_media_info: cleanSocialMedia
+        })
+        .eq('id', targetUserId)
+        
+      if (updateError) {
+        console.error('❌ 清理社交媒体数据失败:', updateError)
+      } else {
+        console.log('✅ 社交媒体数据清理成功:', cleanSocialMedia)
+        
+        // 更新本地缓存
+        if (this.currentUser && this.currentUser.id === targetUserId) {
+          this.currentUser.social_media_info = cleanSocialMedia
+          
+          // 更新localStorage
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('user', JSON.stringify(this.currentUser))
+          }
+        }
+      }
+    } catch (error) {
+      console.error('💥 清理社交媒体数据异常:', error)
+    }
+  }
   async updateSocialMedia(socialMedia: {
     whatsapp?: string
     tiktok?: string
@@ -1188,13 +1276,35 @@ export class UserService {
       console.log('✅ updateSocialMedia: 成功获取用户:', currentUser.email)
     }
 
-    // 合并现有的社交媒体信息
-    const currentSocialMedia = currentUser.social_media_info || {}
-    const updatedSocialMedia = { ...currentSocialMedia, ...socialMedia }
+    // 提取现有的纯社交媒体信息（排除Google OAuth数据）
+    const currentSocialMedia = this.extractSocialMediaOnly(currentUser.social_media_info)
     
-    console.log('🔄 updateSocialMedia: 合并社交媒体信息:', {
+    // 验证输入的社交媒体平台
+    const validatedSocialMedia: any = {}
+    Object.keys(socialMedia).forEach(platform => {
+      if (this.isValidSocialPlatform(platform) && socialMedia[platform as keyof typeof socialMedia]) {
+        const value = socialMedia[platform as keyof typeof socialMedia]
+        if (value && value.trim() !== '') {
+          validatedSocialMedia[platform] = value.trim()
+        }
+      }
+    })
+    
+    console.log('🔍 验证后的社交媒体数据:', validatedSocialMedia)
+    
+    // 合并新的社交媒体信息
+    const updatedSocialMedia = { ...currentSocialMedia, ...validatedSocialMedia }
+    
+    // 过滤掉空值
+    Object.keys(updatedSocialMedia).forEach(key => {
+      if (!updatedSocialMedia[key] || updatedSocialMedia[key].trim() === '') {
+        delete updatedSocialMedia[key]
+      }
+    })
+    
+    console.log('🔄 updateSocialMedia: 处理后的社交媒体信息:', {
       current: currentSocialMedia,
-      new: socialMedia,
+      new: validatedSocialMedia,
       merged: updatedSocialMedia
     })
 
