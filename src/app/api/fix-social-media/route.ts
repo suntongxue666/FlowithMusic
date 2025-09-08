@@ -3,6 +3,12 @@ import { supabase } from '@/lib/supabase'
 
 export async function GET() {
   try {
+    if (!supabase) {
+      return NextResponse.json({ 
+        error: 'Supabase连接不可用' 
+      }, { status: 500 })
+    }
+
     // 获取当前认证用户
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
     
@@ -57,6 +63,12 @@ export async function GET() {
 
 export async function POST() {
   try {
+    if (!supabase) {
+      return NextResponse.json({ 
+        error: 'Supabase连接不可用' 
+      }, { status: 500 })
+    }
+
     // 获取当前认证用户
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
     
@@ -133,6 +145,12 @@ export async function POST() {
 
 export async function PUT() {
   try {
+    if (!supabase) {
+      return NextResponse.json({ 
+        error: 'Supabase连接不可用' 
+      }, { status: 500 })
+    }
+
     // 获取当前认证用户
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
     
