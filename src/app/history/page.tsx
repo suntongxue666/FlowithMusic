@@ -154,7 +154,7 @@ export default function HistoryPage() {
           finalUser = currentUser
           console.log('✅ 使用Service用户ID:', finalUserId)
         }
-        // 3. 如果都无效，检查localStorage
+        // 3. 如果都无效，检查localStorage并尝试修复ID
         else {
           const localUser = localStorage.getItem('user')
           if (localUser) {
@@ -164,6 +164,22 @@ export default function HistoryPage() {
                 finalUserId = parsedUser.id
                 finalUser = parsedUser
                 console.log('✅ 使用localStorage用户ID:', finalUserId)
+              } else if (parsedUser?.google_id) {
+                // 尝试使用google_id作为用户ID
+                finalUserId = parsedUser.google_id
+                parsedUser.id = parsedUser.google_id
+                finalUser = parsedUser
+                console.log('🔧 使用google_id作为用户ID:', finalUserId)
+                
+                // 更新localStorage
+                localStorage.setItem('user', JSON.stringify(parsedUser))
+              } else {
+                console.warn('⚠️ localStorage用户数据缺少ID和google_id:', {
+                  hasId: !!parsedUser?.id,
+                  hasGoogleId: !!parsedUser?.google_id,
+                  hasEmail: !!parsedUser?.email,
+                  userData: parsedUser
+                })
               }
             } catch (e) {
               console.warn('localStorage解析失败:', e)

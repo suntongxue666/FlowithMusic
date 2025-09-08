@@ -497,9 +497,11 @@ export class UserService {
           localStorage.setItem('anonymous_id', finalUser.anonymous_id || '')
           
           console.log('💾 UserService: 用户数据已保存到localStorage:', {
+            id: finalUser.id,
             email: finalUser.email,
             display_name: finalUser.display_name,
-            has_avatar: !!finalUser.avatar_url
+            has_avatar: !!finalUser.avatar_url,
+            has_id: !!finalUser.id
           })
         } catch (saveError) {
           console.error('❌ UserService: localStorage保存失败:', saveError)
@@ -877,10 +879,29 @@ export class UserService {
         
         if (storedUser && storedAuth === 'true') {
           const parsedUser = JSON.parse(storedUser)
-          if (parsedUser && parsedUser.email && parsedUser.id) {
-            console.log('🎯 从localStorage获取用户并同步到内存:', parsedUser.email, 'ID:', parsedUser.id)
-            this.currentUser = parsedUser // 同步到内存
-            return parsedUser
+          if (parsedUser && parsedUser.email) {
+            if (parsedUser.id) {
+              console.log('🎯 从localStorage获取用户并同步到内存:', parsedUser.email, 'ID:', parsedUser.id)
+              this.currentUser = parsedUser // 同步到内存
+              return parsedUser
+            } else {
+              console.warn('⚠️ localStorage用户数据缺少ID，尝试修复...', {
+                hasEmail: !!parsedUser.email,
+                hasId: !!parsedUser.id,
+                userData: parsedUser
+              })
+              
+              // 尝试从google_id或其他字段恢复ID
+              if (parsedUser.google_id) {
+                parsedUser.id = parsedUser.google_id
+                console.log('🔧 使用google_id作为用户ID:', parsedUser.id)
+                
+                // 重新保存修复后的数据
+                localStorage.setItem('user', JSON.stringify(parsedUser))
+                this.currentUser = parsedUser
+                return parsedUser
+              }
+            }
           } else {
             console.warn('⚠️ localStorage用户数据不完整:', {
               hasEmail: !!parsedUser?.email,
