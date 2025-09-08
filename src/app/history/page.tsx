@@ -196,7 +196,7 @@ export default function HistoryPage() {
                 .limit(50)
               
               const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('查询超时')), 3000)
+                setTimeout(() => reject(new Error('查询超时')), 8000) // 增加到8秒
               )
               
               const result = await Promise.race([queryPromise, timeoutPromise]) as any

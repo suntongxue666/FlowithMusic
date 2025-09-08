@@ -290,7 +290,7 @@ export class UserService {
             .single()
           
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('查询超时')), 5000)
+            setTimeout(() => reject(new Error('查询超时')), 10000) // 增加到10秒
           )
           
           const result = await Promise.race([queryPromise, timeoutPromise]) as any
@@ -376,7 +376,24 @@ export class UserService {
         } catch (queryError) {
           console.warn(`⚠️ UserService: 第${attempt}次查询异常:`, queryError)
           if (attempt === 3) {
-            console.log('⚠️ UserService: 所有查询尝试都失败，跳过查询直接创建用户')
+            console.log('⚠️ UserService: 所有查询尝试都失败，使用Auth用户信息创建临时用户')
+            // 当数据库查询完全失败时，使用Auth用户信息创建一个临时用户记录
+            const metadata = user.user_metadata as any
+            existingUser = {
+              id: user.id,
+              email: user.email,
+              google_id: user.id,
+              display_name: metadata?.full_name || metadata?.name || user.email?.split('@')[0],
+              avatar_url: metadata?.avatar_url || metadata?.picture,
+              anonymous_id: this.anonymousId || generateAnonymousId(),
+              created_at: user.created_at || new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              coins: 10,
+              is_premium: false,
+              user_agent: getUserAgent(),
+              social_media_info: user.user_metadata || {}
+            }
+            console.log('🔧 UserService: 创建临时用户记录用于继续登录流程')
             break
           }
           await new Promise(resolve => setTimeout(resolve, 1000))
