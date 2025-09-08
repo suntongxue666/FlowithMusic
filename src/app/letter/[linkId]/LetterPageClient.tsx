@@ -21,12 +21,15 @@ const LIGHT_COLORS = [
   '#CCCCFF', '#FFFFCC', '#FFE0E0', '#E0FFE0', '#E0E0FF', '#FFFFE0'
 ]
 
-// 生成匿名用户头像和用户名
-function generateAnonymousUser(linkId: string) {
-  // 使用linkId作为种子来确保同一个letter总是显示相同的头像和用户名
+// 生成匿名用户头像和用户名 - 基于统一的匿名ID
+function generateAnonymousUser(letter: any) {
+  // 优先使用letter的anonymous_id，如果没有则使用linkId（兼容旧数据）
+  const seedId = letter.anonymous_id || letter.link_id || 'fallback'
+  
+  // 使用anonymous_id作为种子来确保同一个匿名用户的所有letter显示相同的头像和用户名
   let hash = 0
-  for (let i = 0; i < linkId.length; i++) {
-    const char = linkId.charCodeAt(i)
+  for (let i = 0; i < seedId.length; i++) {
+    const char = seedId.charCodeAt(i)
     hash = ((hash << 5) - hash) + char
     hash = hash & hash // Convert to 32bit integer
   }
@@ -43,7 +46,7 @@ function generateAnonymousUser(linkId: string) {
 }
 
 // Letter发送者组件
-function LetterSender({ user }: { user?: any }) {
+function LetterSender({ user, letter }: { user?: any, letter?: any }) {
   const [showTooltip, setShowTooltip] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
   
@@ -128,11 +131,8 @@ function LetterSender({ user }: { user?: any }) {
       </div>
     )
   } else {
-    // 匿名用户 - 使用linkId生成一致的头像和用户名
-    const linkId = typeof window !== 'undefined' 
-      ? window.location.pathname.split('/').pop() || 'default'
-      : 'default'
-    const anonymousUser = generateAnonymousUser(linkId)
+    // 匿名用户 - 使用letter的anonymous_id生成一致的头像和用户名
+    const anonymousUser = generateAnonymousUser(letter)
     
     return (
       <div className="letter-sender-section">
@@ -439,7 +439,7 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
             )}
             
             {/* 发送者信息 - 单独一行显示 */}
-            <LetterSender user={letter.user} />
+            <LetterSender user={letter.user} letter={letter} />
             
             <div className="letter-date centered-date" style={{ fontSize: '12px' }}>
               Sent on {new Date(letter.created_at).toLocaleDateString('en-US', {

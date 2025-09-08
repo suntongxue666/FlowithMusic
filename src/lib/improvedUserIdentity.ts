@@ -47,14 +47,38 @@ export class ImprovedUserIdentity {
     }
   }
 
-  // 生成匿名ID
+  // 生成匿名ID - 加强版本，包含更多标识信息
   static generateAnonymousId(): string {
     const timestamp = Date.now().toString(36)
     const random = Math.random().toString(36).substring(2, 8)
-    return `anon_${timestamp}_${random}`
+    const fingerprint = this.generateDeviceFingerprint().substring(0, 4)
+    return `anon_${timestamp}_${fingerprint}_${random}`
+  }
+  
+  // 设置持久化Cookie作为备份标识
+  static setCookie(name: string, value: string, days: number = 365) {
+    if (typeof document === 'undefined') return
+    
+    const expires = new Date()
+    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000)
+    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`
+  }
+  
+  // 获取Cookie值
+  static getCookie(name: string): string | null {
+    if (typeof document === 'undefined') return null
+    
+    const nameEQ = name + '='
+    const ca = document.cookie.split(';')
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i]
+      while (c.charAt(0) === ' ') c = c.substring(1, c.length)
+      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length)
+    }
+    return null
   }
 
-  // 获取或创建用户身份
+  // 获取或创建用户身份 - 加强版，多重备份策略
   static getOrCreateIdentity(): AnonymousIdentity {
     if (typeof window === 'undefined') {
       // 服务端fallback
@@ -73,42 +97,85 @@ export class ImprovedUserIdentity {
     }
 
     try {
-      // 1. 尝试从localStorage获取
+      // 多重身份识别策略：
+      // 1. localStorage (主要存储)
+      // 2. sessionStorage (会话备份)  
+      // 3. cookie (持久化备份)
+      // 4. 浏览器指纹验证
+      
+      let identity: AnonymousIdentity | null = null
+      const currentFingerprint = this.generateDeviceFingerprint()
+      
+      // 策略1：尝试从localStorage获取
       const stored = localStorage.getItem(this.STORAGE_KEY)
       if (stored) {
-        const identity: AnonymousIdentity = JSON.parse(stored)
+        const parsedIdentity: AnonymousIdentity = JSON.parse(stored)
         
-        // 验证指纹是否匹配（允许一定的变化）
-        const currentFingerprint = this.generateDeviceFingerprint()
-        if (this.fingerprintSimilarity(identity.fingerprint, currentFingerprint) > 0.8) {
-          // 更新最后访问时间
-          identity.lastSeen = new Date().toISOString()
-          localStorage.setItem(this.STORAGE_KEY, JSON.stringify(identity))
-          
-          console.log('👤 Restored existing user identity:', identity.id)
-          return identity
+        // 验证指纹匹配度
+        if (this.fingerprintSimilarity(parsedIdentity.fingerprint, currentFingerprint) > 0.8) {
+          identity = parsedIdentity
+          console.log('👤 从localStorage恢复用户身份:', identity.id)
         } else {
-          console.log('🔄 Device fingerprint changed significantly, creating new identity')
+          console.log('🔄 localStorage指纹不匹配，继续尝试其他方式')
         }
       }
-
-      // 2. 尝试从备份存储获取
-      const backup = localStorage.getItem(this.BACKUP_STORAGE_KEY)
-      if (backup) {
-        const backupIdentity: AnonymousIdentity = JSON.parse(backup)
-        const currentFingerprint = this.generateDeviceFingerprint()
-        if (this.fingerprintSimilarity(backupIdentity.fingerprint, currentFingerprint) > 0.7) {
-          // 从备份恢复
-          localStorage.setItem(this.STORAGE_KEY, backup)
-          console.log('🔄 Restored identity from backup:', backupIdentity.id)
-          return backupIdentity
+      
+      // 策略2：如果localStorage失败，尝试cookie备份
+      if (!identity) {
+        const cookieId = this.getCookie('anonymous_user_id')
+        const cookieFingerprint = this.getCookie('device_fingerprint')
+        
+        if (cookieId && cookieFingerprint) {
+          if (this.fingerprintSimilarity(cookieFingerprint, currentFingerprint) > 0.7) {
+            // 从cookie恢复身份
+            identity = {
+              id: cookieId,
+              fingerprint: currentFingerprint,
+              createdAt: this.getCookie('user_created_at') || new Date().toISOString(),
+              lastSeen: new Date().toISOString(),
+              deviceInfo: {
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                timezone: new Date().getTimezoneOffset(),
+                screen: `${screen.width}x${screen.height}`
+              }
+            }
+            console.log('🍪 从Cookie恢复用户身份:', identity.id)
+          }
         }
       }
-
-      // 3. 创建新身份
+      
+      // 策略3：如果都失败，尝试从备份localStorage获取
+      if (!identity) {
+        const backup = localStorage.getItem(this.BACKUP_STORAGE_KEY)
+        if (backup) {
+          const backupIdentity: AnonymousIdentity = JSON.parse(backup)
+          if (this.fingerprintSimilarity(backupIdentity.fingerprint, currentFingerprint) > 0.6) {
+            identity = backupIdentity
+            console.log('🔄 从备份localStorage恢复用户身份:', identity.id)
+          }
+        }
+      }
+      
+      // 如果找到了身份，更新并保存
+      if (identity) {
+        identity.lastSeen = new Date().toISOString()
+        identity.fingerprint = currentFingerprint // 更新指纹
+        
+        // 多重保存策略
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(identity))
+        localStorage.setItem(this.BACKUP_STORAGE_KEY, JSON.stringify(identity))
+        this.setCookie('anonymous_user_id', identity.id)
+        this.setCookie('device_fingerprint', currentFingerprint)
+        this.setCookie('user_created_at', identity.createdAt)
+        
+        return identity
+      }
+      
+      // 策略4：创建新身份
       const newIdentity: AnonymousIdentity = {
         id: this.generateAnonymousId(),
-        fingerprint: this.generateDeviceFingerprint(),
+        fingerprint: currentFingerprint,
         createdAt: new Date().toISOString(),
         lastSeen: new Date().toISOString(),
         deviceInfo: {
@@ -119,17 +186,20 @@ export class ImprovedUserIdentity {
         }
       }
 
-      // 保存到主存储和备份存储
+      // 多重保存新身份
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newIdentity))
       localStorage.setItem(this.BACKUP_STORAGE_KEY, JSON.stringify(newIdentity))
+      this.setCookie('anonymous_user_id', newIdentity.id)
+      this.setCookie('device_fingerprint', currentFingerprint)
+      this.setCookie('user_created_at', newIdentity.createdAt)
       
-      console.log('✨ Created new user identity:', newIdentity.id)
+      console.log('✨ 创建新的匿名用户身份:', newIdentity.id)
       return newIdentity
 
     } catch (error) {
       console.error('Failed to get/create user identity:', error)
       
-      // Fallback: 最基本的身份
+      // 最终fallback
       return {
         id: this.generateAnonymousId(),
         fingerprint: 'fallback',
