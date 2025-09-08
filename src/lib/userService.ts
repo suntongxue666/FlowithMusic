@@ -257,15 +257,38 @@ export class UserService {
   // 登录成功后的数据处理（优化版 - 依赖数据库触发器）
   async handleAuthCallback(user: any): Promise<User> {
     console.log('🔄 UserService: 开始处理登录回调...')
-    console.log('👤 UserService: 用户信息:', { 
-      id: user.id, 
-      email: user.email,
-      metadata: user.user_metadata 
+    console.log('👤 UserService: 收到的原始用户对象:', user)
+    console.log('🔍 UserService: 用户对象详细分析:', {
+      type: typeof user,
+      constructor: user?.constructor?.name,
+      keys: Object.keys(user || {}),
+      id: user?.id,
+      sub: user?.sub,
+      aud: user?.aud,
+      email: user?.email,
+      metadata: user?.user_metadata
     })
     
+    // 确保用户ID存在 - 尝试多个可能的ID字段
+    let userId = user?.id || user?.sub || user?.aud
+    if (!userId) {
+      console.error('❌ UserService: 无法从用户对象中获取有效ID', {
+        user_keys: Object.keys(user || {}),
+        user_values: user
+      })
+      throw new Error('用户对象缺少有效的ID字段，无法处理登录')
+    }
+    
+    console.log('✅ UserService: 确定使用的用户ID:', userId)
+    
+    // 标准化用户对象，确保ID字段存在
+    const normalizedUser = {
+      ...user,
+      id: userId // 确保ID字段存在
+    }
     if (!supabase) {
       console.warn('⚠️ UserService: Supabase不可用，使用fallback处理')
-      return this.createFallbackUser(user)
+      return this.createFallbackUser(normalizedUser)
     }
 
     // 获取当前匿名ID用于数据迁移
@@ -286,7 +309,7 @@ export class UserService {
           const queryPromise = supabase
             .from('users')
             .select('*')
-            .eq('id', user.id)
+            .eq('id', normalizedUser.id)  // 使用标准化的用户ID
             .single()
           
           const timeoutPromise = new Promise((_, reject) => 
@@ -313,12 +336,12 @@ export class UserService {
             if (!data.email || !data.display_name || data.email === 'undefined') {
               console.log('🔧 UserService: 检测到用户数据不完整，开始修复...')
               
-              const metadata = user.user_metadata as any
+              const metadata = normalizedUser.user_metadata as any
               const updateData = {
-                email: user.email,
-                display_name: metadata?.full_name || metadata?.name || user.email?.split('@')[0],
+                email: normalizedUser.email,
+                display_name: metadata?.full_name || metadata?.name || normalizedUser.email?.split('@')[0],
                 avatar_url: metadata?.avatar_url || metadata?.picture,
-                social_media_info: user.user_metadata || {}
+                social_media_info: normalizedUser.user_metadata || {}
               }
               
               console.log('🔧 UserService: 更新用户数据:', updateData)
@@ -327,7 +350,7 @@ export class UserService {
                 const { data: updatedData, error: updateError } = await supabase
                   .from('users')
                   .update(updateData)
-                  .eq('id', user.id)
+                  .eq('id', normalizedUser.id)
                   .select()
                   .single()
                 
@@ -377,21 +400,32 @@ export class UserService {
           console.warn(`⚠️ UserService: 第${attempt}次查询异常:`, queryError)
           if (attempt === 3) {
             console.log('⚠️ UserService: 所有查询尝试都失败，使用Auth用户信息创建临时用户')
+            console.log('🔧 UserService: 创建临时用户记录，Auth用户详情:', {
+              user_id: normalizedUser.id,
+              user_sub: normalizedUser.sub,
+              user_aud: normalizedUser.aud,
+              user_email: normalizedUser.email,
+              all_user_fields: Object.keys(normalizedUser),
+              user_object: normalizedUser
+            })
+            
             // 当数据库查询完全失败时，使用Auth用户信息创建一个临时用户记录
-            const metadata = user.user_metadata as any
+            const metadata = normalizedUser.user_metadata as any
+            const userIdToUse = normalizedUser.id // 使用已经标准化的ID
+            
             existingUser = {
-              id: user.id,
-              email: user.email,
-              google_id: user.id,
-              display_name: metadata?.full_name || metadata?.name || user.email?.split('@')[0],
+              id: userIdToUse,
+              email: normalizedUser.email,
+              google_id: userIdToUse,
+              display_name: metadata?.full_name || metadata?.name || normalizedUser.email?.split('@')[0],
               avatar_url: metadata?.avatar_url || metadata?.picture,
               anonymous_id: this.anonymousId || generateAnonymousId(),
-              created_at: user.created_at || new Date().toISOString(),
+              created_at: normalizedUser.created_at || new Date().toISOString(),
               updated_at: new Date().toISOString(),
               coins: 10,
               is_premium: false,
               user_agent: getUserAgent(),
-              social_media_info: user.user_metadata || {}
+              social_media_info: normalizedUser.user_metadata || {}
             }
             console.log('🔧 UserService: 创建临时用户记录用于继续登录流程')
             break
@@ -406,14 +440,14 @@ export class UserService {
         console.log('✅ UserService: 找到触发器创建的用户记录')
         
         // 确保用户数据完整性，强制填充缺失字段
-        const metadata = user.user_metadata as any
+        const metadata = normalizedUser.user_metadata as any
         finalUser = {
           ...existingUser,
           // 强制确保关键字段不为undefined
-          email: existingUser.email || user.email,
-          display_name: existingUser.display_name || metadata?.full_name || metadata?.name || user.email?.split('@')[0],
+          email: existingUser.email || normalizedUser.email,
+          display_name: existingUser.display_name || metadata?.full_name || metadata?.name || normalizedUser.email?.split('@')[0],
           avatar_url: existingUser.avatar_url || metadata?.avatar_url || metadata?.picture,
-          social_media_info: existingUser.social_media_info || user.user_metadata || {}
+          social_media_info: existingUser.social_media_info || normalizedUser.user_metadata || {}
         }
         
         console.log('🔧 UserService: 确保数据完整性后的用户:', {
@@ -431,14 +465,14 @@ export class UserService {
           const { data: createdUser, error: createError } = await supabase
             .from('users')
             .insert({
-              id: user.id,
-              email: user.email,
-              google_id: user.id,
+              id: normalizedUser.id,
+              email: normalizedUser.email,
+              google_id: normalizedUser.id,
               anonymous_id: newAnonymousId,
-              display_name: (user.user_metadata as any)?.full_name || (user.user_metadata as any)?.name || user.email?.split('@')[0],
-              avatar_url: (user.user_metadata as any)?.avatar_url || (user.user_metadata as any)?.picture,
+              display_name: (normalizedUser.user_metadata as any)?.full_name || (normalizedUser.user_metadata as any)?.name || normalizedUser.email?.split('@')[0],
+              avatar_url: (normalizedUser.user_metadata as any)?.avatar_url || (normalizedUser.user_metadata as any)?.picture,
               user_agent: getUserAgent(),
-              social_media_info: user.user_metadata || {},
+              social_media_info: normalizedUser.user_metadata || {},
               coins: 10,
               is_premium: false
             })
@@ -454,7 +488,7 @@ export class UserService {
               const { data: retryUser } = await supabase
                 .from('users')
                 .select('*')
-                .eq('id', user.id)
+                .eq('id', normalizedUser.id)
                 .single()
               
               if (retryUser) {
@@ -471,7 +505,7 @@ export class UserService {
           }
         } catch (createError) {
           console.warn('⚠️ UserService: 所有创建方法都失败，使用临时用户:', createError)
-          return this.createFallbackUser(user)
+          return this.createFallbackUser(normalizedUser)
         }
       }
 
@@ -527,17 +561,25 @@ export class UserService {
     } catch (error) {
       console.error('💥 UserService: 处理登录回调失败:', error)
       console.log('🔄 UserService: 使用fallback处理')
-      return this.createFallbackUser(user)
+      return this.createFallbackUser(normalizedUser)
     }
   }
 
   // 创建fallback用户
   private createFallbackUser(user: any): User {
     console.log('🔄 UserService: 创建fallback用户')
+    
+    // 确保ID存在
+    const userId = user.id || user.sub || user.aud
+    if (!userId) {
+      console.error('❌ UserService: fallback用户也无法获取有效ID')
+      throw new Error('无法获取用户ID，登录失败')
+    }
+    
     const fallbackUser = {
-      id: user.id,
+      id: userId,
       email: user.email,
-      google_id: user.id,
+      google_id: userId,
       anonymous_id: this.anonymousId || generateAnonymousId(),
       display_name: (user.user_metadata as any)?.full_name || (user.user_metadata as any)?.name || user.email?.split('@')[0],
       avatar_url: (user.user_metadata as any)?.avatar_url || (user.user_metadata as any)?.picture,
