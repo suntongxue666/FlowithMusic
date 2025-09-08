@@ -28,8 +28,8 @@ export default function ArtistLetters() {
         const popularArtists = await letterService.getPopularArtists(20)
         console.log('📝 热门艺术家:', popularArtists)
         
-        // 2. 筛选出Letter数量≥6的艺术家
-        const qualifiedArtists = popularArtists.filter(artist => artist.count >= 6)
+        // 2. 筛选出Letter数量≥3的艺术家（降低条件以确保有内容显示）
+        const qualifiedArtists = popularArtists.filter(artist => artist.count >= 3)
         console.log('📝 符合条件的艺术家:', qualifiedArtists)
         
         // 3. 为每个艺术家获取更多Letters用于轮播
@@ -37,8 +37,8 @@ export default function ArtistLetters() {
         
         for (const artistInfo of qualifiedArtists.slice(0, 2)) { // 最多显示2个艺术家
           try {
-            // 获取该艺术家的更多Letters（取3的倍数，最多12个）
-            const maxLetters = Math.min(12, Math.floor(artistInfo.count / 3) * 3)
+            // 获取该艺术家的Letters（至少3个，最多12个）
+            const maxLetters = Math.max(3, Math.min(12, artistInfo.count))
             const artistLetters = await letterService.getPublicLetters(maxLetters, 0, 'created_at', {
               artist: artistInfo.artist
             })
@@ -57,6 +57,25 @@ export default function ArtistLetters() {
         
         setArtistSections(artistSections)
         console.log('📝 艺术家分组结果:', artistSections)
+        
+        // 如果没有符合条件的艺术家，创建一个通用的"Popular Posts"区域
+        if (artistSections.length === 0) {
+          console.log('📝 没有符合条件的艺术家，尝试获取热门Letter作为fallback')
+          try {
+            const popularLetters = await letterService.getPublicLetters(6, 0, 'view_count')
+            if (popularLetters.length >= 3) {
+              artistSections.push({
+                artist: 'Popular Songs',
+                letters: popularLetters.slice(0, 6),
+                count: popularLetters.length
+              })
+              setArtistSections(artistSections)
+              console.log('📝 使用热门Letter作为fallback:', popularLetters.length)
+            }
+          } catch (error) {
+            console.error('Failed to load popular letters as fallback:', error)
+          }
+        }
         
         // 初始化每个艺术家的显示索引和轮换位置
         const initialDisplayIndices: {[key: string]: number[]} = {}
