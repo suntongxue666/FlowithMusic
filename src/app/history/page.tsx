@@ -171,13 +171,9 @@ export default function HistoryPage() {
           }
         }
         
-        // 4. 最后检查是否是特定的已知用户（临时修复）
+        // 4. 如果仍然没有用户ID，则不应该显示任何Letter
         if (!finalUserId) {
-          const localAuth = localStorage.getItem('isAuthenticated')
-          if (localAuth === 'true') {
-            finalUserId = 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981'
-            console.log('🔧 检测到已登录状态但用户ID缺失，使用已知用户ID:', finalUserId)
-          }
+          console.log('⚠️ 无法获取有效用户ID，History将为空')
         }
         
         console.log('🎯 最终使用的用户ID:', finalUserId)
@@ -482,10 +478,9 @@ export default function HistoryPage() {
                         
                         // 最后的已知用户ID fallback
                         if (!userId) {
-                          const localAuth = localStorage.getItem('isAuthenticated')
-                          if (localAuth === 'true') {
-                            userId = 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981'
-                          }
+                          console.log('⚠️ 紧急修复无法获取有效用户ID')
+                          alert('无法获取用户ID，请刷新页面重试')
+                          return
                         }
                       }
                     }
