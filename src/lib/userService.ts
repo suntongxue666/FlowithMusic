@@ -930,6 +930,7 @@ export class UserService {
               console.warn('⚠️ localStorage用户数据缺少ID，尝试修复...', {
                 hasEmail: !!parsedUser.email,
                 hasId: !!parsedUser.id,
+                hasGoogleId: !!parsedUser.google_id,
                 userData: parsedUser
               })
               
@@ -942,6 +943,12 @@ export class UserService {
                 localStorage.setItem('user', JSON.stringify(parsedUser))
                 this.currentUser = parsedUser
                 return parsedUser
+              } else {
+                console.error('❌ 无法修复用户ID - 既没有id也没有google_id')
+                // 清除损坏的数据，强制重新登录
+                localStorage.removeItem('user')
+                localStorage.removeItem('isAuthenticated')
+                return null
               }
             }
           } else {
@@ -950,10 +957,18 @@ export class UserService {
               hasId: !!parsedUser?.id,
               userData: parsedUser
             })
+            // 清除不完整的数据
+            localStorage.removeItem('user')
+            localStorage.removeItem('isAuthenticated')
+            return null
           }
         }
       } catch (error) {
         console.warn('⚠️ getCurrentUser: localStorage解析失败:', error)
+        // 清除损坏的数据
+        localStorage.removeItem('user')
+        localStorage.removeItem('isAuthenticated')
+        return null
       }
     }
     
@@ -1122,11 +1137,24 @@ export class UserService {
     let currentUser = this.currentUser
     if (!currentUser || !currentUser.id) {
       console.log('⚠️ updateProfile: 内存中无用户或用户ID缺失，尝试获取...')
-      currentUser = await this.getCurrentUserAsync()
+      
+      // 首先尝试从localStorage获取并修复
+      currentUser = this.getCurrentUser()
+      
+      // 如果localStorage也没有或者修复失败，尝试从数据库获取
+      if (!currentUser || !currentUser.id) {
+        console.log('⚠️ updateProfile: localStorage也无有效用户，尝试从数据库获取...')
+        currentUser = await this.getCurrentUserAsync()
+      }
       
       if (!currentUser || !currentUser.id) {
-        console.error('❌ updateProfile: 无法获取用户信息或用户ID')
-        throw new Error('用户未登录或用户ID缺失')
+        console.error('❌ updateProfile: 无法获取用户信息或用户ID', {
+          hasCurrentUser: !!currentUser,
+          hasId: !!currentUser?.id,
+          hasEmail: !!currentUser?.email,
+          userData: currentUser
+        })
+        throw new Error('用户未登录或用户ID缺失，请重新登录')
       }
       
       console.log('✅ updateProfile: 成功获取用户:', currentUser.email, 'ID:', currentUser.id)
