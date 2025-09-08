@@ -25,42 +25,43 @@ export default function DebugAuthUserPage() {
           console.log('所有字段:', Object.keys(user))
           console.log('字段类型和值:')
           Object.keys(user).forEach(key => {
-            console.log(`  ${key}: ${typeof user[key]} = ${user[key]}`)
+            console.log(`  ${key}: ${typeof (user as any)[key]} = ${(user as any)[key]}`)
           })
           
+          const userAny = user as any
           setAuthUser({
             // 基本信息
-            id: user.id,
-            email: user.email,
-            phone: user.phone,
+            id: userAny.id,
+            email: userAny.email,
+            phone: userAny.phone,
             
             // 元数据
-            user_metadata: user.user_metadata,
-            app_metadata: user.app_metadata,
+            user_metadata: userAny.user_metadata,
+            app_metadata: userAny.app_metadata,
             
             // 认证信息
-            aud: user.aud,
-            sub: user.sub,
+            aud: userAny.aud,
+            sub: userAny.sub,
             
             // 时间戳
-            created_at: user.created_at,
-            updated_at: user.updated_at,
-            last_sign_in_at: user.last_sign_in_at,
+            created_at: userAny.created_at,
+            updated_at: userAny.updated_at,
+            last_sign_in_at: userAny.last_sign_in_at,
             
             // 其他可能的字段
-            role: user.role,
-            email_confirmed_at: user.email_confirmed_at,
-            phone_confirmed_at: user.phone_confirmed_at,
+            role: userAny.role,
+            email_confirmed_at: userAny.email_confirmed_at,
+            phone_confirmed_at: userAny.phone_confirmed_at,
             
             // 原始对象的所有字段
             allFields: Object.keys(user),
             
             // 检查常见ID字段
             possibleIds: {
-              id: user.id,
-              sub: user.sub,
-              aud: user.aud,
-              email: user.email
+              id: userAny.id,
+              sub: userAny.sub,
+              aud: userAny.aud,
+              email: userAny.email
             }
           })
         }
