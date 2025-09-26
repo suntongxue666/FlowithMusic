@@ -228,16 +228,21 @@ export default function RecentPostsCarousel({
   }, [displayLetters.length, autoPlay, isHovered, currentRotationIndex, isMobile]) // 增加isMobile依赖
 
   // Convert Letter to card format
-  const convertLetterToCard = (letter: Letter) => ({
-    to: letter.recipient_name,
-    message: letter.message,
-    song: {
-      title: letter.song_title,
-      artist: letter.song_artist,
-      albumCover: letter.song_album_cover
-    },
-    linkId: letter.link_id
-  })
+  const convertLetterToCard = (letter: Letter) => {
+    console.log('Frontend: convertLetterToCard - Input letter:', letter);
+    const card = {
+      to: letter.recipient_name,
+      message: letter.message,
+      song: {
+        title: letter.song_title,
+        artist: letter.song_artist,
+        albumCover: letter.song_album_cover
+      },
+      linkId: letter.link_id
+    };
+    console.log('Frontend: convertLetterToCard - Output card:', card);
+    return card;
+  };
 
   // 获取当前显示的6个Letters
   const getCurrentLetters = () => {
