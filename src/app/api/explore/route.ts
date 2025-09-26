@@ -1,4 +1,4 @@
-imp好rt { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { letterService } from '@/lib/letterService'
 import { Letter } from '@/lib/supabase'
 
