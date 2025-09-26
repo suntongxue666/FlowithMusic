@@ -52,7 +52,7 @@ export async function GET(request: Request) {
               shareableLink: letter.shareable_link,
               userDisplayName: letter.user?.display_name,
               userAvatarUrl: letter.user?.avatar_url,
-            })) as any // 强制类型转换，因为map返回的是部分Letter字段
+            }))
           })
         }
       } catch (error) {

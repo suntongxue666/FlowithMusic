@@ -103,17 +103,19 @@ export default function RecentPostsCarousel({
         // 从新的API接口加载Letters
         const response = await fetch('/api/home/recent-posts?limit=30&offset=0')
         if (!response.ok) {
+          console.error('Frontend: API response not OK:', response.status, response.statusText);
           throw new Error(`HTTP error! status: ${response.status}`)
         }
         const data = await response.json() as Letter[]
         setLetters(data)
-        console.log('📝 轮播加载Letters (来自API):', data.length)
+        console.log('Frontend: Received letters from API:', data);
       } catch (error) {
-        console.error('Failed to load letters for carousel:', error)
+        console.error('Frontend: Failed to load letters for carousel:', error)
         setLetters([]); // 确保在失败时清空letters，触发fallback
       } finally {
         setLoading(false)
       }
+    }
     }
 
     loadAllLetters()
