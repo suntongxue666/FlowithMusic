@@ -100,14 +100,14 @@ export default function RecentPostsCarousel({
     const loadAllLetters = async () => {
       setLoading(true)
       try {
-        // 加载更多Letters用于轮播（比如30个）
-        const publicLetters = await letterService.getPublicLetters(30, 0, 'created_at')
-        const filteredLetters = publicLetters.filter(letter => {
-          const wordCount = letter.message.trim().split(/\s+/).length
-          return wordCount >= 6
-        })
-        setLetters(filteredLetters)
-        console.log('📝 轮播加载Letters:', filteredLetters.length)
+        // 从新的API接口加载Letters
+        const response = await fetch('https://flowithmusic.com/api/home/recent-posts?limit=30&offset=0')
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        const data = await response.json() as Letter[] // API返回的数据已经是过滤和格式化后的
+        setLetters(data)
+        console.log('📝 轮播加载Letters (来自API):', data.length)
       } catch (error) {
         console.error('Failed to load letters for carousel:', error)
       } finally {
