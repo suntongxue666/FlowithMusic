@@ -116,7 +116,6 @@ export default function RecentPostsCarousel({
         setLoading(false)
       }
     }
-    }
 
     loadAllLetters()
     const interval = setInterval(loadAllLetters, 60 * 60 * 1000) // 1小时
