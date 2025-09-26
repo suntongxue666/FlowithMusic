@@ -55,40 +55,8 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
       
     } catch (error) {
       console.error('Failed to load letters:', error)
-      
-      // 错误处理：尝试从localStorage加载
-      if (typeof window !== 'undefined') {
-        try {
-          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-          const validLocalLetters = localLetters
-            .filter((letter: Letter) => {
-              if (searchQuery && searchQuery.trim()) {
-                const query = searchQuery.trim().toLowerCase()
-                const recipientMatch = letter.recipient_name.toLowerCase().includes(query)
-                const songMatch = letter.song_title.toLowerCase().includes(query)
-                const artistMatch = letter.song_artist.toLowerCase().includes(query)
-                return (recipientMatch || songMatch || artistMatch)
-              }
-              return true // 显示所有Letters，无其他限制条件
-            })
-            .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-          
-          const offset = page * LETTERS_PER_PAGE
-          const paginatedLetters = validLocalLetters.slice(offset, offset + LETTERS_PER_PAGE)
-          
-          if (isNewSearch) {
-            setLetters(paginatedLetters)
-          } else {
-            setLetters(prev => [...prev, ...paginatedLetters])
-          }
-          
-          setHasMore(paginatedLetters.length === LETTERS_PER_PAGE)
-        } catch (localError) {
-          console.error('Local storage also failed:', localError)
-          setLetters([])
-          setHasMore(false)
-        }
-      }
+      setLetters([])
+      setHasMore(false)
     } finally {
       setLoading(false)
       setLoadingMore(false)

@@ -32,11 +32,9 @@ export default function ArtistLetters() {
         const hotArtistSections: ArtistSection[] = await response.json()
 
         setArtistSections(hotArtistSections)
-        console.log('📝 热门艺术家分组结果 (来自新API):', hotArtistSections)
 
         // 如果新的API没有返回任何热门艺术家，则尝试获取热门Letter作为fallback
         if (hotArtistSections.length === 0) {
-          console.log('📝 新API没有返回热门艺术家，尝试获取热门Letter作为fallback')
           try {
             const popularLetters = await letterService.getPublicLetters(6, 0, 'view_count')
             if (popularLetters.length >= 3) {
@@ -45,7 +43,6 @@ export default function ArtistLetters() {
                 letters: popularLetters.slice(0, 6),
                 count: popularLetters.length
               }])
-              console.log('📝 使用热门Letter作为fallback:', popularLetters.length)
             }
           } catch (error) {
             console.error('Failed to load popular letters as fallback:', error)
