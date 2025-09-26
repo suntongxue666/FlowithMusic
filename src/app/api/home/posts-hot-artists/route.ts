@@ -8,6 +8,7 @@ export async function GET(request: Request) {
     const minLettersCount = parseInt(searchParams.get('minLettersCount') || '6', 10)
     const artistLimit = parseInt(searchParams.get('artistLimit') || '2', 10) // 限制返回的热门艺术家数量
     const letterLimitPerArtist = parseInt(searchParams.get('letterLimitPerArtist') || '12', 10) // 每个艺术家返回的Letters数量
+    const format = searchParams.get('format') // 控制返回字段命名
 
     // 1. 获取热门艺术家
     const popularArtists = await letterService.getPopularArtists(20) // 获取足够多的艺术家进行筛选
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
     const hotArtists = popularArtists.filter(artist => artist.count >= minLettersCount)
                                      .slice(0, artistLimit) // 限制返回的热门艺术家数量
 
-    const hotArtistSections: { artist: string; count: number; letters: Letter[] }[] = []
+    const hotArtistSections: { artist: string; count: number; letters: any[] }[] = []
 
     // 3. 为每个热门艺术家获取他们的Letters
     for (const artistInfo of hotArtists) {
