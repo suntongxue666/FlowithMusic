@@ -986,7 +986,7 @@ export class LetterService {
         )
       `)
       .eq('is_public', true)
-      .or(`song_title.ilike.%${searchTerm}%,song_artist.ilike.%${searchTerm}%,message.ilike.%${searchTerm}%`)
+      .or(`song_title.ilike.%${searchTerm}%,song_artist.ilike.%${searchTerm}%,message.ilike.%${searchTerm}%,recipient_name.ilike.%${searchTerm}%`)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 

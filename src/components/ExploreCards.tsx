@@ -31,57 +31,18 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
         setLoadingMore(true)
       }
 
-      const offset = pageNum * LETTERS_PER_PAGE
-      let fetchedLetters: Letter[] = []
+      const offset = pageNum * LETTERS_PER_PAGE;
+      let url = `/api/explore?limit=${LETTERS_PER_PAGE}&offset=${offset}`;
 
       if (searchQuery && searchQuery.trim()) {
-        const query = searchQuery.trim();
-        fetchedLetters = await letterService.searchLetters(query, LETTERS_PER_PAGE, offset);
-      } else {
-        fetchedLetters = await letterService.getPublicLetters(LETTERS_PER_PAGE, offset, 'created_at');
-        
-        if (localStorage.getItem('supabase_auth_error') && pageNum === 0) {
-          console.log('📝 Explore: 检测到认证错误，合并localStorage所有数据');
-          
-          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]');
-          const allLocalLetters = localLetters;
-          
-          if (allLocalLetters.length > 0) {
-            console.log('📝 Explore: 发现本地Letters，合并显示:', allLocalLetters.length);
-            const combinedLetters = [...allLocalLetters, ...fetchedLetters];
-            fetchedLetters = combinedLetters.filter((letter, index, self) => 
-              index === self.findIndex(l => l.link_id === letter.link_id)
-            ).sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-          }
-        }
+        url += `&searchQuery=${encodeURIComponent(searchQuery.trim())}`;
       }
 
-      if (fetchedLetters.length === 0 && pageNum === 0) {
-        console.log('📝 Explore: 数据库无Letters，检查localStorage和认证状态...');
-        
-        const hasAuthError = localStorage.getItem('supabase_auth_error');
-        if (hasAuthError) {
-          console.log('📝 Explore: 检测到认证错误，使用localStorage作为主要数据源');
-        }
-        
-        if (typeof window !== 'undefined') {
-          const localLetters = JSON.parse(localStorage.getItem('letters') || '[]');
-          const validLocalLetters = localLetters
-            .filter((letter: Letter) => {
-              if (searchQuery && searchQuery.trim()) {
-                const query = searchQuery.trim().toLowerCase();
-                const recipientMatch = letter.recipient_name.toLowerCase().includes(query);
-                const songMatch = letter.song_title.toLowerCase().includes(query);
-                const artistMatch = letter.song_artist.toLowerCase().includes(query);
-                return (recipientMatch || songMatch || artistMatch);
-              }
-              return true;
-            })
-            .sort((a: Letter, b: Letter) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-          
-          fetchedLetters = validLocalLetters.slice(offset, offset + LETTERS_PER_PAGE);
-        }
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      const fetchedLetters: Letter[] = await response.json();
 
       if (isNewSearch) {
         setLetters(fetchedLetters)

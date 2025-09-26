@@ -24,58 +24,27 @@ export default function ArtistLetters() {
       try {
         setLoading(true)
         
-        // 1. 获取热门艺术家
-        const popularArtistsResponse = await fetch('https://flowithmusic.com/api/home/popular-artists?limit=20')
-        if (!popularArtistsResponse.ok) {
-          throw new Error(`HTTP error! status: ${popularArtistsResponse.status}`)
+        // 从新的API接口获取热门艺术家帖子
+        const response = await fetch('https://flowithmusic.com/api/home/posts-hot-artists')
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
         }
-        const popularArtists: { artist: string; count: number }[] = await popularArtistsResponse.json()
-        console.log('📝 热门艺术家 (来自API):', popularArtists)
+        const hotArtistSections: ArtistSection[] = await response.json()
 
-        // 2. 筛选出Letter数量≥3的艺术家
-        const qualifiedArtists = popularArtists.filter(artist => artist.count >= 3)
-        console.log('📝 符合条件的艺术家:', qualifiedArtists)
+        setArtistSections(hotArtistSections)
+        console.log('📝 热门艺术家分组结果 (来自新API):', hotArtistSections)
 
-        // 3. 为每个艺术家获取更多Letters用于轮播
-        const artistSectionsData: ArtistSection[] = []
-
-        for (const artistInfo of qualifiedArtists.slice(0, 2)) { // 最多显示2个艺术家
+        // 如果新的API没有返回任何热门艺术家，则尝试获取热门Letter作为fallback
+        if (hotArtistSections.length === 0) {
+          console.log('📝 新API没有返回热门艺术家，尝试获取热门Letter作为fallback')
           try {
-            const maxLetters = Math.max(3, Math.min(12, artistInfo.count))
-            const artistLettersResponse = await fetch(`https://flowithmusic.com/api/home/artist-posts?artist=${encodeURIComponent(artistInfo.artist)}&limit=${maxLetters}&offset=0`)
-            if (!artistLettersResponse.ok) {
-              throw new Error(`HTTP error! status: ${artistLettersResponse.status}`)
-            }
-            const artistLetters: Letter[] = await artistLettersResponse.json()
-
-            if (artistLetters.length >= 3) {
-              artistSectionsData.push({
-                artist: artistInfo.artist,
-                letters: artistLetters,
-                count: artistInfo.count
-              })
-            }
-          } catch (error) {
-            console.error(`Failed to load letters for ${artistInfo.artist} from API:`, error)
-          }
-        }
-
-        setArtistSections(artistSectionsData)
-        console.log('📝 艺术家分组结果 (来自API):', artistSectionsData)
-
-        // 如果没有符合条件的艺术家，创建一个通用的"Popular Songs"区域
-        if (artistSectionsData.length === 0) {
-          console.log('📝 没有符合条件的艺术家，尝试获取热门Letter作为fallback')
-          try {
-            // 这里仍然使用 letterService.getPublicLetters 作为 fallback，因为没有直接的 API 接口获取 "Popular Songs"
             const popularLetters = await letterService.getPublicLetters(6, 0, 'view_count')
             if (popularLetters.length >= 3) {
-              artistSectionsData.push({
+              setArtistSections([{
                 artist: 'Popular Songs',
                 letters: popularLetters.slice(0, 6),
                 count: popularLetters.length
-              })
-              setArtistSections(artistSectionsData)
+              }])
               console.log('📝 使用热门Letter作为fallback:', popularLetters.length)
             }
           } catch (error) {
@@ -89,7 +58,7 @@ export default function ArtistLetters() {
         const initialExitingPositions: {[key: string]: Set<number>} = {}
         const initialEnteringPositions: {[key: string]: Set<number>} = {}
 
-        artistSectionsData.forEach((section, sectionIndex) => {
+        hotArtistSections.forEach((section, sectionIndex) => {
           initialDisplayIndices[section.artist] = [0, 1, 2] // 显示前3个
           initialRotationIndex[section.artist] = sectionIndex === 0 ? 0 : 2 // 第一组从位置0开始，第二组从位置2开始
           initialExitingPositions[section.artist] = new Set()
