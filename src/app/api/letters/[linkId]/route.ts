@@ -1,5 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// 输出 camelCase（App 友好）
+function toCamel(letter: any) {
+  if (!letter || typeof letter !== 'object') return letter
+  return {
+    id: letter.id,
+    userId: letter.user_id,
+    anonymousId: letter.anonymous_id,
+    linkId: letter.link_id,
+    recipientName: letter.recipient_name,
+    message: letter.message,
+    songId: letter.song_id,
+    songTitle: letter.song_title,
+    songArtist: letter.song_artist,
+    songAlbumCover: letter.song_album_cover,
+    songPreviewUrl: letter.song_preview_url,
+    songSpotifyUrl: letter.song_spotify_url,
+    createdAt: letter.created_at,
+    updatedAt: letter.updated_at,
+    viewCount: letter.view_count,
+    isPublic: letter.is_public,
+    shareableLink: letter.shareable_link,
+    user: letter.user
+      ? {
+          id: letter.user.id,
+          display_name: letter.user.display_name,
+          avatar_url: letter.user.avatar_url,
+        }
+      : letter.user,
+  }
+}
+
+function maybeFormatCamel(data: any, format: string | null) {
+  return format === 'camelCase' ? toCamel(data) : data
+}
+
 // 全局存储 - 在生产环境中应该使用 Redis 或数据库
 const globalLetterStorage = new Map<string, any>()
 
@@ -10,6 +45,7 @@ export async function GET(
   try {
     const { linkId } = await params
     console.log('🔍 API: Searching for letter:', linkId)
+    const format = request.nextUrl.searchParams.get('format')
     
     // 1. 首先尝试从Supabase获取
     try {
@@ -32,7 +68,8 @@ export async function GET(
         
         if (!error && data) {
           console.log('✅ Found in Supabase:', linkId)
-          return NextResponse.json(data)
+          const formatted = maybeFormatCamel(data, format)
+          return NextResponse.json(formatted)
         } else {
           console.log('❌ Supabase error:', error?.message)
         }
@@ -47,7 +84,8 @@ export async function GET(
     if (globalLetterStorage.has(linkId)) {
       const letter = globalLetterStorage.get(linkId)
       console.log('✅ Found in global storage:', linkId)
-      return NextResponse.json(letter)
+      const formatted = maybeFormatCamel(letter, format)
+      return NextResponse.json(formatted)
     }
     
     // 3. 尝试从浏览器存储API获取
@@ -59,7 +97,8 @@ export async function GET(
         
         // 缓存到全局存储
         globalLetterStorage.set(linkId, data)
-        return NextResponse.json(data)
+        const formatted = maybeFormatCamel(data, format)
+        return NextResponse.json(formatted)
       }
     } catch (browserError) {
       console.warn('⚠️ Browser storage fetch failed:', browserError)

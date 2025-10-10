@@ -6,7 +6,9 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '30', 10)
-    const offset = parseInt(searchParams.get('offset') || '0', 10)
+    const pageParam = searchParams.get('page')
+    const rawOffset = parseInt(searchParams.get('offset') || '0', 10)
+    const offset = !pageParam ? rawOffset : Math.max((parseInt(pageParam, 10) - 1) * limit, 0)
 
     const publicLetters: Letter[] = await letterService.getPublicLetters(limit, offset, 'created_at')
 
@@ -66,7 +68,17 @@ export async function GET(request: Request) {
       }
     });
 
-    return NextResponse.json(formattedLetters)
+    if (format === 'camelCase') {
+      const hasMore = formattedLetters.length === limit
+      return NextResponse.json({
+        items: formattedLetters,
+        limit,
+        offset,
+        hasMore,
+      })
+    } else {
+      return NextResponse.json(formattedLetters)
+    }
   } catch (error) {
     console.error('Error fetching recent posts:', error)
     return NextResponse.json({ error: 'Failed to fetch recent posts' }, { status: 500 })

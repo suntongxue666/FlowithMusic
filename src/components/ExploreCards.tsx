@@ -17,7 +17,7 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(0)
   
-  const LETTERS_PER_PAGE = 18 // 6 columns * 3 rows
+  const LETTERS_PER_PAGE = 15 // 3列 * 5排
 
   const loadLetters = useCallback(async (pageNum: number, isNewSearch = false) => {
     try {
@@ -32,7 +32,7 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
       }
 
       const offset = pageNum * LETTERS_PER_PAGE;
-      let url = `/api/explore?limit=${LETTERS_PER_PAGE}&offset=${offset}`;
+      let url = `/api/explore?limit=${LETTERS_PER_PAGE}&offset=${offset}&format=camelCase`;
 
       if (searchQuery && searchQuery.trim()) {
         url += `&searchQuery=${encodeURIComponent(searchQuery.trim())}`;
@@ -42,16 +42,22 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const fetchedLetters: Letter[] = await response.json();
+      const json = await response.json();
+      const fetchedLetters: Letter[] = Array.isArray(json)
+        ? json
+        : (json.items || []);
 
       if (isNewSearch) {
-        setLetters(fetchedLetters)
+        setLetters(fetchedLetters);
       } else {
-        setLetters(prev => [...prev, ...fetchedLetters])
+        setLetters(prev => [...prev, ...fetchedLetters]);
       }
 
-      setHasMore(fetchedLetters.length === LETTERS_PER_PAGE)
-      setPage(pageNum)
+      const nextHasMore = Array.isArray(json)
+        ? (fetchedLetters.length === LETTERS_PER_PAGE)
+        : !!json.hasMore;
+      setHasMore(nextHasMore);
+      setPage(pageNum);
       
     } catch (error) {
       console.error('Failed to load letters:', error)
@@ -77,7 +83,7 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
           loadLetters(page + 1);
         }
       },
-      { threshold: 1.0 }
+      { threshold: 0.1 }
     );
 
     if (observerTarget.current) {

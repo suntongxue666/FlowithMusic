@@ -25,7 +25,7 @@ export default function ArtistLetters() {
         setLoading(true)
         
         // 从新的API接口获取热门艺术家帖子
-        const response = await fetch('/api/home/posts-hot-artists')
+        const response = await fetch('/api/home/posts-hot-artists?artistLimit=100&minLettersCount=6')
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
