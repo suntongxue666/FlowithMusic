@@ -1,4 +1,5 @@
-// 本地缓存管理工具
+ // 本地缓存管理工具
+const isBrowser = typeof window !== 'undefined'
 class CacheManager {
   private static instance: CacheManager
   private cache: Map<string, { data: any; timestamp: number; ttl: number }> = new Map()
@@ -18,16 +19,18 @@ class CacheManager {
       ttl
     })
     
-    // 同时保存到localStorage作为持久化缓存
-    try {
-      const cacheData = {
-        data,
-        timestamp: Date.now(),
-        ttl
+    // 同时保存到localStorage作为持久化缓存（仅浏览器端）
+    if (isBrowser) {
+      try {
+        const cacheData = {
+          data,
+          timestamp: Date.now(),
+          ttl
+        }
+        localStorage.setItem(`cache_${key}`, JSON.stringify(cacheData))
+      } catch (error) {
+        console.warn('Failed to save cache to localStorage:', error)
       }
-      localStorage.setItem(`cache_${key}`, JSON.stringify(cacheData))
-    } catch (error) {
-      console.warn('Failed to save cache to localStorage:', error)
     }
   }
 
@@ -39,22 +42,24 @@ class CacheManager {
       return memoryCache.data
     }
 
-    // 内存缓存失效，尝试从localStorage获取
-    try {
-      const stored = localStorage.getItem(`cache_${key}`)
-      if (stored) {
-        const cacheData = JSON.parse(stored)
-        if (Date.now() - cacheData.timestamp < cacheData.ttl) {
-          // 恢复到内存缓存
-          this.cache.set(key, cacheData)
-          return cacheData.data
-        } else {
-          // localStorage中的缓存也已过期，清除
-          localStorage.removeItem(`cache_${key}`)
+    // 内存缓存失效，尝试从localStorage获取（仅浏览器端）
+    if (isBrowser) {
+      try {
+        const stored = localStorage.getItem(`cache_${key}`)
+        if (stored) {
+          const cacheData = JSON.parse(stored)
+          if (Date.now() - cacheData.timestamp < cacheData.ttl) {
+            // 恢复到内存缓存
+            this.cache.set(key, cacheData)
+            return cacheData.data
+          } else {
+            // localStorage中的缓存也已过期，清除
+            localStorage.removeItem(`cache_${key}`)
+          }
         }
+      } catch (error) {
+        console.warn('Failed to read cache from localStorage:', error)
       }
-    } catch (error) {
-      console.warn('Failed to read cache from localStorage:', error)
     }
 
     // 缓存不存在或已过期
@@ -70,10 +75,12 @@ class CacheManager {
   // 清除特定缓存
   delete(key: string): void {
     this.cache.delete(key)
-    try {
-      localStorage.removeItem(`cache_${key}`)
-    } catch (error) {
-      console.warn('Failed to remove cache from localStorage:', error)
+    if (isBrowser) {
+      try {
+        localStorage.removeItem(`cache_${key}`)
+      } catch (error) {
+        console.warn('Failed to remove cache from localStorage:', error)
+      }
     }
   }
 
@@ -91,32 +98,36 @@ class CacheManager {
       this.cache.delete(key)
     })
 
-    // 清除localStorage缓存
-    try {
-      const keys = Object.keys(localStorage)
-      keys.forEach(key => {
-        if (key.startsWith('cache_') && key.includes(pattern)) {
-          localStorage.removeItem(key)
-        }
-      })
-    } catch (error) {
-      console.warn('Failed to clear pattern cache from localStorage:', error)
+    // 清除localStorage缓存（仅浏览器端）
+    if (isBrowser) {
+      try {
+        const keys = Object.keys(localStorage)
+        keys.forEach(key => {
+          if (key.startsWith('cache_') && key.includes(pattern)) {
+            localStorage.removeItem(key)
+          }
+        })
+      } catch (error) {
+        console.warn('Failed to clear pattern cache from localStorage:', error)
+      }
     }
   }
 
   // 清除所有缓存
   clear(): void {
     this.cache.clear()
-    // 清除localStorage中的所有缓存
-    try {
-      const keys = Object.keys(localStorage)
-      keys.forEach(key => {
-        if (key.startsWith('cache_')) {
-          localStorage.removeItem(key)
-        }
-      })
-    } catch (error) {
-      console.warn('Failed to clear localStorage cache:', error)
+    // 清除localStorage中的所有缓存（仅浏览器端）
+    if (isBrowser) {
+      try {
+        const keys = Object.keys(localStorage)
+        keys.forEach(key => {
+          if (key.startsWith('cache_')) {
+            localStorage.removeItem(key)
+          }
+        })
+      } catch (error) {
+        console.warn('Failed to clear localStorage cache:', error)
+      }
     }
   }
 
@@ -136,24 +147,26 @@ class CacheManager {
       this.cache.delete(key)
     })
 
-    // 清理localStorage缓存
-    try {
-      const keys = Object.keys(localStorage)
-      keys.forEach(key => {
-        if (key.startsWith('cache_')) {
-          try {
-            const cacheData = JSON.parse(localStorage.getItem(key) || '{}')
-            if (now - cacheData.timestamp >= cacheData.ttl) {
+    // 清理localStorage缓存（仅浏览器端）
+    if (isBrowser) {
+      try {
+        const keys = Object.keys(localStorage)
+        keys.forEach(key => {
+          if (key.startsWith('cache_')) {
+            try {
+              const cacheData = JSON.parse(localStorage.getItem(key) || '{}')
+              if (now - cacheData.timestamp >= cacheData.ttl) {
+                localStorage.removeItem(key)
+              }
+            } catch (error) {
+              // 无效的缓存数据，直接删除
               localStorage.removeItem(key)
             }
-          } catch (error) {
-            // 无效的缓存数据，直接删除
-            localStorage.removeItem(key)
           }
-        }
-      })
-    } catch (error) {
-      console.warn('Failed to clean expired localStorage cache:', error)
+        })
+      } catch (error) {
+        console.warn('Failed to clean expired localStorage cache:', error)
+      }
     }
   }
 

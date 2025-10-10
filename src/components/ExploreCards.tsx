@@ -43,9 +43,35 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const json = await response.json();
-      const fetchedLetters: Letter[] = Array.isArray(json)
-        ? json
-        : (json.items || []);
+      let fetchedLetters: Letter[] = [];
+
+      if (Array.isArray(json)) {
+        // 老接口直接返回 snake_case 数组
+        fetchedLetters = json;
+      } else {
+        // 新接口 camelCase，需映射为 snake_case
+        const items = json.items || [];
+        fetchedLetters = items.map((it: any) => ({
+          id: it.id,
+          user_id: it.userId,
+          anonymous_id: it.anonymousId,
+          link_id: it.linkId,
+          recipient_name: it.recipientName,
+          message: it.message,
+          song_id: it.songId,
+          song_title: it.songTitle,
+          song_artist: it.songArtist,
+          song_album_cover: it.songAlbumCover,
+          song_preview_url: it.songPreviewUrl,
+          song_spotify_url: it.songSpotifyUrl,
+          created_at: it.createdAt,
+          updated_at: it.updatedAt,
+          view_count: it.viewCount,
+          is_public: it.isPublic,
+          shareable_link: it.shareableLink,
+          user: it.user,
+        }));
+      }
 
       if (isNewSearch) {
         setLetters(fetchedLetters);
@@ -99,12 +125,12 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
 
   // Convert Letter to the format expected by MusicCard
   const convertLetterToCard = (letter: Letter) => ({
-    to: letter.recipient_name,
-    message: letter.message,
+    to: letter.recipient_name || 'Someone',
+    message: letter.message || '',
     song: {
-      title: letter.song_title,
-      artist: letter.song_artist,
-      albumCover: letter.song_album_cover
+      title: letter.song_title || 'Unknown Title',
+      artist: letter.song_artist || 'Unknown Artist',
+      albumCover: letter.song_album_cover || '/favicon.ico'
     },
     linkId: letter.link_id
   })

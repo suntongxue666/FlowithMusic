@@ -369,21 +369,6 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
             </p>
           </div>
           
-          {/* Debug information */}
-          {process.env.NODE_ENV === 'development' && (
-            <div style={{ background: '#f0f0f0', padding: '1rem', margin: '1rem 0', fontSize: '12px' }}>
-              <strong>Debug Info:</strong><br/>
-              Link ID: {letter.link_id}<br/>
-              Recipient: {letter.recipient_name}<br/>
-              Message: {letter.message ? `"${letter.message.substring(0, 50)}..."` : 'MISSING'}<br/>
-              Song ID: {letter.song_id || 'MISSING'}<br/>
-              Song Title: {letter.song_title || 'MISSING'}<br/>
-              Song Artist: {letter.song_artist || 'MISSING'}<br/>
-              Album Cover: {letter.song_album_cover ? 'Present' : 'MISSING'}<br/>
-              Created: {letter.created_at}
-            </div>
-          )}
-          
           <div className="letter-player">
             {letter.song_title && letter.song_artist ? (
               <ColorfulSpotifyPlayer 
