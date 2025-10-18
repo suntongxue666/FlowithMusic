@@ -123,10 +123,6 @@ export async function GET(request: Request) {
     }
 
     const { supabaseServer } = await import('@/lib/supabase-server')
-    if (!supabaseServer) {
-      console.error('GET /api/letters error: supabaseServer is not initialized')
-      return NextResponse.json({ error: 'Supabase not initialized' }, { status: 500 })
-    }
 
     // 组合 where 条件
     let query = supabaseServer
@@ -249,10 +245,6 @@ export async function POST(request: Request) {
     }
 
     const { supabaseServer } = await import('@/lib/supabase-server')
-    if (!supabaseServer) {
-      console.error('POST /api/letters error: supabaseServer is not initialized')
-      return NextResponse.json({ error: 'Supabase not initialized' }, { status: 500 })
-    }
     const { data, error } = await supabaseServer
       .from('letters')
       .insert(insertData)

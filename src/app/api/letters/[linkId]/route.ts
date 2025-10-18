@@ -1,8 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// 动物表情符号数组（与前端保持一致）
+const ANIMAL_EMOJIS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧', '🐘', '🦛', '🦏', '🐪', '🐫', '🦒', '🦘', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐕‍🦺', '🐈', '🐈‍⬛', '🐓', '🦃', '🦚', '🦜', '🦢', '🦩', '🕊️', '🐇', '🦝', '🦨', '🦡', '🦦', '🦥', '🐁', '🐀', '🐿️', '🦔']
+
+// 浅色背景数组（与前端保持一致）
+const LIGHT_COLORS = [
+  '#FFE5E5', '#E5F3FF', '#E5FFE5', '#FFF5E5', '#F0E5FF', '#E5FFFF',
+  '#FFE5F5', '#F5FFE5', '#E5E5FF', '#FFFFE5', '#FFE5CC', '#E5FFCC',
+  '#CCE5FF', '#FFCCE5', '#E5CCFF', '#CCFFE5', '#FFCCCC', '#CCFFCC',
+  '#CCCCFF', '#FFFFCC', '#FFE0E0', '#E0FFE0', '#E0E0FF', '#FFFFE0'
+]
+
+// 生成匿名用户头像和用户名 - 基于统一的匿名ID
+function generateAnonymousUser(letter: any) {
+  // 优先使用letter的anonymous_id，如果没有则使用linkId（兼容旧数据）
+  const seedId = letter.anonymous_id || letter.link_id || 'fallback'
+  
+  // 使用anonymous_id作为种子来确保同一个匿名用户的所有letter显示相同的头像和用户名
+  let hash = 0
+  for (let i = 0; i < seedId.length; i++) {
+    const char = seedId.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  
+  const emojiIndex = Math.abs(hash) % ANIMAL_EMOJIS.length
+  const colorIndex = Math.abs(hash >> 8) % LIGHT_COLORS.length
+  const userNumber = Math.abs(hash >> 16) % 100000000 // 8位数字
+  
+  return {
+    emoji: ANIMAL_EMOJIS[emojiIndex],
+    backgroundColor: LIGHT_COLORS[colorIndex],
+    username: `Guest${userNumber.toString().padStart(8, '0')}`
+  }
+}
+
 // 输出 camelCase（App 友好）
 function toCamel(letter: any) {
   if (!letter || typeof letter !== 'object') return letter
+  const anonymousUserInfo = letter.anonymous_id ? generateAnonymousUser(letter) : null
   return {
     id: letter.id,
     userId: letter.user_id,
@@ -21,6 +57,7 @@ function toCamel(letter: any) {
     viewCount: letter.view_count,
     isPublic: letter.is_public,
     shareableLink: letter.shareable_link,
+    anonymousUserInfo: anonymousUserInfo,
     user: letter.user
       ? {
           id: letter.user.id,
