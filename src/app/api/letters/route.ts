@@ -123,6 +123,11 @@ export async function GET(request: Request) {
     }
 
     const { supabaseServer } = await import('@/lib/supabase-server')
+    
+    if (!supabaseServer) {
+      console.error('❌ Supabase server client is not initialized')
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
+    }
 
     // 组合 where 条件
     let query = supabaseServer
@@ -245,6 +250,12 @@ export async function POST(request: Request) {
     }
 
     const { supabaseServer } = await import('@/lib/supabase-server')
+    
+    if (!supabaseServer) {
+      console.error('❌ Supabase server client is not initialized')
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
+    }
+    
     const { data, error } = await supabaseServer
       .from('letters')
       .insert(insertData)
