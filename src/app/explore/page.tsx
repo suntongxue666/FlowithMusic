@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Header from '@/components/Header'
 import ExploreCards from '@/components/ExploreCards'
 import Footer from '@/components/Footer'
+import AdBanner from '@/components/AdBanner'
 
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -47,6 +48,10 @@ export default function ExplorePage() {
               Search
             </button>
           </div>
+        </div>
+        
+        <div className="ad-section">
+          <AdBanner />
         </div>
         
         <ExploreCards searchQuery={searchQuery} />

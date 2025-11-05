@@ -6,6 +6,7 @@ import Header from '@/components/Header'
 import SongSelector from '@/components/SongSelector'
 import SpotifyEmbedPlayer from '@/components/SpotifyEmbedPlayer'
 import Toast from '@/components/Toast'
+import AdBanner from '@/components/AdBanner'
 import { SpotifyTrack } from '@/lib/spotify'
 import { letterService } from '@/lib/letterService'
 import { userService } from '@/lib/userService'
@@ -291,6 +292,10 @@ export default function SendPage() {
             height={16}
           />
           <span>  Log in to Spotify in your browser to listen to the full song.</span>
+        </div>
+        
+        <div className="ad-section">
+          <AdBanner />
         </div>
       </div>
 
