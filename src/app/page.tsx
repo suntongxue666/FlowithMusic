@@ -5,6 +5,7 @@ import MusicCards from '@/components/MusicCards'
 import RecentPostsCarousel from '@/components/RecentPostsCarousel'
 import ArtistLetters from '@/components/ArtistLetters'
 import Footer from '@/components/Footer'
+import AdBanner from '@/components/AdBanner'
 
 
 export default function Home() {
@@ -15,6 +16,12 @@ export default function Home() {
       <div className="desktop-only">
         <Features />
       </div>
+      
+      {/* 首页广告Banner */}
+      <div className="ad-section">
+        <AdBanner />
+      </div>
+      
       {/* Recent Posts 轮播 - 每页6个卡片，每小时更新数据 */}
       <RecentPostsCarousel 
         cardsPerPage={6}
