@@ -7,9 +7,9 @@ export interface AdConfig {
 
 // 默认广告配置
 export const defaultAdConfig: AdConfig = {
-  imageUrl: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon/WebAD-Petogether-700x150.png',
-  linkUrl: 'https://apps.apple.com/app/apple-store/id6754391749?pt=118914236&ct=FlowithmusicWeb&mt=8',
-  altText: 'Petogether App Advertisement'
+  imageUrl: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon/WebAD-Musight-700x150.png',
+  linkUrl: 'https://apps.apple.com/app/apple-store/id6755451783?pt=118914236&ct=flowithmusicweb&mt=8',
+  altText: 'Musigt App Advertisement'
 };
 
 // 可以在这里添加更多广告配置
