@@ -7,7 +7,7 @@ export interface AdConfig {
 
 // 默认广告配置
 export const defaultAdConfig: AdConfig = {
-  imageUrl: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon/WebAD-Musight-700x150.png',
+  imageUrl: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon/WebAD-Musight-700x150%20(1).png',
   linkUrl: 'https://apps.apple.com/app/apple-store/id6755451783?pt=118914236&ct=flowithmusicweb&mt=8',
   altText: 'Musight App Advertisement'
 };
