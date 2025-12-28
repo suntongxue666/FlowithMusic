@@ -5,7 +5,7 @@ import MusicCards from '@/components/MusicCards'
 import RecentPostsCarousel from '@/components/RecentPostsCarousel'
 import ArtistLetters from '@/components/ArtistLetters'
 import Footer from '@/components/Footer'
-
+import AdBanner from '@/components/AdBanner'
 
 export default function Home() {
   return (
@@ -25,6 +25,11 @@ export default function Home() {
       
       {/* Posts with Artist - 每个艺术家显示3个卡片，最多2个艺术家，每3小时更新 */}
       <ArtistLetters />
+      
+      {/* Explore Letters 广告横幅 */}
+      <div className="explore-letters-ad">
+        <AdBanner />
+      </div>
       
 
       
