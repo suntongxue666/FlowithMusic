@@ -17,6 +17,11 @@ export default function Home() {
       </div>
       
       {/* Recent Posts 轮播 - 每页6个卡片，每小时更新数据 */}
+      {/* Explore Letters 广告横幅 */}
+      <div className="explore-letters-ad">
+        <AdBanner />
+      </div>
+      
       <RecentPostsCarousel 
         cardsPerPage={6}
         autoPlay={true}
@@ -25,11 +30,6 @@ export default function Home() {
       
       {/* Posts with Artist - 每个艺术家显示3个卡片，最多2个艺术家，每3小时更新 */}
       <ArtistLetters />
-      
-      {/* Explore Letters 广告横幅 */}
-      <div className="explore-letters-ad">
-        <AdBanner />
-      </div>
       
 
       
