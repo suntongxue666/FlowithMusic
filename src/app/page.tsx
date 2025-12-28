@@ -18,7 +18,7 @@ export default function Home() {
       
       {/* Recent Posts 轮播 - 每页6个卡片，每小时更新数据 */}
       {/* Explore Letters 广告横幅 */}
-      <div className="explore-letters-ad">
+      <div className="explore-letters-ad" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <AdBanner />
       </div>
       
