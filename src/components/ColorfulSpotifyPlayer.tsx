@@ -26,7 +26,7 @@ interface ColorfulSpotifyPlayerProps {
 export default function ColorfulSpotifyPlayer({ track, countryCode }: ColorfulSpotifyPlayerProps) {
   const [dominantColor, setDominantColor] = useState<string>('#1DB954')
   const [isChinaDetails, setIsChinaDetails] = useState<{ isChina: boolean, checked: boolean }>({ isChina: false, checked: false })
-  const [appleTimestamp, setAppleTimestamp] = useState<AppleMusicTrack | null>(null)
+  const [appleTrack, setAppleTrack] = useState<AppleMusicTrack | null>(null)
   const [fallbackError, setFallbackError] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -61,7 +61,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode }: ColorfulSp
       const searchCountry = countryCode || (isChinaDetails.isChina ? 'CN' : 'US')
       const result = await searchAppleMusic(track.name, track.artists[0].name, track.duration_ms, searchCountry)
       if (result) {
-        setAppleTimestamp(result)
+        setAppleTrack(result)
       } else {
         setFallbackError('Song not available in your region')
       }
@@ -107,60 +107,68 @@ export default function ColorfulSpotifyPlayer({ track, countryCode }: ColorfulSp
       )
     }
 
-    if (appleTimestamp) {
+    if (appleTrack) {
       return (
-        <div className="w-full bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm flex flex-col sm:flex-row h-auto sm:h-[152px]">
-          <div className="relative w-full sm:w-[152px] h-[152px] bg-gray-100 flex-shrink-0">
+        <div
+          className="w-full rounded-xl overflow-hidden shadow-lg flex flex-col sm:flex-row h-auto sm:h-[152px] transition-all duration-300 border border-white/10"
+          style={{
+            background: `linear-gradient(135deg, ${dominantColor}44 0%, #121212 100%)`,
+          }}
+        >
+          <div className="relative w-full sm:w-[152px] h-[152px] flex-shrink-0">
             <img
-              src={appleTimestamp.artworkUrl100?.replace('100x100', '300x300')}
-              alt={appleTimestamp.trackName}
+              src={appleTrack.artworkUrl100?.replace('100x100', '300x300')}
+              alt={appleTrack.trackName}
               className="w-full h-full object-cover"
             />
             <button
               onClick={togglePlay}
-              className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors group"
+              className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/20 transition-all group"
             >
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center pl-1 shadow-lg group-hover:scale-105 transition-transform">
+              <div className="w-14 h-14 bg-[#1DB954] rounded-full flex items-center justify-center pl-1 shadow-xl group-hover:scale-110 transition-transform">
                 {isPlaying ? (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
                 ) : (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"></path></svg>
                 )}
               </div>
             </button>
             <audio
               ref={audioRef}
-              src={appleTimestamp.previewUrl}
+              src={appleTrack.previewUrl}
               onEnded={() => setIsPlaying(false)}
               onPause={() => setIsPlaying(false)}
               onPlay={() => setIsPlaying(true)}
             />
           </div>
 
-          <div className="p-4 flex-1 flex flex-col justify-between">
-            <div>
-              <h3 className="font-bold text-lg line-clamp-1">{appleTimestamp.trackName}</h3>
-              <p className="text-gray-600 line-clamp-1">{appleTimestamp.artistName}</p>
+          <div className="p-5 flex-1 flex flex-col justify-between text-white">
+            <div className="space-y-1">
+              <h3 className="font-bold text-xl line-clamp-1 group-hover:text-[#1DB954] transition-colors">{appleTrack.trackName}</h3>
+              <p className="text-gray-400 font-medium line-clamp-1">{appleTrack.artistName}</p>
             </div>
 
-            <div className="mt-2">
-              <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2 overflow-hidden">
-                <div className="bg-pink-500 h-full w-full animate-progress origin-left" style={{
+            <div className="mt-4">
+              <div className="w-full bg-white/10 rounded-full h-1.5 mb-2 overflow-hidden backdrop-blur-sm">
+                <div className="bg-[#1DB954] h-full w-full animate-progress origin-left" style={{
                   animationPlayState: isPlaying ? 'running' : 'paused',
                   transform: isPlaying ? 'scaleX(1)' : 'scaleX(0)',
-                  transition: 'transform 30s linear' // 30s preview
+                  transition: isPlaying ? 'transform 30s linear' : 'none'
                 }}></div>
               </div>
-              <div className="flex justify-between items-center text-xs text-gray-500">
-                <span>Preview (30s)</span>
+              <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-bold text-gray-500">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-[#1DB954] rounded-full animate-pulse"></span>
+                  PREVIEW MODE
+                </div>
                 <a
-                  href={appleTimestamp.trackViewUrl}
+                  href={appleTrack.trackViewUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-pink-600 hover:underline flex items-center gap-1"
+                  className="bg-white/5 hover:bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors flex items-center gap-2"
                 >
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Apple_Music_logo.svg/210px-Apple_Music_logo.svg.png" className="w-4 h-4" alt="Apple Music" />
-                  Listen on Apple Music
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" className="w-2.5 h-2.5 invert" alt="Apple" />
+                  LISTEN FULL
                 </a>
               </div>
             </div>

@@ -3,7 +3,7 @@
 async function testSearch(song, artist, country = 'US') {
     const term = encodeURIComponent(`${song} ${artist}`);
     const url = `https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=5&country=${country}`;
-    console.log(`\n--- Searching: ${song} - ${artist} (Country: ${country || 'Global'}) ---`);
+    console.log(`\n--- Searching: "${song}" by "${artist}" (Country: ${country}) ---`);
     console.log(`URL: ${url}`);
 
     try {
@@ -11,11 +11,15 @@ async function testSearch(song, artist, country = 'US') {
         const data = await response.json();
         console.log(`Found ${data.resultCount} results`);
 
+        if (data.resultCount === 0) {
+            console.log("❌ NO RESULTS FOUND");
+            return;
+        }
+
         data.results.forEach((track, i) => {
             console.log(`${i + 1}. [${track.trackTimeMillis}ms] ${track.trackName} - ${track.artistName}`);
             console.log(`   Album: ${track.collectionName}`);
             console.log(`   Preview: ${track.previewUrl ? '✅' : '❌'}`);
-            if (i === 0) console.log(`   URL: ${track.trackViewUrl}`);
         });
     } catch (e) {
         console.error('Error:', e.message);
@@ -23,14 +27,18 @@ async function testSearch(song, artist, country = 'US') {
 }
 
 async function run() {
-    // Style - Taylor Swift
-    // Target duration from Spotify for "Style" is usually ~231031ms (3:51)
-    await testSearch('Style', 'Taylor Swift');
+    // Basic Style check
     await testSearch('Style', 'Taylor Swift', 'CN');
 
-    // Test with "Taylor's Version" if duration matching is too strict
-    await testSearch("Style (Taylor's Version)", 'Taylor Swift');
-    await testSearch("Style (Taylor's Version)", 'Taylor Swift', 'CN');
+    // Simulate "dirty" titles from Spotify
+    await testSearch('Style - 2014 Remaster', 'Taylor Swift', 'CN');
+    await testSearch('Love Story - International Mix', 'Taylor Swift', 'CN');
+    await testSearch('Blank Space - Deluxe Edition', 'Taylor Swift', 'CN');
+    await testSearch('Style (Taylor\'s Version)', 'Taylor Swift', 'CN');
+
+    // Test a suspected "non-matching" old song
+    await testSearch('Our Song', 'Taylor Swift', 'CN');
+    await testSearch('Love Story (Digital Dog Remix)', 'Taylor Swift', 'CN');
 }
 
 run();

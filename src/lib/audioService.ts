@@ -39,38 +39,68 @@ export async function searchAppleMusic(
     country: string = 'US'
 ): Promise<AppleMusicTrack | null> {
     try {
-        const term = encodeURIComponent(`${songTitle} ${artistName}`)
-        const response = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=5&country=${country}`)
+        // Try original title first
+        let track = await executeAppleSearch(songTitle, artistName, targetDurationMs, country);
 
-        if (!response.ok) return null
-
-        const data = await response.json()
-        if (data.resultCount === 0) {
-            // If CN search fails, try US as fallback
-            if (country === 'CN') {
-                return searchAppleMusic(songTitle, artistName, targetDurationMs, 'US')
+        // If not found, try a "cleaned" title to strip Spotify noise
+        if (!track) {
+            const cleanedTitle = cleanSongTitle(songTitle);
+            if (cleanedTitle !== songTitle) {
+                console.log(`🔍 Apple Music: Trying cleaned title: "${cleanedTitle}" (Original: "${songTitle}")`);
+                track = await executeAppleSearch(cleanedTitle, artistName, targetDurationMs, country);
             }
-            return null
         }
 
-        const results: any[] = data.results
-
-        // If duration is provided, find the best match
-        if (targetDurationMs) {
-            const bestMatch = results.find(track => {
-                const diff = Math.abs(track.trackTimeMillis - targetDurationMs)
-                return diff < 5000 // Allow 5 seconds difference
-            })
-            if (bestMatch) return formatAppleTrack(bestMatch)
-        }
-
-        // Default to first result if no duration match found or provided
-        // This is the "robust fallback" - better a slightly off version than nothing
-        return formatAppleTrack(results[0])
+        return track;
     } catch (error) {
         console.error('Apple Music search failed:', error)
         return null
     }
+}
+
+async function executeAppleSearch(
+    songTitle: string,
+    artistName: string,
+    targetDurationMs?: number,
+    country: string = 'US'
+): Promise<AppleMusicTrack | null> {
+    const term = encodeURIComponent(`${songTitle} ${artistName}`)
+    const response = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=5&country=${country}`)
+
+    if (!response.ok) return null
+
+    const data = await response.json()
+    if (data.resultCount === 0) {
+        // If CN search fails, try US as fallback
+        if (country === 'CN') {
+            return executeAppleSearch(songTitle, artistName, targetDurationMs, 'US')
+        }
+        return null
+    }
+
+    const results: any[] = data.results
+
+    // If duration is provided, find the best match
+    if (targetDurationMs) {
+        const bestMatch = results.find(track => {
+            const diff = Math.abs(track.trackTimeMillis - targetDurationMs)
+            return diff < 5000 // Allow 5 seconds difference
+        })
+        if (bestMatch) return formatAppleTrack(bestMatch)
+    }
+
+    // Default to first result if no duration match found or provided
+    return formatAppleTrack(results[0])
+}
+
+/**
+ * Strips common Spotify metadata suffixes that break iTunes search.
+ */
+function cleanSongTitle(title: string): string {
+    return title
+        .split(' - ')[0] // Strip " - Remastered", " - 2014 Remaster", etc.
+        .split(' (')[0]  // Optionally strip "(Deluxe Edition)", but be careful with "(Taylor's Version)"
+        .trim();
 }
 
 function formatAppleTrack(track: any): AppleMusicTrack {
