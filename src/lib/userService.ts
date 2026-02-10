@@ -51,12 +51,8 @@ export class UserService {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
-        // 已登录用户
-        const { data: userData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('google_id', user.id)
-          .single()
+        // 已登录用户 - 尝试获取数据库中的完整资料
+        const userData = await this.fetchAndCacheUser()
 
         if (userData) {
           this.currentUser = userData

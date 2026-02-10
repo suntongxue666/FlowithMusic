@@ -139,11 +139,15 @@ export default function SendPage() {
         isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
       })
 
-      // 确保用户服务可用
+      // 确保用户服务可用（增加 5 秒超时保护，防止卡死）
       try {
-        await userService.initializeUser()
+        const initPromise = userService.initializeUser()
+        const initTimeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('User init timeout')), 5000)
+        )
+        await Promise.race([initPromise, initTimeout])
       } catch (userError) {
-        console.warn('User service initialization failed, but continuing:', userError)
+        console.warn('User service initialization timed out or failed, but continuing:', userError)
       }
 
       const letterPromise = letterService.createLetter({

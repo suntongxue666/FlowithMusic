@@ -226,110 +226,64 @@ function HistoryContent() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {letters.map((letter) => (
             <div
               key={letter.link_id}
-              className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group"
+              className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
             >
-              <div className="flex flex-col md:flex-row">
-                {/* 音乐展示部分 - 窄条样式 */}
-                <div
-                  className="w-full md:w-[320px] h-[160px] relative overflow-hidden flex-shrink-0"
-                  style={{
-                    background: `linear-gradient(135deg, #1DB95444 0%, #121212 100%)`,
-                  }}
-                >
-                  <div className="absolute inset-0 flex items-center p-4 gap-4">
-                    <div className="w-24 h-24 rounded-lg shadow-2xl overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform duration-500">
-                      <img
-                        src={letter.song_album_cover}
-                        alt={letter.song_title}
-                        className="w-full h-full object-cover"
-                      />
+              <div className="flex flex-col sm:flex-row items-center p-4 gap-4">
+                {/* 封面图 - 减小尺寸 */}
+                <div className="w-20 h-20 rounded-xl overflow-hidden shadow-inner flex-shrink-0 bg-gray-50 border border-gray-100 group">
+                  <img
+                    src={letter.song_album_cover}
+                    alt={letter.song_title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                </div>
+
+                {/* 内容部分 - 左对齐 */}
+                <div className="flex-1 min-w-0 text-center sm:text-left">
+                  <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 mb-1">
+                    <h3 className="font-bold text-gray-900 truncate">
+                      To: {letter.recipient_name}
+                    </h3>
+                    <span className="text-[10px] uppercase tracking-widest font-black text-gray-400 whitespace-nowrap">
+                      {new Date(letter.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 truncate mb-1">
+                    {letter.song_title} — {letter.song_artist}
+                  </p>
+                  <div className="flex items-center justify-center sm:justify-start gap-3 text-[10px] font-bold">
+                    <div className="flex items-center gap-1 text-gray-400">
+                      <span>👁️ {letter.view_count || 0}</span>
                     </div>
-                    <div className="flex-1 min-w-0 text-white">
-                      <h4 className="font-bold text-lg truncate mb-1">{letter.song_title}</h4>
-                      <p className="text-gray-400 text-sm truncate uppercase tracking-wider font-medium">{letter.song_artist}</p>
-                      <div className="mt-4 flex items-center gap-2">
-                        <span className="w-2 h-2 bg-[#1DB954] rounded-full animate-pulse"></span>
-                        <span className="text-[10px] font-bold text-gray-500 tracking-tighter uppercase">Musical Track</span>
-                      </div>
-                    </div>
+                    {letter.user_id ? (
+                      <span className="text-green-500 uppercase tracking-tighter">Synced</span>
+                    ) : (
+                      <span className="text-orange-500 uppercase tracking-tighter">Local</span>
+                    )}
                   </div>
                 </div>
 
-                {/* 内容与操作部分 */}
-                <div className="flex-1 p-6 flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Recipient</p>
-                        <h3 className="font-bold text-xl text-gray-900">To: {letter.recipient_name}</h3>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Sent Date</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {new Date(letter.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Message Preview</p>
-                      <p className="text-gray-600 line-clamp-2 italic font-outfit">
-                        "{letter.message}"
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-8 flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-50">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 rounded-full text-[11px] font-bold text-gray-500">
-                        <span>👁️ {letter.view_count || 0} Views</span>
-                      </div>
-                      {letter.user_id ? (
-                        <span className="flex items-center gap-1.5 px-3 py-1 bg-green-50 rounded-full text-[11px] font-bold text-green-600">
-                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                          Synced
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5 px-3 py-1 bg-orange-50 rounded-full text-[11px] font-bold text-orange-600">
-                          <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
-                          Local Only
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleCopyLink(letter.link_id)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-all ${copyStatus === letter.link_id
-                            ? 'bg-green-50 border-green-200 text-green-600'
-                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 shadow-sm active:scale-95'
-                          }`}
-                      >
-                        {copyStatus === letter.link_id ? (
-                          <>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                            Copy Link
-                          </>
-                        )}
-                      </button>
-                      <Link
-                        href={`/letter/${letter.link_id}`}
-                        className="flex items-center gap-2 px-6 py-2 bg-black text-white rounded-full text-sm font-bold shadow-md hover:bg-gray-800 transition-all hover:scale-105 active:scale-95"
-                      >
-                        Visit Letter
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                      </Link>
-                    </div>
-                  </div>
+                {/* 操作部分 - 右侧对齐 */}
+                <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 px-2">
+                  <button
+                    onClick={() => handleCopyLink(letter.link_id)}
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-bold border transition-all ${copyStatus === letter.link_id
+                        ? 'bg-green-50 border-green-200 text-green-600'
+                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 active:scale-95'
+                      }`}
+                  >
+                    {copyStatus === letter.link_id ? 'Copied!' : 'Copy Link'}
+                  </button>
+                  <Link
+                    href={`/letter/${letter.link_id}`}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 bg-black text-white rounded-full text-xs font-bold shadow-md hover:bg-gray-800 transition-all hover:scale-105 active:scale-95"
+                  >
+                    View
+                  </Link>
                 </div>
               </div>
             </div>

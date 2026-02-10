@@ -12,97 +12,80 @@ function AuthCallbackComponent() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
-      console.log('🚀 AuthCallback: 开始处理Google OAuth回调...')
+    let mounted = true;
+    let timeoutId: NodeJS.Timeout;
+
+    const handleAuth = async () => {
+      console.log('🚀 AuthCallback: Starting Google OAuth callback handling...');
 
       try {
-        if (!supabase) {
-          throw new Error('Supabase客户端未初始化')
-        }
+        if (!supabase) throw new Error('Supabase not initialized');
 
-        // 1. 获取认证会话
-        console.log('🔍 AuthCallback: 获取当前会话...')
+        // Wait for session with a timeout
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-        // 尝试从URL hash获取token (Implicit Grant)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1))
-        const accessToken = hashParams.get('access_token')
-        const error = hashParams.get('error')
-        const errorDescription = hashParams.get('error_description')
+        if (sessionError) throw sessionError;
 
-        if (error) {
-          throw new Error(`OAuth认证失败: ${errorDescription || error}`)
-        }
+        if (session?.user) {
+          console.log('✅ AuthCallback: Session found for user:', session.user.email);
+          const dbUser = await userService.handleAuthCallback(session.user);
+          if (mounted) {
+            console.log('🎉 AuthCallback: Login success, redirecting to history');
+            router.push('/history?login=success');
+          }
+        } else {
+          // If no session yet, wait for AuthStateChange
+          console.log('⏳ AuthCallback: No immediate session, waiting for auth state change...');
 
-        let user: any
+          const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+              console.log('✅ AuthCallback: SIGNED_IN event for:', session.user.email);
+              subscription.unsubscribe();
+              clearTimeout(timeoutId);
 
-        if (accessToken) {
-          console.log('✅ AuthCallback: 发现access_token，尝试获取用户信息')
-          const { data, error } = await supabase.auth.getUser(accessToken)
-          if (error || !data.user) {
-            console.warn('⚠️ getUser失败，尝试解析token:', error)
-            // 降级：手动解析JWT
-            const tokenParts = accessToken.split('.')
-            if (tokenParts.length === 3) {
-              const payload = JSON.parse(atob(tokenParts[1]))
-              user = {
-                id: payload.sub,
-                email: payload.email,
-                user_metadata: {
-                  full_name: payload.user_metadata?.full_name || payload.name,
-                  avatar_url: payload.user_metadata?.avatar_url || payload.picture,
-                  email: payload.email
+              try {
+                const dbUser = await userService.handleAuthCallback(session.user);
+                if (mounted) {
+                  router.push('/history?login=success');
+                }
+              } catch (err) {
+                console.error('💥 AuthCallback: DB sync error:', err);
+                if (mounted) {
+                  setError('Failed to sync user data.');
+                  setTimeout(() => router.push('/history?login=error'), 3000);
                 }
               }
             }
-          } else {
-            user = data.user
-          }
-        } else {
-          // 尝试获取现有会话 (PKCE Flow)
-          const { data, error } = await supabase.auth.getUser()
-          if (error || !data.user) {
-            throw new Error('无法获取用户信息，请重试登录')
-          }
-          user = data.user
+          });
+
+          // Set a 15s timeout for the event
+          timeoutId = setTimeout(() => {
+            subscription.unsubscribe();
+            if (mounted) {
+              console.error('💥 AuthCallback: Auth state change timeout');
+              setError('Verification timeout. Please try logging in again.');
+              setTimeout(() => router.push('/history?login=error'), 3000);
+            }
+          }, 15000);
         }
-
-        if (!user || (!user.id && !user.sub)) {
-          throw new Error('无效的用户信息')
-        }
-
-        // 2. 调用统一的 UserService 处理逻辑
-        // 这将负责：确保用户存在于数据库(修复FK)、更新本地状态、尝试迁移匿名数据
-        console.log('🔄 AuthCallback: 调用 userService.handleAuthCallback...')
-
-        // 设置20秒超时，因为可能涉及数据库写入和重试
-        const userProcessPromise = userService.handleAuthCallback(user)
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('用户数据同步超时')), 20000)
-        )
-
-        const processedUser = await Promise.race([userProcessPromise, timeoutPromise]) as any
-
-        console.log('✅ AuthCallback: 用户处理完成，ID:', processedUser.id)
-        console.log('🎉 AuthCallback: 登录成功，即将重定向...')
-
-        // 3. 重定向
-        router.push('/history?login=success')
-
       } catch (err: any) {
-        console.error('💥 AuthCallback: 回调处理出错:', err)
-        setError(err.message || '登录处理失败，请重试')
-        setTimeout(() => {
-          router.push('/history?login=error')
-        }, 3000)
+        console.error('💥 AuthCallback: Error:', err);
+        if (mounted) {
+          setError(err.message || 'Login failed');
+          setTimeout(() => router.push('/history?login=error'), 3000);
+        }
       } finally {
-        setLoading(false)
+        if (mounted) setLoading(false);
       }
-    }
+    };
 
-    // 延迟执行确保Supabase环境就绪
-    const timeoutId = setTimeout(handleAuthCallback, 500)
-    return () => clearTimeout(timeoutId)
-  }, [router, searchParams])
+    handleAuth();
+
+    return () => {
+      mounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [router])
 
   if (loading) {
     return (
