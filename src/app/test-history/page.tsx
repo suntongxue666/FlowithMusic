@@ -20,16 +20,16 @@ export default function TestHistoryPage() {
         anonymousId,
         isAuthenticated
       })
-      
-      const result = await letterService.getUserLetters(50, 0)
+
+      const result = user ? await letterService.getUserLetters(user.id) : []
       console.log('📋 getUserLetters result:', result)
       setLetters(result)
-      
+
       // 也检查本地存储
       const localData = JSON.parse(localStorage.getItem('letters') || '[]')
       console.log('💾 localStorage letters:', localData)
       setLocalLetters(localData)
-      
+
       setDebugInfo({
         user: user?.id || 'not authenticated',
         anonymousId: anonymousId || 'no anonymous id',
@@ -49,7 +49,7 @@ export default function TestHistoryPage() {
     setLoading(true)
     try {
       console.log('✍️ Testing create letter')
-      
+
       const testLetter = {
         to: 'Test Recipient',
         message: 'This is a test message from the test page',
@@ -61,10 +61,10 @@ export default function TestHistoryPage() {
           spotifyUrl: 'https://open.spotify.com/track/test'
         }
       }
-      
+
       const result = await letterService.createLetter(testLetter)
       console.log('✅ Created test letter:', result)
-      
+
       // 重新获取letters
       await testGetUserLetters()
     } catch (error) {
@@ -81,7 +81,7 @@ export default function TestHistoryPage() {
   return (
     <div style={{ padding: '2rem', fontFamily: 'monospace' }}>
       <h1>History Debug Page</h1>
-      
+
       <div style={{ marginBottom: '2rem', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
         <h3>Debug Info</h3>
         <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
