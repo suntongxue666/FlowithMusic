@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Manual Auth Handler</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .success { color: green; background: #e6ffe6; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .error { color: red; background: #ffe6e6; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        button { padding: 12px 24px; background: #4285f4; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 10px 0; }
+        .log { background: #f5f5f5; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; margin: 10px 0; }
+        .user-info { background: #e3f2fd; padding: 15px; border-radius: 4px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>手动处理Google认证</h1>
+    
+    <div id="status">准备处理认证信息...</div>
+    
+    <button onclick="processAuth()">处理当前认证信息</button>
+    <button onclick="redirectToApp()">跳转到应用</button>
+    
+    <div id="userInfo" class="user-info" style="display: none;">
+        <h3>用户信息:</h3>
+        <div id="userDetails"></div>
+    </div>
+    
+    <div id="log" class="log">等待处理认证信息...\n</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://oiggdnnehohoaycyiydn.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZ2dkbm5laG9ob2F5Y3lpeWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MjQ2NjksImV4cCI6MjA2OTAwMDY2OX0.lGA8b4PwJJog7YT8DXtBgiDJ7oXMzDXy7RXf43COrIU'
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+        
+        function log(message) {
+            const logElement = document.getElementById('log')
+            const time = new Date().toLocaleTimeString()
+            logElement.textContent += `${time}: ${message}\n`
+            logElement.scrollTop = logElement.scrollHeight
+            console.log(message)
+        }
+        
+        async function processAuth() {
+            log('🔄 开始处理认证信息...')
+            
+            try {
+                // 获取当前会话
+                const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+                
+                if (sessionError) {
+                    log(`❌ 获取会话失败: ${sessionError.message}`)
+                    return
+                }
+                
+                if (!sessionData.session) {
+                    log('❌ 没有有效会话，请重新登录')
+                    return
+                }
+                
+                const user = sessionData.session.user
+                log(`✅ 找到用户会话: ${user.email}`)
+                log(`👤 用户ID: ${user.id}`)
+                log(`🖼️ 头像URL: ${user.user_metadata.avatar_url}`)
+                
+                // 显示用户信息
+                document.getElementById('userInfo').style.display = 'block'
+                document.getElementById('userDetails').innerHTML = `
+                    <p><strong>邮箱:</strong> ${user.email}</p>
+                    <p><strong>姓名:</strong> ${user.user_metadata.full_name}</p>
+                    <p><strong>头像:</strong> <img src="${user.user_metadata.avatar_url}" width="50" height="50" style="border-radius: 50%;"></p>
+                    <p><strong>用户ID:</strong> ${user.id}</p>
+                `
+                
+                // 创建或更新用户记录
+                const anonymousId = localStorage.getItem('anonymous_id') || 'anon_' + Date.now()
+                
+                const { data: existingUser, error: fetchError } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('google_id', user.id)
+                    .single()
+                
+                let finalUser
+                
+                if (existingUser) {
+                    log('✅ 用户已存在，更新信息')
+                    const { data: updatedUser, error: updateError } = await supabase
+                        .from('users')
+                        .update({
+                            email: user.email,
+                            display_name: user.user_metadata.full_name,
+                            avatar_url: user.user_metadata.avatar_url,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('google_id', user.id)
+                        .select()
+                        .single()
+                    
+                    if (updateError) {
+                        log(`❌ 更新用户失败: ${updateError.message}`)
+                        return
+                    }
+                    finalUser = updatedUser
+                } else {
+                    log('🆕 创建新用户')
+                    const { data: newUser, error: createError } = await supabase
+                        .from('users')
+                        .insert({
+                            email: user.email,
+                            google_id: user.id,
+                            anonymous_id: anonymousId,
+                            display_name: user.user_metadata.full_name,
+                            avatar_url: user.user_metadata.avatar_url,
+                            coins: 100,
+                            is_premium: false
+                        })
+                        .select()
+                        .single()
+                    
+                    if (createError) {
+                        log(`❌ 创建用户失败: ${createError.message}`)
+                        return
+                    }
+                    finalUser = newUser
+                }
+                
+                // 尝试迁移Letters
+                log('🔄 尝试迁移匿名Letters...')
+                const { data: migrationResult, error: migrationError } = await supabase
+                    .rpc('migrate_anonymous_letters_to_user', {
+                        p_user_id: finalUser.id,
+                        p_anonymous_id: anonymousId
+                    })
+                
+                if (migrationError) {
+                    log(`⚠️ Letter迁移失败: ${migrationError.message}`)
+                } else {
+                    log(`✅ 成功迁移 ${migrationResult || 0} 个Letters`)
+                }
+                
+                // 保存用户信息到localStorage
+                localStorage.setItem('user', JSON.stringify(finalUser))
+                localStorage.setItem('isAuthenticated', 'true')
+                
+                log('✅ 认证处理完成！')
+                document.getElementById('status').innerHTML = '<div class="success">✅ 认证成功！用户信息已保存</div>'
+                
+            } catch (error) {
+                log(`💥 处理失败: ${error.message}`)
+                document.getElementById('status').innerHTML = `<div class="error">❌ 处理失败: ${error.message}</div>`
+            }
+        }
+        
+        function redirectToApp() {
+            // 尝试重定向到应用
+            window.location.href = 'http://127.0.0.1:8080/history'
+        }
+        
+        // 页面加载时自动处理
+        window.addEventListener('load', () => {
+            log('📋 页面加载完成')
+            // 自动处理认证
+            setTimeout(processAuth, 1000)
+        })
+    </script>
+</body>
+</html>
