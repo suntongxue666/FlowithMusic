@@ -35,8 +35,17 @@ function HistoryContent() {
       setIsAuthenticated(!!currentUser)
       setUser(currentUser)
 
-      // 2. 加载本地 Letters (Guest Mode)
-      const localLetters: Letter[] = JSON.parse(localStorage.getItem('letters') || '[]')
+      // 2. 加载本地 Letters (Guest Mode) - 增加鲁棒性过滤
+      let localLetters: Letter[] = []
+      try {
+        const raw = localStorage.getItem('letters')
+        localLetters = JSON.parse(raw || '[]')
+        if (!Array.isArray(localLetters)) localLetters = []
+        // 关键修复：过滤掉 null 值，防止 link_id 读取失败
+        localLetters = localLetters.filter(l => l && typeof l === 'object' && l.link_id)
+      } catch (e) {
+        localLetters = []
+      }
 
       let dbLetters: Letter[] = []
 
@@ -44,6 +53,7 @@ function HistoryContent() {
       if (currentUser) {
         try {
           dbLetters = await letterService.getUserLetters(currentUser.id)
+          dbLetters = (dbLetters || []).filter(l => l && l.link_id)
 
           // 4. 检查是否有未同步的本地信件
           if (localLetters.length > 0) {
@@ -112,30 +122,30 @@ function HistoryContent() {
   }
 
   return (
-    <div className="container mx-auto px-3 sm:px-6 py-8 sm:py-16 max-w-4xl">
-      {/* 顶部标题栏 - 简化版，增强质感 */}
-      <div className="mb-10 sm:mb-14 px-1">
-        <h1 className="text-3xl sm:text-5xl font-black font-outfit tracking-tight text-gray-900 mb-2 sm:mb-3 flex items-baseline gap-3">
+    <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-16 max-w-4xl min-h-screen">
+      {/* 顶部标题栏 */}
+      <div className="mb-10 px-2">
+        <h1 className="text-3xl sm:text-5xl font-black font-outfit tracking-tight text-gray-900 mb-2 flex items-baseline gap-2">
           My Letters
-          <span className="text-base sm:text-xl font-medium text-gray-300">/ {letters.length}</span>
+          <span className="text-sm font-bold text-gray-300">/ {letters.length}</span>
         </h1>
-        <p className="text-sm sm:text-lg text-gray-400 font-medium">Musical memories shared from your heart</p>
+        <p className="text-xs sm:text-sm text-gray-400 font-medium tracking-wide">Your collection of musical messages</p>
       </div>
 
-      {/* Sync Banner - H5 适配 */}
+      {/* Sync Banner */}
       {isAuthenticated && unsyncedCount > 0 && (
-        <div className="mb-8 p-5 sm:p-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-5 shadow-sm">
+        <div className="mb-8 p-5 bg-black text-white rounded-[32px] flex flex-col sm:flex-row items-center justify-between gap-5 shadow-2xl shadow-gray-200">
           <div className="flex items-center gap-4 text-center sm:text-left">
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl shadow-sm">☁️</div>
+            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl">☁️</div>
             <div>
-              <h3 className="font-bold text-amber-900">Sync local letters?</h3>
-              <p className="text-xs sm:text-sm text-amber-700/80 font-medium">We found {unsyncedCount} letters on this device.</p>
+              <h3 className="font-bold text-white leading-tight">Sync local data</h3>
+              <p className="text-[10px] text-white/50 font-medium">Found {unsyncedCount} letters to sync</p>
             </div>
           </div>
           <button
             onClick={handleSync}
             disabled={isSyncing}
-            className="w-full sm:w-auto px-8 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-amber-200 active:scale-95 disabled:opacity-50"
+            className="w-full sm:w-auto px-8 py-3 bg-white text-black font-bold rounded-2xl transition-all active:scale-95 disabled:opacity-50"
           >
             {isSyncing ? 'Syncing...' : 'Sync Now'}
           </button>
@@ -143,112 +153,90 @@ function HistoryContent() {
       )}
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-32 space-y-4">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full border-4 border-gray-100"></div>
-            <div className="w-12 h-12 rounded-full border-4 border-t-black absolute inset-0 animate-spin"></div>
-          </div>
-          <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">Authenticating</p>
+        <div className="flex flex-col items-center justify-center py-40">
+          <div className="w-10 h-10 rounded-full border-4 border-gray-100 border-t-black animate-spin"></div>
         </div>
       ) : letters.length === 0 ? (
-        <div className="text-center py-24 sm:py-32 bg-gray-50/50 rounded-[40px] border-2 border-dashed border-gray-100">
-          <div className="text-6xl mb-6 opacity-20">📭</div>
-          <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Empty Space</h3>
-          <p className="text-sm text-gray-400 mb-10 max-w-[240px] sm:max-w-sm mx-auto">Your musical journey starts here. Send your first letter now.</p>
+        <div className="text-center py-32 bg-white rounded-[40px] border border-gray-100 shadow-sm">
+          <div className="text-6xl mb-6 grayscale opacity-20">📭</div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">Nothing here</h3>
+          <p className="text-gray-400 mb-10 text-sm max-w-xs mx-auto">Start sharing your thoughts through music.</p>
           <Link
             href="/send"
-            className="inline-flex items-center gap-2 px-10 py-4 bg-black text-white rounded-full font-bold hover:bg-gray-800 transition-all shadow-xl shadow-gray-200 hover:scale-105 active:scale-95"
+            className="inline-flex px-12 py-4 bg-black text-white rounded-full font-bold hover:scale-105 transition-all shadow-xl shadow-gray-200"
           >
             Create Letter
           </Link>
         </div>
       ) : (
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-4">
           {letters.map((letter) => (
             <div
               key={letter.link_id}
-              className="group bg-white border border-gray-50 rounded-[28px] overflow-hidden shadow-sm hover:shadow-xl hover:shadow-gray-100 transition-all duration-500 hover:-translate-y-1"
+              className="group bg-white border border-gray-100/50 rounded-[32px] p-4 sm:p-5 shadow-sm hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-500"
             >
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center p-4 sm:p-5 gap-4">
-                {/* 左侧：核心信息 */}
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  {/* Small Cover Image - 增加圆角与阴影 */}
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-gray-50 border border-gray-100 shadow-sm relative group-hover:rotate-3 transition-transform duration-500">
-                    <img
-                      src={letter.song_album_cover}
-                      alt={letter.song_title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500"></div>
+              <div className="flex flex-row items-center gap-4">
+                {/* 封面图片 - 强制固定尺寸，防止巨型图片出现 */}
+                <div
+                  className="flex-shrink-0 relative overflow-hidden rounded-2xl shadow-sm border border-gray-100 h-[64px] w-[64px] sm:h-[80px] sm:w-[80px]"
+                  style={{ width: '64px', height: '64px' }} // 移动端强制 64px
+                >
+                  <img
+                    src={letter.song_album_cover}
+                    alt={letter.song_title}
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    style={{ minWidth: '100%', minHeight: '100%' }}
+                  />
+                </div>
+
+                {/* 内容区域 */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate tracking-tight">
+                      To: {letter.recipient_name}
+                    </h3>
+                    <span className="text-[9px] text-gray-300 font-bold uppercase tracking-wider">
+                      {new Date(letter.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-xs sm:text-sm font-bold text-gray-700 truncate leading-tight">
+                      {letter.song_title}
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-gray-400 font-medium truncate italic opacity-80">
+                      {letter.song_artist}
+                    </p>
                   </div>
 
-                  {/* Info: To, Song Title, Date */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-gray-900 text-base sm:text-lg truncate tracking-tight">
-                        To: {letter.recipient_name}
-                      </h3>
-                      <span className="hidden sm:inline text-[10px] text-gray-300 font-bold uppercase tracking-wider">
-                        • {new Date(letter.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                      </span>
-                    </div>
-                    <div className="space-y-0.5">
-                      <p className="text-xs sm:text-sm font-bold text-gray-700 truncate leading-tight">
-                        {letter.song_title}
-                      </p>
-                      <p className="text-[10px] sm:text-xs text-gray-400 font-medium truncate italic antialiased">
-                        {letter.song_artist}
-                      </p>
-                    </div>
-
-                    {/* H5 专属时间展示 */}
-                    <div className="flex sm:hidden items-center gap-2 mt-2">
-                      <span className="text-[9px] font-black text-gray-200 uppercase tracking-widest">
-                        {new Date(letter.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                      </span>
-                      <div className="w-1 h-1 bg-gray-100 rounded-full"></div>
-                      <span className="text-[9px] font-black text-gray-200 uppercase tracking-widest">
-                        👁️ {letter.view_count || 0}
-                      </span>
-                    </div>
-
-                    {/* Desktop 统计 */}
-                    <div className="hidden sm:flex items-center gap-3 mt-3">
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-50 rounded-md">
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Views</span>
-                        <span className="text-[10px] font-bold text-gray-900">{letter.view_count || 0}</span>
-                      </div>
-                      {letter.user_id ? (
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-50/50 rounded-md">
-                          <div className="w-1 h-1 bg-green-400 rounded-full animate-pulse"></div>
-                          <span className="text-[9px] font-black text-green-600 uppercase tracking-widest">Cloud</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-orange-50/50 rounded-md">
-                          <div className="w-1 h-1 bg-orange-400 rounded-full"></div>
-                          <span className="text-[9px] font-black text-orange-600 uppercase tracking-widest">Local</span>
-                        </div>
-                      )}
-                    </div>
+                  {/* 云端/本地状态 */}
+                  <div className="mt-2 flex items-center gap-1.5 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
+                    <div className={`w-1.5 h-1.5 rounded-full ${letter.user_id ? 'bg-green-400' : 'bg-orange-400'}`}></div>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-gray-400 group-hover:text-gray-600">
+                      {letter.user_id ? 'Synced' : 'Local'}
+                    </span>
                   </div>
                 </div>
 
-                {/* 右侧：操作按钮 - H5 横向紧凑化 */}
-                <div className="flex items-center gap-2 w-full sm:w-auto mt-1 sm:mt-0 sm:pl-4">
+                {/* 操作按钮 - 紧凑排列 */}
+                <div className="flex flex-col sm:flex-row items-center gap-2 pr-1">
                   <button
                     onClick={() => handleCopyLink(letter.link_id)}
-                    className={`flex-1 sm:flex-none flex items-center justify-center gap-1 px-5 py-3 sm:py-2.5 rounded-2xl text-[11px] font-black tracking-wider uppercase transition-all border ${copyStatus === letter.link_id
-                        ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-100'
-                        : 'bg-white border-gray-100 text-gray-400 hover:border-gray-900 hover:text-gray-900 hover:bg-gray-50 active:scale-95 shadow-sm'
+                    className={`h-9 w-9 sm:h-10 sm:w-auto sm:px-4 flex items-center justify-center rounded-xl sm:rounded-2xl border transition-all ${copyStatus === letter.link_id
+                        ? 'bg-green-500 border-green-500 text-white'
+                        : 'bg-white border-gray-100 text-gray-400 hover:border-gray-900 hover:text-gray-900'
                       }`}
+                    title="Copy Link"
                   >
-                    {copyStatus === letter.link_id ? 'Copied' : 'Link'}
+                    <span className="hidden sm:inline text-[10px] font-black tracking-widest uppercase">{copyStatus === letter.link_id ? 'Copied' : 'Link'}</span>
+                    <span className="sm:hidden text-lg">{copyStatus === letter.link_id ? '✓' : '🔗'}</span>
                   </button>
                   <Link
                     href={`/letter/${letter.link_id}`}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-8 py-3 sm:py-2.5 bg-black text-white rounded-2xl text-[11px] font-black tracking-wider uppercase shadow-xl shadow-gray-200 hover:bg-gray-800 transition-all hover:scale-105 active:scale-95"
+                    className="h-9 w-9 sm:h-10 sm:w-auto sm:px-6 flex items-center justify-center bg-black text-white rounded-xl sm:rounded-2xl transition-all hover:scale-105 active:scale-95"
+                    title="View Letter"
                   >
-                    Open
+                    <span className="hidden sm:inline text-[10px] font-black tracking-widest uppercase">Open</span>
+                    <span className="sm:hidden text-lg">↗</span>
                   </Link>
                 </div>
               </div>
@@ -257,17 +245,28 @@ function HistoryContent() {
         </div>
       )}
 
-      {/* 底部装饰 - 减少白墙感 */}
-      <div className="mt-20 pt-10 border-t border-gray-50 text-center">
-        <p className="text-[10px] font-black text-gray-200 uppercase tracking-[0.4em]">Flowith Music</p>
+      {/* 底部装饰 */}
+      <div className="mt-20 py-10 text-center opacity-10">
+        <p className="text-[9px] font-black text-gray-900 uppercase tracking-[0.6em]">Flowith Music</p>
       </div>
+
+      <style jsx global>{`
+        body {
+          background-color: #fafafa !important;
+        }
+        @media (max-width: 640px) {
+          .container {
+             padding-bottom: 5rem;
+          }
+        }
+      `}</style>
     </div>
   )
 }
 
 export default function HistoryPage() {
   return (
-    <main className="min-h-screen bg-[#fafafa]">
+    <main className="min-h-screen">
       <Header currentPage="history" />
       <Suspense fallback={
         <div className="flex flex-col items-center justify-center py-40">

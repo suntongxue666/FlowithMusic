@@ -178,13 +178,24 @@ export default function SendPage() {
       console.log('Letter created successfully:', newLetter)
       setCreatedLetter(newLetter)
 
-      // 立即将新Letter添加到localStorage中
-      const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+      // 立即将新Letter添加到localStorage中 (增加过滤，防止写入 null)
+      const rawLetters = localStorage.getItem('letters')
+      let existingLetters = []
+      try {
+        existingLetters = JSON.parse(rawLetters || '[]')
+        if (!Array.isArray(existingLetters)) existingLetters = []
+      } catch (e) {
+        existingLetters = []
+      }
+
+      // 过滤掉可能存在的 null 或无效数据
+      existingLetters = existingLetters.filter((l: any) => l && l.link_id)
+
       const exists = existingLetters.some((letter: any) => letter.link_id === newLetter.link_id)
       if (!exists) {
         existingLetters.unshift(newLetter)
         localStorage.setItem('letters', JSON.stringify(existingLetters))
-        console.log('✅ Letter added to localStorage')
+        console.log('✅ Letter added to localStorage and sanitized')
       }
 
       // 清理相关缓存
