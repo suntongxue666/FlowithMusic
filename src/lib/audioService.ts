@@ -35,16 +35,23 @@ export interface AppleMusicTrack {
 export async function searchAppleMusic(
     songTitle: string,
     artistName: string,
-    targetDurationMs?: number
+    targetDurationMs?: number,
+    country: string = 'US'
 ): Promise<AppleMusicTrack | null> {
     try {
         const term = encodeURIComponent(`${songTitle} ${artistName}`)
-        const response = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=5`)
+        const response = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=5&country=${country}`)
 
         if (!response.ok) return null
 
         const data = await response.json()
-        if (data.resultCount === 0) return null
+        if (data.resultCount === 0) {
+            // If CN search fails, try US as fallback
+            if (country === 'CN') {
+                return searchAppleMusic(songTitle, artistName, targetDurationMs, 'US')
+            }
+            return null
+        }
 
         const results: any[] = data.results
 
@@ -58,6 +65,7 @@ export async function searchAppleMusic(
         }
 
         // Default to first result if no duration match found or provided
+        // This is the "robust fallback" - better a slightly off version than nothing
         return formatAppleTrack(results[0])
     } catch (error) {
         console.error('Apple Music search failed:', error)

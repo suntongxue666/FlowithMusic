@@ -58,7 +58,8 @@ export default function ColorfulSpotifyPlayer({ track, countryCode }: ColorfulSp
     try {
       if (!track || !track.artists || track.artists.length === 0) return
 
-      const result = await searchAppleMusic(track.name, track.artists[0].name, track.duration_ms)
+      const searchCountry = countryCode || (isChinaDetails.isChina ? 'CN' : 'US')
+      const result = await searchAppleMusic(track.name, track.artists[0].name, track.duration_ms, searchCountry)
       if (result) {
         setAppleTimestamp(result)
       } else {
