@@ -21,53 +21,71 @@ function AuthCallbackComponent() {
       try {
         if (!supabase) throw new Error('Supabase not initialized');
 
-        // Wait for session with a timeout
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // 1. 优先检查 URL 中的 'code' 参数 (PKCE Flow)
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
 
+        if (code) {
+          console.log('🔍 AuthCallback: Found OAuth code, exchanging for session...');
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+
+          if (data.session?.user) {
+            console.log('✅ AuthCallback: Code exchanged for user:', data.session.user.email);
+            await userService.handleAuthCallback(data.session.user);
+            if (mounted) {
+              router.push('/history?login=success');
+              return;
+            }
+          }
+        }
+
+        // 2. 检查现有会话 (可能适用于 Implicit/Hash flows)
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
 
         if (session?.user) {
           console.log('✅ AuthCallback: Session found for user:', session.user.email);
-          const dbUser = await userService.handleAuthCallback(session.user);
+          await userService.handleAuthCallback(session.user);
           if (mounted) {
-            console.log('🎉 AuthCallback: Login success, redirecting to history');
             router.push('/history?login=success');
+            return;
           }
-        } else {
-          // If no session yet, wait for AuthStateChange
-          console.log('⏳ AuthCallback: No immediate session, waiting for auth state change...');
+        }
 
-          const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_IN' && session?.user) {
-              console.log('✅ AuthCallback: SIGNED_IN event for:', session.user.email);
-              subscription.unsubscribe();
-              clearTimeout(timeoutId);
+        // 3. 兜底方案：监听 AuthStateChange
+        console.log('⏳ AuthCallback: No immediate session, waiting for auth state change...');
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+            console.log('✅ AuthCallback: Auth event:', event, 'for:', session.user.email);
+            subscription.unsubscribe();
+            clearTimeout(timeoutId);
 
-              try {
-                const dbUser = await userService.handleAuthCallback(session.user);
-                if (mounted) {
-                  router.push('/history?login=success');
-                }
-              } catch (err) {
-                console.error('💥 AuthCallback: DB sync error:', err);
-                if (mounted) {
-                  setError('Failed to sync user data.');
-                  setTimeout(() => router.push('/history?login=error'), 3000);
-                }
+            try {
+              await userService.handleAuthCallback(session.user);
+              if (mounted) {
+                router.push('/history?login=success');
+              }
+            } catch (err) {
+              console.error('💥 AuthCallback: DB sync error:', err);
+              if (mounted) {
+                setError('Failed to sync user data.');
+                setTimeout(() => router.push('/history?login=error'), 3000);
               }
             }
-          });
+          }
+        });
 
-          // Set a 15s timeout for the event
-          timeoutId = setTimeout(() => {
-            subscription.unsubscribe();
-            if (mounted) {
-              console.error('💥 AuthCallback: Auth state change timeout');
-              setError('Verification timeout. Please try logging in again.');
-              setTimeout(() => router.push('/history?login=error'), 3000);
-            }
-          }, 15000);
-        }
+        // 设置 15 秒超时
+        timeoutId = setTimeout(() => {
+          subscription.unsubscribe();
+          if (mounted) {
+            console.error('💥 AuthCallback: Auth state change timeout');
+            setError('Verification timeout. Please try logging in again.');
+            setTimeout(() => router.push('/history?login=error'), 3000);
+          }
+        }, 15000);
+
       } catch (err: any) {
         console.error('💥 AuthCallback: Error:', err);
         if (mounted) {
