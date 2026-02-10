@@ -171,6 +171,10 @@ export default function SendPage() {
 
       const newLetter = await Promise.race([letterPromise, timeoutPromise]) as any
 
+      if (!newLetter || !newLetter.link_id) {
+        throw new Error('Letter creation failed: Empty result from server')
+      }
+
       console.log('Letter created successfully:', newLetter)
       setCreatedLetter(newLetter)
 
