@@ -58,7 +58,8 @@ export default function TestHistoryPage() {
           title: 'Test Song',
           artist: 'Test Artist',
           albumCover: 'https://via.placeholder.com/300',
-          spotifyUrl: 'https://open.spotify.com/track/test'
+          spotifyUrl: 'https://open.spotify.com/track/test',
+          duration_ms: 180000
         }
       }
 

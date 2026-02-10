@@ -14,16 +14,16 @@ export default function TestAuthPage() {
       try {
         const anonId = await userService.initializeUser()
         setAnonymousId(anonId)
-        
+
         const currentUser = userService.getCurrentUser()
         setUserInfo(currentUser)
-        
+
         setTestResult('用户初始化成功')
       } catch (error) {
         setTestResult(`初始化失败: ${error}`)
       }
     }
-    
+
     initTest()
   }, [])
 
@@ -37,10 +37,11 @@ export default function TestAuthPage() {
           title: 'Test Song',
           artist: 'Test Artist',
           albumCover: 'https://via.placeholder.com/300',
-          spotifyUrl: 'https://open.spotify.com/track/test'
+          spotifyUrl: 'https://open.spotify.com/track/test',
+          duration_ms: 180000
         }
       })
-      
+
       setTestResult(`Letter创建成功: ${letter.link_id}`)
     } catch (error) {
       setTestResult(`Letter创建失败: ${error}`)
@@ -59,7 +60,7 @@ export default function TestAuthPage() {
   return (
     <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
       <h1>认证测试页面</h1>
-      
+
       <div style={{ marginBottom: '2rem', padding: '1rem', background: '#f5f5f5', borderRadius: '8px' }}>
         <h3>用户状态</h3>
         <p><strong>匿名ID:</strong> {anonymousId}</p>
@@ -68,41 +69,41 @@ export default function TestAuthPage() {
       </div>
 
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-        <button 
+        <button
           onClick={testCreateLetter}
-          style={{ 
-            padding: '0.75rem 1.5rem', 
-            background: '#007bff', 
-            color: 'white', 
-            border: 'none', 
+          style={{
+            padding: '0.75rem 1.5rem',
+            background: '#007bff',
+            color: 'white',
+            border: 'none',
             borderRadius: '6px',
             cursor: 'pointer'
           }}
         >
           测试创建Letter
         </button>
-        
-        <button 
+
+        <button
           onClick={testGoogleLogin}
-          style={{ 
-            padding: '0.75rem 1.5rem', 
-            background: '#4285F4', 
-            color: 'white', 
-            border: 'none', 
+          style={{
+            padding: '0.75rem 1.5rem',
+            background: '#4285F4',
+            color: 'white',
+            border: 'none',
             borderRadius: '6px',
             cursor: 'pointer'
           }}
         >
           测试Google登录
         </button>
-        
-        <button 
+
+        <button
           onClick={() => window.location.href = '/history'}
-          style={{ 
-            padding: '0.75rem 1.5rem', 
-            background: '#28a745', 
-            color: 'white', 
-            border: 'none', 
+          style={{
+            padding: '0.75rem 1.5rem',
+            background: '#28a745',
+            color: 'white',
+            border: 'none',
             borderRadius: '6px',
             cursor: 'pointer'
           }}

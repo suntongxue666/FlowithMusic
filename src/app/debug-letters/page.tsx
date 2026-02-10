@@ -77,7 +77,8 @@ export default function DebugLettersPage() {
           title: 'Debug Song',
           artist: 'Debug Artist',
           albumCover: 'https://via.placeholder.com/300',
-          spotifyUrl: 'https://open.spotify.com/track/debug'
+          spotifyUrl: 'https://open.spotify.com/track/debug',
+          duration_ms: 180000
         }
       })
 

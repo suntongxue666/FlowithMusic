@@ -34,7 +34,8 @@ export default function TestDatabasePage() {
           title: 'Database Test Song',
           artist: 'Test Database Artist',
           albumCover: 'https://via.placeholder.com/300x300/1DB954/ffffff?text=DB+Test',
-          spotifyUrl: 'https://open.spotify.com/track/test_db_song'
+          spotifyUrl: 'https://open.spotify.com/track/test_db_song',
+          duration_ms: 180000
         }
       })
 

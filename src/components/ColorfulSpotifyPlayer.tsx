@@ -6,6 +6,7 @@ import { checkIsChinaIP, searchAppleMusic, AppleMusicTrack } from '@/lib/audioSe
 interface SpotifyTrack {
   id: string
   name: string
+  duration_ms?: number
   artists: { name: string }[]
   album: {
     name: string
@@ -19,9 +20,10 @@ interface SpotifyTrack {
 
 interface ColorfulSpotifyPlayerProps {
   track: SpotifyTrack
+  countryCode?: string
 }
 
-export default function ColorfulSpotifyPlayer({ track }: ColorfulSpotifyPlayerProps) {
+export default function ColorfulSpotifyPlayer({ track, countryCode }: ColorfulSpotifyPlayerProps) {
   const [dominantColor, setDominantColor] = useState<string>('#1DB954')
   const [isChinaDetails, setIsChinaDetails] = useState<{ isChina: boolean, checked: boolean }>({ isChina: false, checked: false })
   const [appleTimestamp, setAppleTimestamp] = useState<AppleMusicTrack | null>(null)
@@ -32,6 +34,14 @@ export default function ColorfulSpotifyPlayer({ track }: ColorfulSpotifyPlayerPr
   // 1. Check IP on mount
   useEffect(() => {
     async function checkIn() {
+      // Priority 1: Use server-detected countryCode
+      if (countryCode === 'CN') {
+        setIsChinaDetails({ isChina: true, checked: true })
+        fetchAppleMusicFallback()
+        return
+      }
+
+      // Priority 2: Use client-side signals
       const isCN = await checkIsChinaIP()
       setIsChinaDetails({ isChina: isCN, checked: true })
 
@@ -41,14 +51,14 @@ export default function ColorfulSpotifyPlayer({ track }: ColorfulSpotifyPlayerPr
       }
     }
     checkIn()
-  }, [])
+  }, [countryCode])
 
   // 2. Fetch Apple Music if needed
   const fetchAppleMusicFallback = async () => {
     try {
       if (!track || !track.artists || track.artists.length === 0) return
 
-      const result = await searchAppleMusic(track.name, track.artists[0].name)
+      const result = await searchAppleMusic(track.name, track.artists[0].name, track.duration_ms)
       if (result) {
         setAppleTimestamp(result)
       } else {

@@ -1,6 +1,7 @@
 interface SpotifyTrack {
   id: string
   name: string
+  duration_ms: number
   artists: Array<{
     name: string
   }>
@@ -60,7 +61,7 @@ class SpotifyService {
 
   async searchTracks(query: string, limit: number = 10): Promise<SpotifyTrack[]> {
     const token = await this.getAccessToken()
-    
+
     const response = await fetch(
       `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`,
       {
@@ -80,10 +81,10 @@ class SpotifyService {
 
   async getRecommendations(limit: number = 10): Promise<SpotifyTrack[]> {
     const token = await this.getAccessToken()
-    
+
     // Use popular seed genres and artists for recommendations
     const seedGenres = 'pop,rock,indie,electronic,hip-hop'
-    
+
     const response = await fetch(
       `https://api.spotify.com/v1/recommendations?seed_genres=${seedGenres}&limit=${limit}`,
       {

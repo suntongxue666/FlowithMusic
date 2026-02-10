@@ -11,6 +11,7 @@ export interface CreateLetterData {
     albumCover: string
     previewUrl?: string
     spotifyUrl: string
+    duration_ms: number
   }
 }
 
@@ -59,6 +60,7 @@ export class LetterService {
         song_album_cover: data.song.albumCover,
         song_preview_url: data.song.previewUrl || undefined,
         song_spotify_url: data.song.spotifyUrl,
+        song_duration_ms: data.song.duration_ms,
         view_count: 0,
         is_public: true,
         created_at: new Date().toISOString(),
@@ -87,6 +89,7 @@ export class LetterService {
         song_album_cover: data.song.albumCover,
         song_preview_url: data.song.previewUrl,
         song_spotify_url: data.song.spotifyUrl,
+        song_duration_ms: data.song.duration_ms,
         is_public: true
       })
       .select()
@@ -303,6 +306,7 @@ export class LetterService {
             song_album_cover: letter.song_album_cover,
             song_preview_url: letter.song_preview_url,
             song_spotify_url: letter.song_spotify_url,
+            song_duration_ms: letter.song_duration_ms,
             is_public: letter.is_public ?? true,
             created_at: letter.created_at || new Date().toISOString()
             // view_count 会默认为 0

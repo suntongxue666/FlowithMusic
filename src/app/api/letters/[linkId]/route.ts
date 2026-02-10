@@ -15,7 +15,7 @@ const LIGHT_COLORS = [
 function generateAnonymousUser(letter: any) {
   // 优先使用letter的anonymous_id，如果没有则使用linkId（兼容旧数据）
   const seedId = letter.anonymous_id || letter.link_id || 'fallback'
-  
+
   // 使用anonymous_id作为种子来确保同一个匿名用户的所有letter显示相同的头像和用户名
   let hash = 0
   for (let i = 0; i < seedId.length; i++) {
@@ -23,11 +23,11 @@ function generateAnonymousUser(letter: any) {
     hash = ((hash << 5) - hash) + char
     hash = hash & hash // Convert to 32bit integer
   }
-  
+
   const emojiIndex = Math.abs(hash) % ANIMAL_EMOJIS.length
   const colorIndex = Math.abs(hash >> 8) % LIGHT_COLORS.length
   const userNumber = Math.abs(hash >> 16) % 100000000 // 8位数字
-  
+
   return {
     emoji: ANIMAL_EMOJIS[emojiIndex],
     backgroundColor: LIGHT_COLORS[colorIndex],
@@ -60,10 +60,10 @@ function toCamel(letter: any) {
     anonymousUserInfo: anonymousUserInfo,
     user: letter.user
       ? {
-          id: letter.user.id,
-          display_name: letter.user.display_name,
-          avatar_url: letter.user.avatar_url,
-        }
+        id: letter.user.id,
+        display_name: letter.user.display_name,
+        avatar_url: letter.user.avatar_url,
+      }
       : letter.user,
   }
 }
@@ -83,7 +83,7 @@ export async function GET(
     const { linkId } = await params
     console.log('🔍 API: Searching for letter:', linkId)
     const format = request.nextUrl.searchParams.get('format')
-    
+
     // 1. 首先尝试从Supabase获取
     try {
       const { supabaseServer } = await import('@/lib/supabase-server')
@@ -102,10 +102,14 @@ export async function GET(
           .eq('link_id', linkId)
           .eq('is_public', true) // 确保只获取公开的Letters
           .single()
-        
+
         if (!error && data) {
           console.log('✅ Found in Supabase:', linkId)
-          const formatted = maybeFormatCamel(data, format)
+          const countryCode = request.headers.get('x-vercel-ip-country') || 'unknown'
+          const formatted = {
+            ...(maybeFormatCamel(data, format)),
+            countryCode
+          }
           return NextResponse.json(formatted)
         } else {
           console.log('❌ Supabase error:', error?.message)
@@ -116,25 +120,33 @@ export async function GET(
     } catch (supabaseError) {
       console.warn('⚠️ Supabase connection failed:', supabaseError)
     }
-    
+
     // 2. 尝试从全局存储获取
     if (globalLetterStorage.has(linkId)) {
       const letter = globalLetterStorage.get(linkId)
       console.log('✅ Found in global storage:', linkId)
-      const formatted = maybeFormatCamel(letter, format)
+      const countryCode = request.headers.get('x-vercel-ip-country') || 'unknown'
+      const formatted = {
+        ...(maybeFormatCamel(letter, format)),
+        countryCode
+      }
       return NextResponse.json(formatted)
     }
-    
+
     // 3. 尝试从浏览器存储API获取
     try {
       const browserStorageResponse = await fetch(`${request.nextUrl.origin}/api/browser-storage/${linkId}`)
       if (browserStorageResponse.ok) {
         const data = await browserStorageResponse.json()
         console.log('✅ Found in browser storage:', linkId)
-        
+
         // 缓存到全局存储
         globalLetterStorage.set(linkId, data)
-        const formatted = maybeFormatCamel(data, format)
+        const countryCode = request.headers.get('x-vercel-ip-country') || 'unknown'
+        const formatted = {
+          ...(maybeFormatCamel(data, format)),
+          countryCode
+        }
         return NextResponse.json(formatted)
       }
     } catch (browserError) {
@@ -144,9 +156,9 @@ export async function GET(
     // 4. 最后的尝试：检查是否有临时数据
     console.log('❌ Letter not found anywhere:', linkId)
     console.log('📊 Global storage keys:', Array.from(globalLetterStorage.keys()))
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Letter not found',
         message: 'This letter is not available. It may have been deleted or the link is incorrect.',
         linkId,
@@ -160,8 +172,8 @@ export async function GET(
   } catch (error) {
     console.error('💥 API error:', error)
     return NextResponse.json(
-      { 
-        error: 'Internal server error', 
+      {
+        error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
@@ -176,9 +188,9 @@ export async function POST(
   try {
     const { linkId } = await params
     const letterData = await request.json()
-    
+
     console.log('💾 API: Saving letter:', linkId)
-    
+
     // 确保Letter是公开的
     const letter = {
       ...letterData,
@@ -187,7 +199,7 @@ export async function POST(
       created_at: letterData.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
-    
+
     // 1. 尝试保存到Supabase
     try {
       const { supabaseServer } = await import('@/lib/supabase-server')
@@ -205,7 +217,7 @@ export async function POST(
             )
           `)
           .single()
-        
+
         if (!error && data) {
           console.log('✅ Saved to Supabase:', linkId)
           // 同时保存到全局存储作为备份
@@ -220,11 +232,11 @@ export async function POST(
     } catch (supabaseError) {
       console.warn('⚠️ Supabase save failed:', supabaseError)
     }
-    
+
     // 2. 保存到全局存储作为fallback
     globalLetterStorage.set(linkId, letter)
     console.log('✅ Saved to global storage:', linkId)
-    
+
     // 3. 尝试保存到浏览器存储
     try {
       const browserStorageResponse = await fetch(`${request.nextUrl.origin}/api/browser-storage/${linkId}`, {
@@ -232,15 +244,15 @@ export async function POST(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(letter)
       })
-      
+
       if (browserStorageResponse.ok) {
         console.log('✅ Also saved to browser storage:', linkId)
       }
     } catch (browserError) {
       console.warn('⚠️ Browser storage save failed:', browserError)
     }
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       ...letter,
       fallback: true,
       message: 'Letter saved successfully'
@@ -248,8 +260,8 @@ export async function POST(
   } catch (error) {
     console.error('💥 Save error:', error)
     return NextResponse.json(
-      { 
-        error: 'Failed to save letter', 
+      {
+        error: 'Failed to save letter',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
@@ -267,7 +279,7 @@ export async function PUT(request: NextRequest) {
       created: letter.created_at,
       public: letter.is_public
     }))
-    
+
     return NextResponse.json({
       globalStorageSize: globalLetterStorage.size,
       letters
@@ -284,22 +296,22 @@ export async function PATCH(
 ) {
   try {
     const { linkId } = await params
-    
+
     console.log('🔍 DEBUGGING LETTER ACCESS for linkId:', linkId)
-    
+
     const debugInfo: any = {
       linkId,
       timestamp: new Date().toISOString(),
       checks: {}
     }
-    
+
     // 1. 检查全局存储
     debugInfo.checks.globalStorage = {
       exists: globalLetterStorage.has(linkId),
       total: globalLetterStorage.size,
       allKeys: Array.from(globalLetterStorage.keys())
     }
-    
+
     // 2. 检查Supabase
     try {
       const { supabaseServer } = await import('@/lib/supabase-server')
@@ -309,7 +321,7 @@ export async function PATCH(
           .select('link_id, is_public, created_at, recipient_name')
           .eq('link_id', linkId)
           .single()
-        
+
         debugInfo.checks.supabase = {
           found: !error && !!data,
           error: error?.message,
@@ -319,11 +331,11 @@ export async function PATCH(
         debugInfo.checks.supabase = { error: 'Supabase server client not initialized' }
       }
     } catch (supabaseError) {
-      debugInfo.checks.supabase = { 
-        error: `Connection failed: ${supabaseError instanceof Error ? supabaseError.message : 'Unknown error'}` 
+      debugInfo.checks.supabase = {
+        error: `Connection failed: ${supabaseError instanceof Error ? supabaseError.message : 'Unknown error'}`
       }
     }
-    
+
     // 3. 检查browser storage API
     try {
       const browserResponse = await fetch(`${request.nextUrl.origin}/api/browser-storage/${linkId}`)
@@ -340,7 +352,7 @@ export async function PATCH(
         error: browserError instanceof Error ? browserError.message : 'Unknown error'
       }
     }
-    
+
     return NextResponse.json(debugInfo)
   } catch (error) {
     return NextResponse.json({

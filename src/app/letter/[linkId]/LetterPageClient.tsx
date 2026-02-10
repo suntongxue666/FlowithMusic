@@ -210,6 +210,7 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
               // 验证Letter数据完整性
               if (apiLetter && apiLetter.link_id && apiLetter.recipient_name && apiLetter.message) {
                 foundLetter = apiLetter
+                // If apiLetter has countryCode, we can store it or use it
                 setLetter(apiLetter)
                 setLoading(false)
                 console.log('✅ Letter data is complete and valid')
@@ -383,8 +384,10 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
                   preview_url: letter.song_preview_url || null,
                   external_urls: {
                     spotify: letter.song_spotify_url
-                  }
+                  },
+                  duration_ms: (letter as any).song_duration_ms
                 }}
+                countryCode={(letter as any).countryCode}
               />
             ) : (
               <div style={{

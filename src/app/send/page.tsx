@@ -155,7 +155,8 @@ export default function SendPage() {
           artist: selectedTrack!.artists[0]?.name || 'Unknown Artist',
           albumCover: selectedTrack!.album.images[0]?.url || '',
           previewUrl: selectedTrack!.preview_url || undefined,
-          spotifyUrl: selectedTrack!.external_urls.spotify
+          spotifyUrl: selectedTrack!.external_urls.spotify,
+          duration_ms: selectedTrack!.duration_ms
         }
       })
 
@@ -218,6 +219,7 @@ export default function SendPage() {
             song_album_cover: selectedTrack!.album.images[0]?.url || '',
             song_preview_url: selectedTrack!.preview_url || undefined,
             song_spotify_url: selectedTrack!.external_urls.spotify,
+            song_duration_ms: selectedTrack!.duration_ms,
             view_count: 0,
             is_public: true,
             created_at: new Date().toISOString(),
