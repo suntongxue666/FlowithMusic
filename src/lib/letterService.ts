@@ -39,7 +39,7 @@ export class LetterService {
     const anonymousId = userService.getAnonymousId()
 
     // 1. 构造基础 Letter 对象
-    const linkId = Math.random().toString(36).substring(2, 12) // 10 characters
+    const linkId = this.generateLinkId()
 
     // 2. 游客模式 (Guest Mode) - 仅本地
     if (!currentUser) {
@@ -335,6 +335,23 @@ export class LetterService {
 
     console.log(`✅ LetterService: Migration complete. Success: ${success}, Fail: ${fail}`)
     return { success, fail }
+  }
+
+  private generateLinkId(): string {
+    const now = new Date()
+    const timestamp = now.getFullYear().toString() +
+      (now.getMonth() + 1).toString().padStart(2, '0') +
+      now.getDate().toString().padStart(2, '0') +
+      now.getHours().toString().padStart(2, '0') +
+      now.getMinutes().toString().padStart(2, '0')
+
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    let random = ''
+    for (let i = 0; i < 8; i++) {
+      random += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+
+    return `${timestamp}${random}`
   }
 }
 

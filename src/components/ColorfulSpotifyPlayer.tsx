@@ -117,86 +117,110 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
       return (
         <div
           key={`apple-${track.id}`}
-          className="w-full rounded-2xl overflow-hidden shadow-sm flex flex-row h-[152px] border border-black/5 relative group bg-[#121212]"
+          className="w-full rounded-[24px] overflow-hidden shadow-2xl flex flex-row h-[180px] border border-white/10 relative group backdrop-blur-md"
           style={{
-            background: `linear-gradient(135deg, ${dominantColor}33 0%, #121212 100%)`,
+            background: `linear-gradient(135deg, ${dominantColor}66 0%, #1a1a1a 100%)`,
           }}
         >
-          {/* Cover Art - Fixed Size */}
-          <div className="relative w-[152px] h-[152px] flex-shrink-0 bg-black/40 overflow-hidden">
-            <img
-              src={appleTrack.artworkUrl100?.replace('100x100', '400x400')}
-              alt={appleTrack.trackName}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <button
-              onClick={togglePlay}
-              className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/20 transition-all backdrop-blur-[2px]"
-            >
-              <div className="w-12 h-12 bg-[#fa243c] rounded-full flex items-center justify-center pl-1 shadow-2xl hover:scale-110 transition-transform active:scale-95">
-                {isPlaying ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"></path></svg>
-                )}
-              </div>
-            </button>
-            <audio
-              ref={audioRef}
-              src={appleTrack.previewUrl}
-              onEnded={() => setIsPlaying(false)}
-              onPause={() => setIsPlaying(false)}
-              onPlay={() => setIsPlaying(true)}
-            />
+          {/* Cover Art - Left Side */}
+          <div className="flex items-center justify-center p-4 pr-0">
+            <div className="relative w-[132px] h-[132px] flex-shrink-0 shadow-2xl rounded-xl overflow-hidden group/cover">
+              <img
+                src={appleTrack.artworkUrl100?.replace('100x100', '600x600')}
+                alt={appleTrack.trackName}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover/cover:scale-110"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover/cover:bg-black/0 transition-colors duration-300" />
+            </div>
           </div>
 
-          {/* Info Section */}
-          <div className="p-6 flex-1 flex flex-col justify-between text-white min-w-0">
-            <div className="space-y-1.5">
-              <h3 className="font-bold text-lg leading-tight truncate tracking-tight">{appleTrack.trackName}</h3>
-              <p className="text-white/60 text-sm font-medium truncate italic tracking-wide">{appleTrack.artistName}</p>
+          {/* Info & Controls Section */}
+          <div className="flex-1 p-6 flex flex-col justify-center min-w-0 relative">
+            <div className="mb-auto">
+              <div className="flex justify-between items-start pt-1">
+                <div className="flex-1 min-w-0 pr-8">
+                  <h3 className="font-bold text-xl leading-tight truncate text-white tracking-tight mb-1">
+                    {appleTrack.trackName}
+                  </h3>
+                  <p className="text-white/70 text-base font-medium truncate italic tracking-wide">
+                    {appleTrack.artistName}
+                  </p>
+                </div>
+                <div className="flex-shrink-0 pt-1">
+                  <div className="w-6 h-6 opacity-40 hover:opacity-100 transition-opacity">
+                    <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.646 15.646c-.195.195-.451.293-.707.293s-.512-.098-.707-.293l-3.232-3.232-3.232 3.232c-.195.195-.451.293-.707.293s-.512-.098-.707-.293c-.391-.391-.391-1.023 0-1.414l3.232-3.232-3.232-3.232c-.391-.391-.391-1.023 0-1.414s1.023-.391 1.414 0l3.232 3.232 3.232-3.232c.391-.391 1.023-.391 1.414 0s.391 1.023 0 1.414l-3.232 3.232 3.232 3.232c.391.391.391 1.023 0 1.414z" opacity=".2" /></svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center gap-3">
+                <div className="px-2 py-0.5 rounded bg-white/10 text-[10px] text-white/60 font-medium uppercase tracking-widest border border-white/5">
+                  Apple Preview
+                </div>
+                <button
+                  onClick={() => setIsChinaDetails({ isChina: false, checked: true })}
+                  className="text-[10px] text-white/30 hover:text-white/80 transition-all underline underline-offset-4"
+                >
+                  Use Spotify
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="w-full bg-white/10 rounded-full h-[3px] overflow-hidden">
-                <div className="bg-[#fa243c] h-full animate-progress origin-left" style={{
-                  animationPlayState: isPlaying ? 'running' : 'paused',
-                  transform: isPlaying ? 'scaleX(1)' : 'scaleX(0)',
-                  transition: isPlaying ? 'transform 30s linear' : 'none',
-                  width: '100%'
-                }}></div>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Apple Preview</span>
-                  <button
-                    onClick={() => setIsChinaDetails({ isChina: false, checked: true })}
-                    className="text-[9px] font-black uppercase tracking-[0.1em] text-white/30 hover:text-white/80 underline underline-offset-4 transition-all"
-                  >
-                    Switch to Spotify
-                  </button>
+            {/* Bottom Controls Area */}
+            <div className="flex flex-col gap-3 mt-4">
+              {/* Progress Bar */}
+              <div className="relative group/progress">
+                <div className="w-full bg-white/10 rounded-full h-[4px] overflow-hidden">
+                  <div
+                    className="bg-white h-full origin-left"
+                    style={{
+                      transform: isPlaying ? 'scaleX(1)' : 'scaleX(0)',
+                      transition: isPlaying ? 'transform 30s linear' : 'none',
+                    }}
+                  />
                 </div>
+                <div className="flex justify-between mt-1.5 px-0.5">
+                  <span className="text-[10px] text-white/40 font-medium tabular-nums">0:00</span>
+                  <span className="text-[10px] text-white/40 font-medium tabular-nums">0:30</span>
+                </div>
+              </div>
+
+              {/* Play Button & Details */}
+              <div className="flex justify-between items-center">
                 <a
                   href={appleTrack.trackViewUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-white/10 hover:bg-white/20 px-4 py-1.5 rounded-full border border-white/5 text-[10px] font-black tracking-widest transition-all hover:px-5 active:scale-95 uppercase"
+                  className="text-[11px] text-white/50 hover:text-white transition-colors flex items-center gap-1.5 group/link"
                 >
-                  Listen Full ↗
+                  Listen on Apple Music <span className="group-hover/link:translate-x-0.5 transition-transform">→</span>
                 </a>
+
+                <div className="flex items-center gap-4">
+                  <button className="text-white/40 hover:text-white transition-colors">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16 10l-4 4-4-4h8z" /></svg>
+                  </button>
+                  <button
+                    onClick={togglePlay}
+                    className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all text-black"
+                  >
+                    {isPlaying ? (
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                    ) : (
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="ml-1"><path d="M8 5v14l11-7z"></path></svg>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-
-          <style jsx>{`
-            @keyframes progress {
-              from { transform: scaleX(0); }
-              to { transform: scaleX(1); }
-            }
-            .animate-progress {
-              animation: progress 30s linear;
-            }
-          `}</style>
+          <audio
+            ref={audioRef}
+            src={appleTrack.previewUrl}
+            onEnded={() => setIsPlaying(false)}
+            onPause={() => setIsPlaying(false)}
+            onPlay={() => setIsPlaying(true)}
+          />
         </div>
       )
     }
