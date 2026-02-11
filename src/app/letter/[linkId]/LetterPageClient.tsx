@@ -407,7 +407,7 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
             )}
           </div>
 
-          <div className="letter-message" style={{ marginTop: '-16px' }}>
+          <div className="letter-message">
             {letter.message ? (
               <div className={`message-content handwritten large-text ${hasChinese(letter.message) ? 'chinese-text' : ''}`}>
                 {letter.message}

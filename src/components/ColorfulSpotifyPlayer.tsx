@@ -148,7 +148,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
     <PlayerCard color={dominantColor}>
       <div className="flex h-full p-4 md:p-6 relative text-white">
         {/* Left: Artwork */}
-        <div className="flex-shrink-0 h-full aspect-square">
+        <div className="flex-shrink-0 w-[132px] h-[132px] my-auto">
           <img
             src={imageUrl}
             alt={title}
@@ -185,7 +185,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
         </div>
 
         {/* Bottom Area: Progress & Controls */}
-        <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-24 md:right-6">
+        <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-[172px] md:right-6">
           <div className="flex items-center gap-4">
             {/* Progress Bar Container */}
             <div className="flex-1 flex items-center gap-3">
