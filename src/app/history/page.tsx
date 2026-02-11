@@ -24,6 +24,16 @@ function HistoryContent() {
 
   useEffect(() => {
     checkAuthAndLoadLetters()
+
+    // 新增：当窗口获得焦点时刷新数据（例如从社交媒体分享回来或从发送页返回）
+    if (typeof window !== 'undefined') {
+      const handleFocus = () => {
+        console.log('📱 History: Window focused, refreshing...')
+        checkAuthAndLoadLetters()
+      }
+      window.addEventListener('focus', handleFocus)
+      return () => window.removeEventListener('focus', handleFocus)
+    }
   }, [searchParams])
 
   const checkAuthAndLoadLetters = async () => {
@@ -222,8 +232,8 @@ function HistoryContent() {
                   <button
                     onClick={() => handleCopyLink(letter.link_id)}
                     className={`h-9 w-9 sm:h-10 sm:w-auto sm:px-4 flex items-center justify-center rounded-xl sm:rounded-2xl border transition-all ${copyStatus === letter.link_id
-                        ? 'bg-green-500 border-green-500 text-white'
-                        : 'bg-white border-gray-100 text-gray-400 hover:border-gray-900 hover:text-gray-900'
+                      ? 'bg-green-500 border-green-500 text-white'
+                      : 'bg-white border-gray-100 text-gray-400 hover:border-gray-900 hover:text-gray-900'
                       }`}
                     title="Copy Link"
                   >

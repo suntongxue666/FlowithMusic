@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 // 动物表情符号数组（与前端保持一致）
 const ANIMAL_EMOJIS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧', '🐘', '🦛', '🦏', '🐪', '🐫', '🦒', '🦘', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐕‍🦺', '🐈', '🐈‍⬛', '🐓', '🦃', '🦚', '🦜', '🦢', '🦩', '🕊️', '🐇', '🦝', '🦨', '🦡', '🦦', '🦥', '🐁', '🐀', '🐿️', '🦔']
 
@@ -105,11 +107,7 @@ export async function GET(
 
         if (!error && data) {
           console.log('✅ Found in Supabase:', linkId)
-          const countryCode = request.headers.get('x-vercel-ip-country') || 'unknown'
-          const formatted = {
-            ...(maybeFormatCamel(data, format)),
-            countryCode
-          }
+          const formatted = maybeFormatCamel(data, format)
           return NextResponse.json(formatted)
         } else {
           console.log('❌ Supabase error:', error?.message)
@@ -125,11 +123,7 @@ export async function GET(
     if (globalLetterStorage.has(linkId)) {
       const letter = globalLetterStorage.get(linkId)
       console.log('✅ Found in global storage:', linkId)
-      const countryCode = request.headers.get('x-vercel-ip-country') || 'unknown'
-      const formatted = {
-        ...(maybeFormatCamel(letter, format)),
-        countryCode
-      }
+      const formatted = maybeFormatCamel(letter, format)
       return NextResponse.json(formatted)
     }
 
@@ -142,11 +136,7 @@ export async function GET(
 
         // 缓存到全局存储
         globalLetterStorage.set(linkId, data)
-        const countryCode = request.headers.get('x-vercel-ip-country') || 'unknown'
-        const formatted = {
-          ...(maybeFormatCamel(data, format)),
-          countryCode
-        }
+        const formatted = maybeFormatCamel(data, format)
         return NextResponse.json(formatted)
       }
     } catch (browserError) {
