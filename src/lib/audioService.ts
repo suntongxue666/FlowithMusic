@@ -1,23 +1,41 @@
 export async function checkIsChinaIP(): Promise<boolean> {
     try {
-        // Signal 1: Check Browser Timezone
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-        console.log('🌍 [Detection] Timezone:', timezone)
-        if (timezone === 'Asia/Shanghai' || timezone === 'Asia/Urumqi') {
-            console.log('🌍 [Detection] Triggered by Timezone')
-            return true
-        }
-
-        // Signal 3: IP detection (Priority Signal)
+        // IP detection - 使用多个 API 确保准确性
         console.log('🌍 [Detection] Fetching IP info...')
-        const response = await fetch('https://ipapi.co/json/')
-        if (response.ok) {
-            const data = await response.json()
-            console.log('🌍 [Detection] IP Country:', data.country_code)
-            return data.country_code === 'CN'
+
+        // 尝试多个 IP API 提高可靠性
+        const apis = [
+            'https://ipapi.co/json/',
+            'https://api.ipify.org?format=json',
+            'https://ip.sb/api/ip'
+        ]
+
+        for (const apiUrl of apis) {
+            try {
+                const response = await fetch(apiUrl)
+                if (!response.ok) continue
+
+                const data = await response.json()
+                let countryCode = null
+
+                // 不同 API 返回的字段名可能不同
+                if (data.country_code) {
+                    countryCode = data.country_code
+                } else if (data.country) {
+                    countryCode = data.country
+                }
+
+                if (countryCode) {
+                    console.log('🌍 [Detection] IP Country:', countryCode, 'from', apiUrl)
+                    return countryCode === 'CN' || countryCode === 'China'
+                }
+            } catch (e) {
+                console.warn('🌍 [Detection] API failed:', apiUrl, e)
+                continue
+            }
         }
 
-        console.log('🌍 [Detection] IP API failed, defaulting to false')
+        console.log('🌍 [Detection] All IP APIs failed, defaulting to false')
         return false
     } catch (error) {
         console.warn('🌍 [Detection] Failed, defaulting to false:', error)

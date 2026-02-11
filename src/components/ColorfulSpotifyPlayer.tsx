@@ -191,21 +191,30 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
           {/* Bottom: Progress & Controls (Aligned with title left edge) */}
           <div className="flex items-center gap-4 mt-auto">
             {/* Progress Bar Container */}
-            <div className="flex-1 flex items-center gap-3">
+            <div className="flex-1 flex items-center gap-3" style={{ maxWidth: 'calc(100% - 140px)' }}>
               <div className="flex-1 bg-white/20 rounded-full h-[4px] relative group/progress cursor-pointer">
                 <div
                   className="bg-white/80 h-full rounded-full relative"
                   style={{ width: `${progress}%`, transition: isPlaying ? 'width 0.1s linear' : 'none' }}
                 />
-                <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg" style={{ left: `${progress}%`, transform: 'translate(-50%, -50%)' }} />
+                {/* 进度条滑块 - 16x16，下移6px */}
+                <div
+                  className="w-4 h-4 bg-white rounded-full shadow-lg"
+                  style={{
+                    left: `${progress}%`,
+                    transform: 'translate(-50%, calc(-50% + 6px))',
+                    position: 'absolute',
+                    top: '50%'
+                  }}
+                />
               </div>
               <span className="text-sm font-bold tabular-nums text-white/90 min-w-[40px] text-right">
                 {formatTime((durationMs || 30000) * (progress / 100))}
               </span>
             </div>
 
-            {/* Controls */}
-            <div className="flex items-center gap-5 md:gap-6">
+            {/* Controls - 右边距20px */}
+            <div className="flex items-center gap-5 md:gap-6" style={{ marginRight: '20px' }}>
               <button className="text-white/60 hover:text-white transition-all">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg>
               </button>
