@@ -56,7 +56,7 @@ export async function checkIsChinaIP(): Promise<boolean> {
 
         // 备用方案：使用浏览器语言检测
         console.log('🌍 [Detection] IP APIs failed, checking browser language as fallback')
-        const browserLang = navigator.language || navigator.userLanguage || ''
+        const browserLang = navigator.language || ''
         console.log('🌍 [Detection] Browser language:', browserLang)
         
         if (browserLang.startsWith('zh') || browserLang.startsWith('ZH')) {
