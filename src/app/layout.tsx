@@ -45,6 +45,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Caveat 手写字体 - Safari 浏览器优化 */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
         {/* Google tag (gtag.js) */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-6BS9TLZYRQ"></script>
         <script
