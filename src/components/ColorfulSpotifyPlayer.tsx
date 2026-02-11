@@ -150,22 +150,22 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
     imageUrl: string, title: string, artist: string, durationMs: number, externalUrl: string, provider: 'spotify' | 'apple'
   }) => (
     <PlayerCard color={dominantColor}>
-      <div className="flex h-full p-2.5 md:p-[10px] relative text-white">
-        {/* Left: Artwork (180x180) - FORCED PHYSICAL SIZE */}
+      <div className="flex h-full p-5 relative text-white">
+        {/* Left: Artwork (160x160) - FORCED PHYSICAL SIZE */}
         <div
           className="flex-shrink-0 my-auto overflow-hidden rounded-[12px] shadow-lg border border-white/10"
-          style={{ width: '180px', height: '180px', minWidth: '180px', minHeight: '180px' }}
+          style={{ width: '160px', height: '160px', minWidth: '160px', minHeight: '160px' }}
         >
           <img
             src={imageUrl}
             alt={title}
             className="object-cover"
-            style={{ width: '180px', height: '180px' }}
+            style={{ width: '160px', height: '160px' }}
           />
         </div>
 
-        {/* Right Info: Title, Artist, Save */}
-        <div className="flex-1 pl-6 flex flex-col justify-start mt-6 min-w-0">
+        {/* Right Info: Title/Artist (Top Aligned, 20px gap) */}
+        <div className="flex-1 pl-5 flex flex-col justify-start mt-0 min-w-0">
           <h3 className="text-2xl md:text-[32px] font-bold truncate tracking-tight mb-0.5 leading-tight">
             {title}
           </h3>
@@ -173,12 +173,15 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
             {artist}
           </p>
 
-          <button className="flex items-center gap-2.5 group/save w-fit">
+          <button
+            onClick={() => window.open(externalUrl, '_blank')}
+            className="flex items-center gap-2.5 group/save w-fit"
+          >
             <div className="w-7 h-7 rounded-full border-2 border-white/60 flex items-center justify-center group-hover/save:border-white transition-colors">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </div>
             <span className="text-base font-semibold text-white/90 group-hover/save:text-white transition-colors">
-              在 {provider === 'spotify' ? 'Spotify' : 'Apple Music'} 上收藏
+              在 {provider === 'spotify' ? 'Spotify' : 'Apple Music'} 上打开
             </span>
           </button>
         </div>
@@ -192,8 +195,8 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
           )}
         </div>
 
-        {/* Bottom Area: Progress & Controls */}
-        <div className="absolute bottom-5 left-4 right-4 md:left-[210px] md:right-6">
+        {/* Bottom Area: Progress & Controls (Left offset 200px) */}
+        <div className="absolute bottom-5 left-4 right-4 md:left-[200px] md:right-6">
           <div className="flex items-center gap-5">
             {/* Progress Bar Container */}
             <div className="flex-1 flex items-center gap-4">
@@ -202,26 +205,26 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
                   className="bg-white/80 h-full rounded-full relative"
                   style={{ width: `${progress}%`, transition: isPlaying ? 'width 0.1s linear' : 'none' }}
                 />
-                <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg" style={{ left: `${progress}%`, transform: 'translate(-50%, -50%)' }} />
+                <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg" style={{ left: `${progress}%`, transform: 'translate(-50%, -50%)' }} />
               </div>
               <span className="text-sm font-bold tabular-nums text-white/90 min-w-[40px] text-right">
                 {formatTime((durationMs || 30000) * (progress / 100))}
               </span>
             </div>
 
-            {/* Meatballs Menu & Play Button */}
+            {/* Controls */}
             <div className="flex items-center gap-5 md:gap-6">
               <button className="text-white/60 hover:text-white transition-all">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg>
               </button>
               <button
                 onClick={togglePlay}
-                className="w-11 h-11 bg-white rounded-full flex items-center justify-center text-black shadow-xl hover:scale-105 active:scale-95 transition-all"
+                className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-black shadow-xl hover:scale-105 active:scale-95 transition-all"
               >
                 {isPlaying ? (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="6" height="16"></rect><rect x="12" y="4" width="6" height="16"></rect></svg>
                 ) : (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="ml-1"><path d="M8 5v14l11-7z"></path></svg>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" className="ml-1"><path d="M7 4v16l14-8z"></path></svg>
                 )}
               </button>
             </div>
