@@ -164,42 +164,34 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
           />
         </div>
 
-        {/* Right Info: Title/Artist (Top Aligned, 20px gap from cover) */}
-        <div className="flex-1 pl-5 flex flex-col justify-start mt-5 min-w-0" style={{ paddingLeft: '20px' }}>
-          <h3 className="text-2xl md:text-[32px] font-bold truncate tracking-tight mb-0.5 leading-tight">
-            {title}
-          </h3>
-          <p className="text-white/70 text-lg font-medium truncate mb-6">
-            {artist}
-          </p>
+        {/* Right Content Container: Title/Artist + Progress/Controls */}
+        <div className="flex-1 flex flex-col min-w-0" style={{ marginTop: '20px', marginLeft: '20px' }}>
+          {/* Top: Title/Artist/Open Button */}
+          <div className="flex flex-col mb-4">
+            <h3 className="text-2xl md:text-[32px] font-bold truncate tracking-tight mb-0.5 leading-tight">
+              {title}
+            </h3>
+            <p className="text-white/70 text-lg font-medium truncate mb-4">
+              {artist}
+            </p>
 
-          <button
-            onClick={() => window.open(externalUrl, '_blank')}
-            className="flex items-center gap-2.5 group/save w-fit"
-          >
-            <div className="w-7 h-7 rounded-full border-2 border-white/60 flex items-center justify-center group-hover/save:border-white transition-colors">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            </div>
-            <span className="text-base font-semibold text-white/90 group-hover/save:text-white transition-colors">
-              在 {provider === 'spotify' ? 'Spotify' : 'Apple Music'} 上打开
-            </span>
-          </button>
-        </div>
+            <button
+              onClick={() => window.open(externalUrl, '_blank')}
+              className="flex items-center gap-2.5 group/save w-fit"
+            >
+              <div className="w-7 h-7 rounded-full border-2 border-white/60 flex items-center justify-center group-hover/save:border-white transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </div>
+              <span className="text-base font-semibold text-white/90 group-hover/save:text-white transition-colors">
+                在 {provider === 'spotify' ? 'Spotify' : 'Apple Music'} 上打开
+              </span>
+            </button>
+          </div>
 
-        {/* Top Right: Brand Logo */}
-        <div className="absolute top-5 right-5 opacity-90">
-          {provider === 'spotify' ? (
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.485 17.306c-.215.352-.676.463-1.028.248-2.857-1.745-6.45-2.14-10.686-1.171-.403.092-.806-.16-.898-.563-.092-.403.16-.806.563-.898 4.675-1.07 8.647-.611 11.796 1.313.352.215.463.676.248 1.028zm1.467-3.264c-.269.439-.844.582-1.283.313-3.27-2.01-8.254-2.595-12.122-1.417-.492.15-1.018-.128-1.168-.621-.15-.493.128-1.018.621-1.168 4.417-1.34 9.93-.679 13.639 1.6 0 .001.44.27.313 1.306zm.127-3.374c-.322.525-1.01.693-1.535.37-3.826-2.272-10.134-2.483-13.844-1.357-.6.183-1.237-.16-1.42-.761-.183-.601.16-1.238.761-1.42 4.316-1.311 11.278-1.066 15.679 1.547.525.323.693 1.01.37 1.535z" /></svg>
-          ) : (
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.96.95-2.56 1.13-4.42 1.13a23.1 23.1 0 0 1-5.63-.64c-1.34-.33-2.61-.91-2.61-2.31 0-1.16.89-1.92 2.37-2.3a16.5 16.5 0 0 1 5.39-.77c2.03 0 3.8.32 4.9.9.46.25.75.54.75.99 0 .45-.29.75-.75.99-.96.95-2.56 1.13-4.42 1.13-.53 0-1.07-.02-1.61-.06-.54-.04-.54-.86 0-.82 2.03 0 3.8-.32 4.9-.9.46-.25.75-.54.75-.99 0-.45-.29-.75-.75-.99-.34-.18-.83-.34-1.42-.47v4.11c0 .44.18.86.5 1.18l.34.33zM12 3v13.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5V3c0-.28.22-.5.5-.5s.5.22.5.5z" /></svg>
-          )}
-        </div>
-
-        {/* Bottom Area: Progress & Controls (Left offset 20px, top offset 20px from bottom) */}
-        <div className="absolute bottom-5 left-4 right-4 md:left-[20px] md:right-6" style={{ marginBottom: '20px' }}>
-          <div className="flex items-center gap-5">
+          {/* Bottom: Progress & Controls (Aligned with title left edge) */}
+          <div className="flex items-center gap-4 mt-auto">
             {/* Progress Bar Container */}
-            <div className="flex-1 flex items-center gap-4">
+            <div className="flex-1 flex items-center gap-3">
               <div className="flex-1 bg-white/20 rounded-full h-[4px] relative group/progress cursor-pointer">
                 <div
                   className="bg-white/80 h-full rounded-full relative"
@@ -229,6 +221,15 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Top Right: Brand Logo */}
+        <div className="absolute top-5 right-5 opacity-90">
+          {provider === 'spotify' ? (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.485 17.306c-.215.352-.676.463-1.028.248-2.857-1.745-6.45-2.14-10.686-1.171-.403.092-.806-.16-.898-.563-.092-.403.16-.806.563-.898 4.675-1.07 8.647-.611 11.796 1.313.352.215.463.676.248 1.028zm1.467-3.264c-.269.439-.844.582-1.283.313-3.27-2.01-8.254-2.595-12.122-1.417-.492.15-1.018-.128-1.168-.621-.15-.493.128-1.018.621-1.168 4.417-1.34 9.93-.679 13.639 1.6 0 .001.44.27.313 1.306zm.127-3.374c-.322.525-1.01.693-1.535.37-3.826-2.272-10.134-2.483-13.844-1.357-.6.183-1.237-.16-1.42-.761-.183-.601.16-1.238.761-1.42 4.316-1.311 11.278-1.066 15.679 1.547.525.323.693 1.01.37 1.535z" /></svg>
+          ) : (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.96.95-2.56 1.13-4.42 1.13a23.1 23.1 0 0 1-5.63-.64c-1.34-.33-2.61-.91-2.61-2.31 0-1.16.89-1.92 2.37-2.3a16.5 16.5 0 0 1 5.39-.77c2.03 0 3.8.32 4.9.9.46.25.75.54.75.99 0 .45-.29.75-.75.99-.96.95-2.56 1.13-4.42 1.13-.53 0-1.07-.02-1.61-.06-.54-.04-.54-.86 0-.82 2.03 0 3.8-.32 4.9-.9.46-.25.75-.54.75-.99 0-.45-.29-.75-.75-.99-.34-.18-.83-.34-1.42-.47v4.11c0 .44.18.86.5 1.18l.34.33zM12 3v13.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5V3c0-.28.22-.5.5-.5s.5.22.5.5z" /></svg>
+          )}
         </div>
       </div>
     </PlayerCard>
