@@ -44,7 +44,14 @@ function HistoryContent() {
       let currentUser = userService.getCurrentUser()
       if (!currentUser) {
         console.log('⏳ History: User not in cache, waiting for initializeUser...')
-        await userService.initializeUser()
+        const initTimeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('init timeout')), 3000)
+        )
+        try {
+          await Promise.race([userService.initializeUser(), initTimeout])
+        } catch (e) {
+          console.warn('⚠️ History: User initialization timed out, using local fallback')
+        }
         currentUser = userService.getCurrentUser()
       }
 

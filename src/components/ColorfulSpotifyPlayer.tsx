@@ -34,12 +34,28 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   // 1. Check IP on mount - PURE CLIENT SIDE RELIABILITY
   useEffect(() => {
     async function checkIn() {
-      // Priority 1: Use client-side signals (Timezone check is instant)
-      const isCN = await checkIsChinaIP()
-      setIsChinaDetails({ isChina: isCN, checked: true })
+      try {
+        // Set a hard timeout of 1 second for IP detection
+        const timeoutPromise = new Promise<boolean>((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout')), 1000)
+        )
 
-      if (isCN) {
-        fetchAppleMusicFallback(true) // Pass true for CN
+        // Priority 1: Use client-side signals (Timezone check is instant)
+        const isCN = await Promise.race([checkIsChinaIP(), timeoutPromise])
+
+        console.log('🌍 Regional detection result:', isCN ? 'China' : 'Global')
+
+        // Only trigger update if it's confirmingly China
+        if (isCN) {
+          setIsChinaDetails({ isChina: true, checked: true })
+          fetchAppleMusicFallback(true)
+        } else {
+          // Explicitly set global to stop any further loading state
+          setIsChinaDetails({ isChina: false, checked: true })
+        }
+      } catch (e) {
+        console.warn('🌍 Detection timed out or failed, defaulting to Global/Spotify')
+        setIsChinaDetails({ isChina: false, checked: true })
       }
     }
     checkIn()

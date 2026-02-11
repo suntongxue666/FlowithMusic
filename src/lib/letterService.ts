@@ -39,7 +39,7 @@ export class LetterService {
     const anonymousId = userService.getAnonymousId()
 
     // 1. 构造基础 Letter 对象
-    const linkId = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 6)
+    const linkId = Math.random().toString(36).substring(2, 12) // 10 characters
 
     // 2. 游客模式 (Guest Mode) - 仅本地
     if (!currentUser) {
@@ -218,11 +218,14 @@ export class LetterService {
   async searchLetters(query: string, limit = 18, offset = 0): Promise<Letter[]> {
     if (!supabase) return []
 
+    const safeQuery = (query || '').trim()
+    if (!safeQuery) return []
+
     const { data, error } = await supabase
       .from('letters')
       .select('*')
       .eq('is_public', true)
-      .or(`recipient_name.ilike.%${query}%,song_title.ilike.%${query}%,song_artist.ilike.%${query}%,message.ilike.%${query}%`)
+      .or(`recipient_name.ilike.%${safeQuery}%,song_title.ilike.%${safeQuery}%,song_artist.ilike.%${safeQuery}%,message.ilike.%${safeQuery}%`)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
