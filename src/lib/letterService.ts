@@ -100,7 +100,12 @@ export class LetterService {
       throw new Error(`Failed to save letter: ${error.message}`)
     }
 
-    console.log('✅ LetterService: Letter saved to DB:', newLetter.link_id)
+    console.log('✅ LetterService: Letter saved to DB:', {
+      link_id: newLetter.link_id,
+      user_id: newLetter.user_id,
+      is_public: newLetter.is_public,
+      created_at: newLetter.created_at
+    })
     return newLetter
   }
 
@@ -153,10 +158,11 @@ export class LetterService {
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('❌ LetterService: Failed to fetch user letters:', error)
+      console.error('❌ LetterService: Failed to fetch user letters for ID:', userId, error)
       return []
     }
 
+    console.log(`📊 LetterService: Fetched ${data?.length || 0} letters for user: ${userId}`)
     return data || []
   }
 

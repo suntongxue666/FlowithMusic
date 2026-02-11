@@ -39,6 +39,8 @@ export async function GET(request: Request) {
       fetchedLetters = await letterService.getPublicLetters(limit, offset, sortBy)
     }
 
+    console.log(`🌐 API Explore: Fetched ${fetchedLetters.length} letters. Query: "${searchQuery}"`)
+
     // Explore 不做额外字数过滤，确保分页完整
     const filteredLetters = fetchedLetters
 

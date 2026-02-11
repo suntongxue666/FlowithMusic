@@ -40,8 +40,14 @@ function HistoryContent() {
     try {
       setLoading(true)
 
-      // 1. 检查登录状态
-      const currentUser = userService.getCurrentUser()
+      // 1. 检查登录状态 (增加等待初始化确保状态准确)
+      let currentUser = userService.getCurrentUser()
+      if (!currentUser) {
+        console.log('⏳ History: User not in cache, waiting for initializeUser...')
+        await userService.initializeUser()
+        currentUser = userService.getCurrentUser()
+      }
+
       setIsAuthenticated(!!currentUser)
       setUser(currentUser)
 
