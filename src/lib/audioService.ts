@@ -4,10 +4,12 @@ export async function checkIsChinaIP(): Promise<boolean> {
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
         if (timezone === 'Asia/Shanghai' || timezone === 'Asia/Urumqi') return true
 
-        // Signal 2: Check Browser Language
+        // Signal 2: Check Browser Language - REMOVED to avoid false positives for overseas users
+        /* 
         if (typeof window !== 'undefined' && window.navigator.languages.some(lang => lang.includes('zh-CN'))) {
             return true
         }
+        */
 
         // Signal 3: IP detection (Optional, may be slow)
         const response = await fetch('https://ipapi.co/json/', { next: { revalidate: 3600 } })

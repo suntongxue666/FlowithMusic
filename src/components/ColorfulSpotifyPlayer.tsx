@@ -71,13 +71,10 @@ export default function ColorfulSpotifyPlayer({ track, countryCode }: ColorfulSp
     }
   }
 
-  // 3. Extract Color (Simplified for brevity, or keep existing logic)
+  // 3. Extract Color
   useEffect(() => {
-    // For now, let's just use a default color or extract from image if needed.
-    // Keeping it simple to minimize dependencies.
     setDominantColor('#1DB954')
   }, [track])
-
 
   const togglePlay = () => {
     if (!audioRef.current) return
@@ -89,15 +86,12 @@ export default function ColorfulSpotifyPlayer({ track, countryCode }: ColorfulSp
     setIsPlaying(!isPlaying)
   }
 
-  // Render logic
-  // If IP check not done -> show loading skeleton or Spotify default
-  // If China -> show Apple Music Player
-  // If Not China -> show Spotify (default)
-
+  // If IP check not done -> show loading skeleton
   if (!isChinaDetails.checked) {
     return <div className="w-full h-[152px] bg-gray-100 rounded-xl animate-pulse"></div>
   }
 
+  // China Logic -> Apple Music Fallback
   if (isChinaDetails.isChina) {
     if (fallbackError) {
       return (
@@ -110,26 +104,27 @@ export default function ColorfulSpotifyPlayer({ track, countryCode }: ColorfulSp
     if (appleTrack) {
       return (
         <div
-          className="w-full rounded-xl overflow-hidden shadow-lg flex flex-col sm:flex-row h-auto sm:h-[152px] transition-all duration-300 border border-white/10"
+          className="w-full rounded-2xl overflow-hidden shadow-lg flex flex-row h-[152px] border border-white/10 relative group"
           style={{
             background: `linear-gradient(135deg, ${dominantColor}44 0%, #121212 100%)`,
           }}
         >
-          <div className="relative w-full sm:w-[152px] h-[152px] flex-shrink-0">
+          {/* Cover Art - Fixed Size to prevent "Huge Image" */}
+          <div className="relative w-[152px] h-[152px] flex-shrink-0 bg-black/20">
             <img
-              src={appleTrack.artworkUrl100?.replace('100x100', '300x300')}
+              src={appleTrack.artworkUrl100?.replace('100x100', '400x400')}
               alt={appleTrack.trackName}
               className="w-full h-full object-cover"
             />
             <button
               onClick={togglePlay}
-              className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/20 transition-all group"
+              className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/10 transition-all"
             >
-              <div className="w-14 h-14 bg-[#1DB954] rounded-full flex items-center justify-center pl-1 shadow-xl group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 bg-[#1DB954] rounded-full flex items-center justify-center pl-1 shadow-xl hover:scale-110 transition-transform">
                 {isPlaying ? (
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
                 ) : (
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"></path></svg>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"></path></svg>
                 )}
               </div>
             </button>
@@ -142,42 +137,50 @@ export default function ColorfulSpotifyPlayer({ track, countryCode }: ColorfulSp
             />
           </div>
 
-          <div className="p-5 flex-1 flex flex-col justify-between text-white">
+          {/* Info Section */}
+          <div className="p-5 flex-1 flex flex-col justify-between text-white min-w-0">
             <div className="space-y-1">
-              <h3 className="font-bold text-xl line-clamp-1 group-hover:text-[#1DB954] transition-colors">{appleTrack.trackName}</h3>
-              <p className="text-gray-400 font-medium line-clamp-1">{appleTrack.artistName}</p>
+              <h3 className="font-bold text-lg leading-tight truncate">{appleTrack.trackName}</h3>
+              <p className="text-gray-400 text-sm font-medium truncate italic opacity-80">{appleTrack.artistName}</p>
             </div>
 
-            <div className="mt-4">
-              <div className="w-full bg-white/10 rounded-full h-1.5 mb-2 overflow-hidden backdrop-blur-sm">
+            <div className="">
+              <div className="w-full bg-white/10 rounded-full h-1 mb-2 overflow-hidden">
                 <div className="bg-[#1DB954] h-full w-full animate-progress origin-left" style={{
                   animationPlayState: isPlaying ? 'running' : 'paused',
                   transform: isPlaying ? 'scaleX(1)' : 'scaleX(0)',
                   transition: isPlaying ? 'transform 30s linear' : 'none'
                 }}></div>
               </div>
-              <div className="flex justify-between items-center text-[10px] uppercase tracking-wider font-bold text-gray-500">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 bg-[#1DB954] rounded-full animate-pulse"></span>
-                  PREVIEW MODE
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-1.5 grayscale opacity-50">
+                  <span className="text-[8px] font-black uppercase tracking-widest text-white">Apple Music Preview</span>
                 </div>
                 <a
                   href={appleTrack.trackViewUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-white/5 hover:bg-white/10 px-3 py-1 rounded-full border border-white/10 transition-colors flex items-center gap-2"
+                  className="bg-white/5 hover:bg-white/10 px-3 py-1 rounded-full border border-white/10 text-[9px] font-black tracking-wider transition-colors inline-block"
                 >
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" className="w-2.5 h-2.5 invert" alt="Apple" />
-                  LISTEN FULL
+                  FULL SONG ↗
                 </a>
               </div>
             </div>
           </div>
+
+          <style jsx>{`
+            @keyframes progress {
+              from { transform: scaleX(0); }
+              to { transform: scaleX(1); }
+            }
+            .animate-progress {
+              animation: progress 30s linear;
+            }
+          `}</style>
         </div>
       )
     }
 
-    // Loading state while fetching Apple Music
     return (
       <div className="w-full h-[152px] bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -185,13 +188,10 @@ export default function ColorfulSpotifyPlayer({ track, countryCode }: ColorfulSp
     )
   }
 
-  // Default: Spotify Embed
+  // Not China -> Spotify Embed (Default)
   return (
     <div
-      className="w-full rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md bg-white border border-gray-100"
-      style={{
-        background: `linear-gradient(135deg, ${dominantColor}15, #ffffff 60%)`
-      }}
+      className="w-full rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md bg-white border border-gray-100"
     >
       <iframe
         src={`https://open.spotify.com/embed/track/${track.id}?utm_source=generator&theme=0`}
@@ -200,7 +200,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode }: ColorfulSp
         frameBorder="0"
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
         loading="lazy"
-        className="block"
+        style={{ borderRadius: '12px' }}
       ></iframe>
     </div>
   )
