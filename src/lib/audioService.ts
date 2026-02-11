@@ -2,25 +2,25 @@ export async function checkIsChinaIP(): Promise<boolean> {
     try {
         // Signal 1: Check Browser Timezone
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-        if (timezone === 'Asia/Shanghai' || timezone === 'Asia/Urumqi') return true
-
-        // Signal 2: Check Browser Language - REMOVED to avoid false positives for overseas users
-        /* 
-        if (typeof window !== 'undefined' && window.navigator.languages.some(lang => lang.includes('zh-CN'))) {
+        console.log('🌍 [Detection] Timezone:', timezone)
+        if (timezone === 'Asia/Shanghai' || timezone === 'Asia/Urumqi') {
+            console.log('🌍 [Detection] Triggered by Timezone')
             return true
         }
-        */
 
-        // Signal 3: IP detection (Optional, may be slow)
-        const response = await fetch('https://ipapi.co/json/', { next: { revalidate: 3600 } })
+        // Signal 3: IP detection (Priority Signal)
+        console.log('🌍 [Detection] Fetching IP info...')
+        const response = await fetch('https://ipapi.co/json/')
         if (response.ok) {
             const data = await response.json()
+            console.log('🌍 [Detection] IP Country:', data.country_code)
             return data.country_code === 'CN'
         }
 
+        console.log('🌍 [Detection] IP API failed, defaulting to false')
         return false
     } catch (error) {
-        console.warn('IP detection failed, defaulting to false:', error)
+        console.warn('🌍 [Detection] Failed, defaulting to false:', error)
         return false
     }
 }
