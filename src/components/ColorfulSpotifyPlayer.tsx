@@ -151,10 +151,10 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   }) => (
     <PlayerCard color={dominantColor}>
       <div className="flex h-full p-5 relative text-white">
-        {/* Left: Artwork (160x160) - FORCED PHYSICAL SIZE */}
+        {/* Left: Artwork (160x160) - FORCED PHYSICAL SIZE with 20px left and top margin */}
         <div
-          className="flex-shrink-0 my-auto overflow-hidden rounded-[12px] shadow-lg border border-white/10"
-          style={{ width: '160px', height: '160px', minWidth: '160px', minHeight: '160px' }}
+          className="flex-shrink-0 overflow-hidden rounded-[12px] shadow-lg border border-white/10"
+          style={{ width: '160px', height: '160px', minWidth: '160px', minHeight: '160px', marginLeft: '20px', marginTop: '20px' }}
         >
           <img
             src={imageUrl}
@@ -164,8 +164,8 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
           />
         </div>
 
-        {/* Right Info: Title/Artist (Top Aligned, 20px gap) */}
-        <div className="flex-1 pl-5 flex flex-col justify-start mt-0 min-w-0">
+        {/* Right Info: Title/Artist (Top Aligned, 20px gap from cover) */}
+        <div className="flex-1 pl-5 flex flex-col justify-start mt-5 min-w-0" style={{ paddingLeft: '20px' }}>
           <h3 className="text-2xl md:text-[32px] font-bold truncate tracking-tight mb-0.5 leading-tight">
             {title}
           </h3>
@@ -195,8 +195,8 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
           )}
         </div>
 
-        {/* Bottom Area: Progress & Controls (Left offset 200px) */}
-        <div className="absolute bottom-5 left-4 right-4 md:left-[200px] md:right-6">
+        {/* Bottom Area: Progress & Controls (Left offset 20px, top offset 20px from bottom) */}
+        <div className="absolute bottom-5 left-4 right-4 md:left-[20px] md:right-6" style={{ marginBottom: '20px' }}>
           <div className="flex items-center gap-5">
             {/* Progress Bar Container */}
             <div className="flex-1 flex items-center gap-4">
