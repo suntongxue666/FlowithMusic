@@ -1816,6 +1816,57 @@ nav {
     margin: 0 !important;
   }
 
+  /* H5 Apple Music 播放器适配 - 封面 120x120，整体缩小 2/3 */
+  .letter-player > div > div {
+    padding: 10px !important;
+    height: auto !important;
+    min-height: 220px !important;
+  }
+
+  /* H5 端封面缩小为 120x120 */
+  .letter-player > div > div > div > div:first-child {
+    width: 120px !important;
+    height: 120px !important;
+    min-width: 120px !important;
+    min-height: 120px !important;
+    margin-left: 10px !important;
+    margin-top: 10px !important;
+  }
+
+  .letter-player > div > div > div > div:first-child img {
+    width: 120px !important;
+    height: 120px !important;
+  }
+
+  /* H5 端右侧内容区域 */
+  .letter-player > div > div > div > div:nth-child(2) {
+    margin-top: 10px !important;
+    margin-left: 15px !important;
+  }
+
+  /* H5 端文本字号缩小 2/3 */
+  .letter-player h3 {
+    font-size: 1.3rem !important;
+  }
+
+  .letter-player h3.md\\:text-\\[32px\\] {
+    font-size: 1.3rem !important;
+  }
+
+  .letter-player p {
+    font-size: 0.9rem !important;
+  }
+
+  .letter-player span {
+    font-size: 0.7rem !important;
+  }
+
+  /* H5 端按钮缩小 */
+  .letter-player button {
+    transform: scale(0.7);
+    transform-origin: center;
+  }
+
   /* Spotify iframe H5 适配 */
   .letter-player iframe {
     height: 180px !important;

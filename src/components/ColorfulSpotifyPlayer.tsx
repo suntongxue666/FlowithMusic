@@ -154,13 +154,27 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
         {/* Left: Artwork (160x160) - FORCED PHYSICAL SIZE with 20px left and top margin */}
         <div
           className="flex-shrink-0 overflow-hidden rounded-[12px] shadow-lg border border-white/10"
-          style={{ width: '160px', height: '160px', minWidth: '160px', minHeight: '160px', marginLeft: '20px', marginTop: '20px' }}
+          style={{ 
+            width: '160px', 
+            height: '160px', 
+            minWidth: '160px', 
+            minHeight: '160px', 
+            marginLeft: '20px', 
+            marginTop: '20px',
+            willChange: 'transform',
+            backfaceVisibility: 'hidden'
+          }}
         >
           <img
             src={imageUrl}
             alt={title}
             className="object-cover"
-            style={{ width: '160px', height: '160px' }}
+            style={{ 
+              width: '160px', 
+              height: '160px',
+              willChange: 'transform',
+              backfaceVisibility: 'hidden'
+            }}
           />
         </div>
 
@@ -179,8 +193,8 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
               onClick={() => window.open(externalUrl, '_blank')}
               className="flex items-center gap-2.5 group/save w-fit"
             >
-              <div className="w-7 h-7 rounded-full border-2 border-white/60 flex items-center justify-center group-hover/save:border-white transition-colors">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <div className="w-5 h-5 rounded-full border-2 border-white/60 flex items-center justify-center group-hover/save:border-white transition-colors">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               </div>
               <span className="text-base font-semibold text-white/90 group-hover/save:text-white transition-colors">
                 在 {provider === 'spotify' ? 'Spotify' : 'Apple Music'} 上打开
@@ -188,8 +202,8 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
             </button>
           </div>
 
-          {/* Bottom: Progress & Controls (Aligned with title left edge) */}
-          <div className="flex items-center gap-4 mt-auto">
+          {/* Bottom: Progress & Controls (Aligned with title left edge, 上移3px) */}
+          <div className="flex items-center gap-4 mt-auto" style={{ marginBottom: '-3px' }}>
             {/* Progress Bar Container */}
             <div className="flex-1 flex items-center gap-3" style={{ maxWidth: 'calc(100% - 140px)' }}>
               <div className="flex-1 bg-white/20 rounded-full h-[4px] relative group/progress cursor-pointer">

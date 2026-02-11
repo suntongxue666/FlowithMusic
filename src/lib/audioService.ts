@@ -1,33 +1,52 @@
 export async function checkIsChinaIP(): Promise<boolean> {
     try {
-        // IP detection - 使用多个 API 确保准确性
-        console.log('🌍 [Detection] Fetching IP info...')
+        console.log('🌍 [Detection] Starting IP detection...')
 
         // 尝试多个 IP API 提高可靠性
         const apis = [
-            'https://ipapi.co/json/',
-            'https://api.ipify.org?format=json',
-            'https://ip.sb/api/ip'
+            { url: 'https://ipapi.co/json/', field: 'country_code' },
+            { url: 'https://api.ipify.org?format=json', field: null }, // 这个API不返回国家码，跳过
+            { url: 'https://ipapi.co/json/', field: 'country' }
         ]
 
-        for (const apiUrl of apis) {
+        // 首先尝试更可靠的 API
+        const reliableApis = [
+            'https://api.ipgeolocation.io/ipgeo?apiKey=free',
+            'https://ipapi.co/json/'
+        ]
+
+        for (const apiUrl of reliableApis) {
             try {
-                const response = await fetch(apiUrl)
-                if (!response.ok) continue
-
-                const data = await response.json()
-                let countryCode = null
-
-                // 不同 API 返回的字段名可能不同
-                if (data.country_code) {
-                    countryCode = data.country_code
-                } else if (data.country) {
-                    countryCode = data.country
+                console.log('🌍 [Detection] Trying:', apiUrl)
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    cache: 'no-cache',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                
+                if (!response.ok) {
+                    console.warn('🌍 [Detection] API response not OK:', response.status)
+                    continue
                 }
 
-                if (countryCode) {
-                    console.log('🌍 [Detection] IP Country:', countryCode, 'from', apiUrl)
-                    return countryCode === 'CN' || countryCode === 'China'
+                const data = await response.json()
+                console.log('🌍 [Detection] API response:', data)
+
+                // 检查多种可能的字段名
+                const possibleFields = ['country_code', 'countryCode', 'country', 'country_name', 'countryName']
+                
+                for (const field of possibleFields) {
+                    if (data[field]) {
+                        const countryCode = String(data[field]).toUpperCase()
+                        console.log('🌍 [Detection] Found country code:', countryCode, 'from field:', field)
+                        
+                        if (countryCode === 'CN' || countryCode === 'CHN' || countryCode === 'CHINA') {
+                            console.log('🌍 [Detection] ✅ Confirmed China IP')
+                            return true
+                        }
+                    }
                 }
             } catch (e) {
                 console.warn('🌍 [Detection] API failed:', apiUrl, e)
@@ -35,7 +54,17 @@ export async function checkIsChinaIP(): Promise<boolean> {
             }
         }
 
-        console.log('🌍 [Detection] All IP APIs failed, defaulting to false')
+        // 备用方案：使用浏览器语言检测
+        console.log('🌍 [Detection] IP APIs failed, checking browser language as fallback')
+        const browserLang = navigator.language || navigator.userLanguage || ''
+        console.log('🌍 [Detection] Browser language:', browserLang)
+        
+        if (browserLang.startsWith('zh') || browserLang.startsWith('ZH')) {
+            console.log('🌍 [Detection] ✅ Browser language suggests China')
+            return true
+        }
+
+        console.log('🌍 [Detection] ❌ Not detected as China')
         return false
     } catch (error) {
         console.warn('🌍 [Detection] Failed, defaulting to false:', error)
