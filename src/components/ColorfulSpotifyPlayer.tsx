@@ -117,7 +117,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   }
 
   // --- Layout Constants ---
-  const PLAYER_HEIGHT = 180 // Fixed height for both PC and H5
+  const PLAYER_HEIGHT = 200 // Fixed height for both PC and H5
 
   if (!isChinaDetails.checked) {
     return (
@@ -128,7 +128,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   // Common UI Wrapper
   const PlayerCard = ({ children, color }: { children: React.ReactNode, color: string }) => (
     <div
-      className="w-full md:w-[540px] mx-auto rounded-2xl overflow-hidden shadow-2xl relative transition-all duration-700"
+      className="w-full md:w-[600px] mx-auto rounded-[16px] overflow-hidden shadow-2xl relative transition-all duration-700"
       style={{
         height: PLAYER_HEIGHT,
         backgroundColor: color,
@@ -146,74 +146,74 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
     imageUrl: string, title: string, artist: string, durationMs: number, externalUrl: string, provider: 'spotify' | 'apple'
   }) => (
     <PlayerCard color={dominantColor}>
-      <div className="flex h-full p-4 md:p-6 relative text-white">
-        {/* Left: Artwork */}
-        <div className="flex-shrink-0 w-[132px] h-[132px] my-auto">
+      <div className="flex h-full p-2.5 md:p-[10px] relative text-white">
+        {/* Left: Artwork (180x180) */}
+        <div className="flex-shrink-0 w-[180px] h-[180px] my-auto ml-0 md:ml-0 overflow-hidden rounded-[12px] shadow-lg border border-white/10">
           <img
             src={imageUrl}
             alt={title}
-            className="w-full h-full object-cover rounded-xl shadow-lg border border-white/10"
+            className="w-full h-full object-cover"
           />
         </div>
 
-        {/* Center: Info */}
-        <div className="flex-1 px-6 flex flex-col justify-center min-w-0">
-          <h3 className="text-xl md:text-2xl font-bold truncate tracking-tight mb-1">
+        {/* Right Info: Title, Artist, Save */}
+        <div className="flex-1 pl-6 flex flex-col justify-start mt-6 min-w-0">
+          <h3 className="text-2xl md:text-[32px] font-bold truncate tracking-tight mb-0.5 leading-tight">
             {title}
           </h3>
-          <p className="text-white/70 text-base font-medium truncate mb-4">
+          <p className="text-white/70 text-lg font-medium truncate mb-6">
             {artist}
           </p>
 
-          <button className="flex items-center gap-2 group/save w-fit">
-            <div className="w-6 h-6 rounded-full border border-white/40 flex items-center justify-center group-hover/save:border-white transition-colors">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <button className="flex items-center gap-2.5 group/save w-fit">
+            <div className="w-7 h-7 rounded-full border-2 border-white/60 flex items-center justify-center group-hover/save:border-white transition-colors">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </div>
-            <span className="text-sm font-medium text-white/80 group-hover/save:text-white transition-colors">
+            <span className="text-base font-semibold text-white/90 group-hover/save:text-white transition-colors">
               在 {provider === 'spotify' ? 'Spotify' : 'Apple Music'} 上收藏
             </span>
           </button>
         </div>
 
         {/* Top Right: Brand Logo */}
-        <div className="absolute top-4 right-4 md:top-6 md:right-6 opacity-80">
+        <div className="absolute top-5 right-5 opacity-90">
           {provider === 'spotify' ? (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.485 17.306c-.215.352-.676.463-1.028.248-2.857-1.745-6.45-2.14-10.686-1.171-.403.092-.806-.16-.898-.563-.092-.403.16-.806.563-.898 4.675-1.07 8.647-.611 11.796 1.313.352.215.463.676.248 1.028zm1.467-3.264c-.269.439-.844.582-1.283.313-3.27-2.01-8.254-2.595-12.122-1.417-.492.15-1.018-.128-1.168-.621-.15-.493.128-1.018.621-1.168 4.417-1.34 9.93-.679 13.639 1.6 0 .001.44.27.313 1.306zm.127-3.374c-.322.525-1.01.693-1.535.37-3.826-2.272-10.134-2.483-13.844-1.357-.6.183-1.237-.16-1.42-.761-.183-.601.16-1.238.761-1.42 4.316-1.311 11.278-1.066 15.679 1.547.525.323.693 1.01.37 1.535z" /></svg>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.485 17.306c-.215.352-.676.463-1.028.248-2.857-1.745-6.45-2.14-10.686-1.171-.403.092-.806-.16-.898-.563-.092-.403.16-.806.563-.898 4.675-1.07 8.647-.611 11.796 1.313.352.215.463.676.248 1.028zm1.467-3.264c-.269.439-.844.582-1.283.313-3.27-2.01-8.254-2.595-12.122-1.417-.492.15-1.018-.128-1.168-.621-.15-.493.128-1.018.621-1.168 4.417-1.34 9.93-.679 13.639 1.6 0 .001.44.27.313 1.306zm.127-3.374c-.322.525-1.01.693-1.535.37-3.826-2.272-10.134-2.483-13.844-1.357-.6.183-1.237-.16-1.42-.761-.183-.601.16-1.238.761-1.42 4.316-1.311 11.278-1.066 15.679 1.547.525.323.693 1.01.37 1.535z" /></svg>
           ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.96.95-2.56 1.13-4.42 1.13a23.1 23.1 0 0 1-5.63-.64c-1.34-.33-2.61-.91-2.61-2.31 0-1.16.89-1.92 2.37-2.3a16.5 16.5 0 0 1 5.39-.77c2.03 0 3.8.32 4.9.9.46.25.75.54.75.99 0 .45-.29.75-.75.99-.96.95-2.56 1.13-4.42 1.13-.53 0-1.07-.02-1.61-.06-.54-.04-.54-.86 0-.82 2.03 0 3.8-.32 4.9-.9.46-.25.75-.54.75-.99 0-.45-.29-.75-.75-.99-.34-.18-.83-.34-1.42-.47v4.11c0 .44.18.86.5 1.18l.34.33zM12 3v13.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5V3c0-.28.22-.5.5-.5s.5.22.5.5z" /></svg>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.96.95-2.56 1.13-4.42 1.13a23.1 23.1 0 0 1-5.63-.64c-1.34-.33-2.61-.91-2.61-2.31 0-1.16.89-1.92 2.37-2.3a16.5 16.5 0 0 1 5.39-.77c2.03 0 3.8.32 4.9.9.46.25.75.54.75.99 0 .45-.29.75-.75.99-.96.95-2.56 1.13-4.42 1.13-.53 0-1.07-.02-1.61-.06-.54-.04-.54-.86 0-.82 2.03 0 3.8-.32 4.9-.9.46-.25.75-.54.75-.99 0-.45-.29-.75-.75-.99-.34-.18-.83-.34-1.42-.47v4.11c0 .44.18.86.5 1.18l.34.33zM12 3v13.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5V3c0-.28.22-.5.5-.5s.5.22.5.5z" /></svg>
           )}
         </div>
 
         {/* Bottom Area: Progress & Controls */}
-        <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-[172px] md:right-6">
-          <div className="flex items-center gap-4">
+        <div className="absolute bottom-5 left-4 right-4 md:left-[210px] md:right-6">
+          <div className="flex items-center gap-5">
             {/* Progress Bar Container */}
-            <div className="flex-1 flex items-center gap-3">
-              <div className="flex-1 bg-white/20 rounded-full h-[3px] md:h-[4px] relative group/progress cursor-pointer">
+            <div className="flex-1 flex items-center gap-4">
+              <div className="flex-1 bg-white/20 rounded-full h-[4px] relative group/progress cursor-pointer">
                 <div
-                  className="bg-white h-full rounded-full relative"
+                  className="bg-white/80 h-full rounded-full relative"
                   style={{ width: `${progress}%`, transition: isPlaying ? 'width 0.1s linear' : 'none' }}
                 />
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 md:w-3 md:h-3 bg-white rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-lg" style={{ left: `${progress}%`, transform: 'translate(-50%, -50%)' }} />
+                <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg" style={{ left: `${progress}%`, transform: 'translate(-50%, -50%)' }} />
               </div>
-              <span className="text-[10px] md:text-xs font-medium tabular-nums text-white/60 min-w-[32px]">
+              <span className="text-sm font-bold tabular-nums text-white/90 min-w-[40px] text-right">
                 {formatTime((durationMs || 30000) * (progress / 100))}
               </span>
             </div>
 
             {/* Meatballs Menu & Play Button */}
-            <div className="flex items-center gap-4 md:gap-6">
-              <button className="text-white/40 hover:text-white transition-all">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg>
+            <div className="flex items-center gap-5 md:gap-6">
+              <button className="text-white/60 hover:text-white transition-all">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg>
               </button>
               <button
                 onClick={togglePlay}
-                className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-full flex items-center justify-center text-black shadow-lg hover:scale-105 active:scale-95 transition-all"
+                className="w-11 h-11 bg-white rounded-full flex items-center justify-center text-black shadow-xl hover:scale-105 active:scale-95 transition-all"
               >
                 {isPlaying ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
                 ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="ml-1"><path d="M8 5v14l11-7z"></path></svg>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="ml-1"><path d="M8 5v14l11-7z"></path></svg>
                 )}
               </button>
             </div>
