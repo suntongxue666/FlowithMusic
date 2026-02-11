@@ -103,7 +103,12 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
       return (
         <div className="w-full h-[152px] bg-gray-50 rounded-2xl flex flex-col items-center justify-center text-gray-400 border border-black/5 p-4 text-center">
           <p className="text-sm">🚫 {fallbackError}</p>
-          <a href={track.external_urls.spotify} target="_blank" className="text-[10px] mt-2 underline opacity-60">Try Spotify anyway</a>
+          <button
+            onClick={() => setIsChinaDetails({ isChina: false, checked: true })}
+            className="text-[10px] mt-2 underline opacity-60 hover:opacity-100"
+          >
+            Force Spotify
+          </button>
         </div>
       )
     }
@@ -162,8 +167,14 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
                 }}></div>
               </div>
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Apple Preview</span>
+                  <button
+                    onClick={() => setIsChinaDetails({ isChina: false, checked: true })}
+                    className="text-[9px] font-black uppercase tracking-[0.1em] text-white/30 hover:text-white/80 underline underline-offset-4 transition-all"
+                  >
+                    Switch to Spotify
+                  </button>
                 </div>
                 <a
                   href={appleTrack.trackViewUrl}
@@ -204,7 +215,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   return (
     <div
       key={`spotify-${track.id}`}
-      className="w-full rounded-2xl overflow-hidden shadow-sm transition-all duration-500 hover:shadow-md bg-white border border-black/5"
+      className="w-full rounded-2xl overflow-hidden shadow-sm transition-all duration-500 hover:shadow-md bg-white border border-black/5 group relative"
     >
       <iframe
         src={`https://open.spotify.com/embed/track/${track.id}?utm_source=generator&theme=0`}
@@ -216,6 +227,19 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
         className="block"
         style={{ borderRadius: '12px', minHeight: '152px' }}
       ></iframe>
+
+      {/* Subtle Apple Music Switcher for debugging/fallback */}
+      <div className="absolute bottom-2 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => {
+            setIsChinaDetails({ isChina: true, checked: true })
+            fetchAppleMusicFallback(true)
+          }}
+          className="text-[8px] font-black uppercase tracking-widest text-black/20 hover:text-black/60 bg-white/80 px-2 py-1 rounded-full border border-black/5"
+        >
+          Try Apple Music
+        </button>
+      </div>
     </div>
   )
 }
