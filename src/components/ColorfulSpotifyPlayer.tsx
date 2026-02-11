@@ -68,9 +68,11 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
         )
         const isCN = await Promise.race([checkIsChinaIP(), timeoutPromise])
         if (isCN) {
+          console.log('📍 Region: China (CN) - Using Apple Music Player')
           setIsChinaDetails({ isChina: true, checked: true })
           fetchAppleMusicFallback(true)
         } else {
+          console.log('🌐 Region: Global - Using Spotify Player')
           setIsChinaDetails({ isChina: false, checked: true })
         }
       } catch (e) {
@@ -130,7 +132,9 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
     <div
       className="w-full md:w-[600px] mx-auto rounded-[16px] overflow-hidden shadow-2xl relative transition-all duration-700"
       style={{
-        height: PLAYER_HEIGHT,
+        width: '100%',
+        maxWidth: '600px',
+        height: `${PLAYER_HEIGHT}px`,
         backgroundColor: color,
         background: `linear-gradient(135deg, ${color} 0%, ${color}EE 100%)`
       }}
@@ -147,12 +151,16 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   }) => (
     <PlayerCard color={dominantColor}>
       <div className="flex h-full p-2.5 md:p-[10px] relative text-white">
-        {/* Left: Artwork (180x180) */}
-        <div className="flex-shrink-0 w-[180px] h-[180px] my-auto ml-0 md:ml-0 overflow-hidden rounded-[12px] shadow-lg border border-white/10">
+        {/* Left: Artwork (180x180) - FORCED PHYSICAL SIZE */}
+        <div
+          className="flex-shrink-0 my-auto overflow-hidden rounded-[12px] shadow-lg border border-white/10"
+          style={{ width: '180px', height: '180px', minWidth: '180px', minHeight: '180px' }}
+        >
           <img
             src={imageUrl}
             alt={title}
-            className="w-full h-full object-cover"
+            className="object-cover"
+            style={{ width: '180px', height: '180px' }}
           />
         </div>
 

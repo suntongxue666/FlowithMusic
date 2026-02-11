@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Nanum+Pen+Script&display=swap');
 
 /* 中文字体样式 */
@@ -15,18 +16,22 @@ body {
   font-family: 'Open Sans', sans-serif;
   background: #f9f9f9;
   line-height: 1.6;
-  padding-top: 80px; /* 为固定header留出空间 */
+  padding-top: 80px;
+  /* 为固定header留出空间 */
 }
 
 /* H5端优化 */
 @media (max-width: 768px) {
   body {
-    padding-top: 0; /* H5端完全移除顶部padding */
+    padding-top: 0;
+    /* H5端完全移除顶部padding */
   }
-  
+
   header {
-    padding: 0.75rem 1rem; /* H5端减少header内边距 */
-    position: relative; /* H5端header不固定 */
+    padding: 0.75rem 1rem;
+    /* H5端减少header内边距 */
+    position: relative;
+    /* H5端header不固定 */
   }
 }
 
@@ -3076,6 +3081,7 @@ art Spotify Player Styles */
     opacity: 1;
     filter: blur(0px);
   }
+
   100% {
     transform: scale(0.3);
     opacity: 0.1;
@@ -3089,6 +3095,7 @@ art Spotify Player Styles */
     opacity: 0.1;
     filter: blur(8px);
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -3106,7 +3113,8 @@ art Spotify Player Styles */
 /* H5端Recent Posts margin优化 */
 @media (max-width: 768px) {
   .recent-posts-carousel {
-    margin: 1rem auto; /* H5端从2rem改为1rem */
+    margin: 1rem auto;
+    /* H5端从2rem改为1rem */
   }
 }
 
@@ -3145,7 +3153,9 @@ art Spotify Player Styles */
 .card-wrapper:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}/* Social M
+}
+
+/* Social M
 edia Inputs Styles */
 .social-media-inputs {
   display: grid;
@@ -3176,7 +3186,9 @@ edia Inputs Styles */
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
-}/* H5端
+}
+
+/* H5端
 轮播样式 */
 .mobile-carousel {
   padding: 0 1rem;
@@ -3234,12 +3246,12 @@ edia Inputs Styles */
     align-items: center;
     margin-bottom: 1.5rem;
   }
-  
+
   .recent-posts-carousel.mobile-carousel .carousel-header h2 {
     font-size: 1.5rem;
     margin: 0;
   }
-  
+
   /* 隐藏PC端的动画效果 */
   .mobile-carousel .card-exiting,
   .mobile-carousel .card-entering,
@@ -3247,7 +3259,7 @@ edia Inputs Styles */
   .mobile-artist-letters .card-entering {
     animation: none !important;
   }
-  
+
   /* 确保卡片在移动端完整显示 */
   .mobile-card-wrapper .card {
     width: 100%;
@@ -3255,7 +3267,9 @@ edia Inputs Styles */
     height: auto;
     min-height: 270px;
   }
-}/*
+}
+
+/*
  Letter发送者样式 */
 .letter-sender-section {
   display: flex;
@@ -3347,6 +3361,7 @@ edia Inputs Styles */
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -3419,46 +3434,46 @@ edia Inputs Styles */
     margin: 16px 0 12px 0;
     padding: 12px;
   }
-  
+
   .sender-avatar-img,
   .sender-avatar-placeholder,
   .sender-avatar-anonymous {
     width: 40px;
     height: 40px;
   }
-  
+
   .sender-avatar-placeholder {
     font-size: 16px;
   }
-  
+
   .sender-avatar-anonymous {
     font-size: 20px;
   }
-  
+
   .letter-sender-text {
     font-size: 14px;
   }
-  
+
   .user-tooltip {
     min-width: 240px;
     max-width: 280px;
     padding: 12px;
   }
-  
+
   .tooltip-avatar img,
   .tooltip-avatar-placeholder {
     width: 48px;
     height: 48px;
   }
-  
+
   .tooltip-avatar-placeholder {
     font-size: 18px;
   }
-  
+
   .tooltip-username {
     font-size: 16px;
   }
-  
+
   .tooltip-social {
     font-size: 13px;
   }
