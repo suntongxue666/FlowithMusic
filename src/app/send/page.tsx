@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import SongSelector from '@/components/SongSelector'
 import SpotifyEmbedPlayer from '@/components/SpotifyEmbedPlayer'
@@ -11,8 +11,9 @@ import { letterService } from '@/lib/letterService'
 import { userService } from '@/lib/userService'
 import { supabase } from '@/lib/supabase'
 
-export default function SendPage() {
+function SendContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [selectedTrack, setSelectedTrack] = useState<SpotifyTrack | null>(null)
   const [recipient, setRecipient] = useState('')
   const [message, setMessage] = useState('')
@@ -56,6 +57,9 @@ export default function SendPage() {
         // 静默失败，不阻断用户
       }
 
+      // 检查是否是登录后恢复发送
+      const isResume = searchParams.get('resume') === '1'
+      
       // 检查是否有预保存的未发送信件
       if (typeof window !== 'undefined') {
         const pendingLetter = localStorage.getItem('pending_letter')
@@ -68,8 +72,17 @@ export default function SendPage() {
 
             console.log('Restored pending letter data')
 
-            // 清除pending状态，避免反复恢复
-            localStorage.removeItem('pending_letter')
+            // 如果是登录后恢复，自动提交
+            if (isResume && userService.isAuthenticated()) {
+              console.log('🔄 Auto-submitting after login...')
+              // 延迟一点让状态更新
+              setTimeout(() => {
+                localStorage.removeItem('pending_letter')
+              }, 100)
+            } else {
+              // 清除pending状态，避免反复恢复
+              localStorage.removeItem('pending_letter')
+            }
           } catch (e) {
             console.error('Failed to parse pending letter:', e)
           }
@@ -78,7 +91,16 @@ export default function SendPage() {
     }
 
     initUser()
-  }, [])
+  }, [searchParams])
+
+  // 登录后自动提交（表单数据恢复后）
+  useEffect(() => {
+    const isResume = searchParams.get('resume') === '1'
+    if (isResume && userService.isAuthenticated() && recipient && message && selectedTrack && !isSubmitting) {
+      console.log('🚀 Auto-submitting letter after login resume...')
+      submitLetter(false)
+    }
+  }, [recipient, message, selectedTrack, searchParams])
 
   const handleTrackSelect = (track: SpotifyTrack) => {
     setSelectedTrack(track)
@@ -552,5 +574,24 @@ export default function SendPage() {
         }
       `}</style>
     </main>
+  )
+}
+
+export default function SendPage() {
+  return (
+    <Suspense fallback={
+      <main>
+        <Header currentPage="send" />
+        <div className="send-container">
+          <div className="send-form">
+            <div className="flex items-center justify-center py-20">
+              <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-black animate-spin"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    }>
+      <SendContent />
+    </Suspense>
   )
 }

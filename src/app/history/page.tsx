@@ -40,6 +40,17 @@ function HistoryContent() {
     try {
       setLoading(true)
 
+      // 0. 检查是否有待发送的信件（登录后返回继续发送）
+      const loginStatus = searchParams.get('login')
+      if (loginStatus === 'success') {
+        const pendingLetter = localStorage.getItem('pending_letter')
+        if (pendingLetter) {
+          console.log('🔄 History: Found pending letter, redirecting back to Send page...')
+          router.push('/send?resume=1')
+          return
+        }
+      }
+
       // 1. 检查登录状态 (增加等待初始化确保状态准确)
       let currentUser = userService.getCurrentUser()
       if (!currentUser) {
@@ -145,14 +156,13 @@ function HistoryContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-16 max-w-4xl min-h-screen">
-      {/* 顶部标题栏 */}
-      <div className="mb-10 px-2">
-        <h1 className="text-3xl sm:text-5xl font-black font-outfit tracking-tight text-gray-900 mb-2 flex items-baseline gap-2">
+    <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-16 max-w-2xl min-h-screen">
+      {/* 顶部标题栏 - 居中 */}
+      <div className="mb-8 text-center">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
           My Letters
-          <span className="text-sm font-bold text-gray-300">/ {letters.length}</span>
         </h1>
-        <p className="text-xs sm:text-sm text-gray-400 font-medium tracking-wide">Your collection of musical messages</p>
+        <p className="text-xs text-gray-400">Your collection of musical messages</p>
       </div>
 
       {/* Sync Banner */}
@@ -192,74 +202,61 @@ function HistoryContent() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {letters.map((letter) => (
             <div
               key={letter.link_id}
-              className="group bg-white border border-gray-100/50 rounded-[32px] p-4 sm:p-5 shadow-sm hover:shadow-xl hover:shadow-gray-100/50 transition-all duration-500"
+              className="group bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all"
             >
               <div className="flex flex-row items-center gap-4">
-                {/* 封面图片 - 强制固定尺寸，防止巨型图片出现 */}
-                <div
-                  className="flex-shrink-0 relative overflow-hidden rounded-2xl shadow-sm border border-gray-100 h-[64px] w-[64px] sm:h-[80px] sm:w-[80px]"
-                  style={{ width: '64px', height: '64px' }} // 移动端强制 64px
-                >
+                {/* 封面图片 - 40x40 圆角方形 */}
+                <div className="flex-shrink-0 w-10 h-10 rounded-md overflow-hidden shadow-sm">
                   <img
                     src={letter.song_album_cover}
                     alt={letter.song_title}
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    style={{ minWidth: '100%', minHeight: '100%' }}
+                    className="w-full h-full object-cover"
                   />
                 </div>
 
-                {/* 内容区域 */}
+                {/* 内容区域 - 三行布局 */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate tracking-tight">
-                      To: {letter.recipient_name}
-                    </h3>
-                    <span className="text-[9px] text-gray-300 font-bold uppercase tracking-wider">
-                      {new Date(letter.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    </span>
+                  {/* 第一行：收件人 */}
+                  <div className="text-sm font-semibold text-gray-900">
+                    To: {letter.recipient_name}
                   </div>
-                  <div className="space-y-0.5">
-                    <p className="text-xs sm:text-sm font-bold text-gray-700 truncate leading-tight">
-                      {letter.song_title}
-                    </p>
-                    <p className="text-[10px] sm:text-xs text-gray-400 font-medium truncate italic opacity-80">
-                      {letter.song_artist}
-                    </p>
+                  {/* 第二行：歌名 - 歌手 */}
+                  <div className="text-sm text-gray-700 truncate mt-0.5">
+                    {letter.song_title} - {letter.song_artist}
                   </div>
-
-                  {/* 云端/本地状态 */}
-                  <div className="mt-2 flex items-center gap-1.5 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
-                    <div className={`w-1.5 h-1.5 rounded-full ${letter.user_id ? 'bg-green-400' : 'bg-orange-400'}`}></div>
-                    <span className="text-[8px] font-black uppercase tracking-widest text-gray-400 group-hover:text-gray-600">
-                      {letter.user_id ? 'Synced' : 'Local'}
-                    </span>
+                  {/* 第三行：时间 */}
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    {new Date(letter.created_at).toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric', 
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                   </div>
                 </div>
 
-                {/* 操作按钮 - 紧凑排列 */}
-                <div className="flex flex-col sm:flex-row items-center gap-2 pr-1">
+                {/* 操作按钮 */}
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleCopyLink(letter.link_id)}
-                    className={`h-9 w-9 sm:h-10 sm:w-auto sm:px-4 flex items-center justify-center rounded-xl sm:rounded-2xl border transition-all ${copyStatus === letter.link_id
-                      ? 'bg-green-500 border-green-500 text-white'
-                      : 'bg-white border-gray-100 text-gray-400 hover:border-gray-900 hover:text-gray-900'
-                      }`}
-                    title="Copy Link"
+                    className={`px-3 py-1.5 text-xs rounded-md transition-all ${
+                      copyStatus === letter.link_id
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
                   >
-                    <span className="hidden sm:inline text-[10px] font-black tracking-widest uppercase">{copyStatus === letter.link_id ? 'Copied' : 'Link'}</span>
-                    <span className="sm:hidden text-lg">{copyStatus === letter.link_id ? '✓' : '🔗'}</span>
+                    {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
                   </button>
                   <Link
                     href={`/letter/${letter.link_id}`}
-                    className="h-9 w-9 sm:h-10 sm:w-auto sm:px-6 flex items-center justify-center bg-black text-white rounded-xl sm:rounded-2xl transition-all hover:scale-105 active:scale-95"
-                    title="View Letter"
+                    className="px-3 py-1.5 text-xs rounded-md bg-gray-900 text-white hover:bg-gray-700 transition-all"
                   >
-                    <span className="hidden sm:inline text-[10px] font-black tracking-widest uppercase">Open</span>
-                    <span className="sm:hidden text-lg">↗</span>
+                    View
                   </Link>
                 </div>
               </div>
