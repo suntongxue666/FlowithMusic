@@ -21,9 +21,10 @@ interface SpotifyTrack {
 interface ColorfulSpotifyPlayerProps {
   track: SpotifyTrack
   countryCode?: string
+  forceRefresh?: number  // 添加强制刷新属性
 }
 
-export default function ColorfulSpotifyPlayer({ track, countryCode: initialCountryCode }: ColorfulSpotifyPlayerProps) {
+export default function ColorfulSpotifyPlayer({ track, countryCode: initialCountryCode, forceRefresh }: ColorfulSpotifyPlayerProps) {
   const [dominantColor, setDominantColor] = useState<string>('#535353')
   const [isChinaDetails, setIsChinaDetails] = useState<{ isChina: boolean, checked: boolean }>({ isChina: false, checked: false })
   const [appleTrack, setAppleTrack] = useState<AppleMusicTrack | null>(null)
@@ -121,7 +122,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
       }
     }
     checkIn()
-  }, [track.id])
+  }, [track.id, forceRefresh])
 
   const fetchAppleMusicFallback = async (isCN: boolean) => {
     try {

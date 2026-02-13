@@ -158,31 +158,11 @@ function HistoryContent() {
   return (
     <div className="min-h-screen flex flex-col items-center py-8 sm:py-16" style={{ backgroundColor: '#fafafa' }}>
       {/* 顶部标题栏 - 居中 */}
-      <div className="mb-8 text-center">
+      <div className="mb-10 text-center">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
           My Letters
         </h1>
       </div>
-
-      {/* Sync Banner */}
-      {isAuthenticated && unsyncedCount > 0 && (
-        <div className="mb-8 p-4 bg-white rounded-xl border border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ width: '100%', maxWidth: '600px' }}>
-          <div className="flex items-center gap-3 text-center sm:text-left">
-            <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-lg">☁️</div>
-            <div>
-              <h3 className="font-semibold text-gray-900 leading-tight">Sync local data</h3>
-              <p className="text-xs text-gray-500">Found {unsyncedCount} letters to sync</p>
-            </div>
-          </div>
-          <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className="px-5 py-2 bg-gray-900 text-white font-medium rounded-lg transition-all active:scale-95 disabled:opacity-50"
-          >
-            {isSyncing ? 'Syncing...' : 'Sync Now'}
-          </button>
-        </div>
-      )}
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-40">

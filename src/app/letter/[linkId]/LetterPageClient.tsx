@@ -158,6 +158,7 @@ interface LetterPageClientProps {
 
 export default function LetterPageClient({ linkId }: LetterPageClientProps) {
   const [letter, setLetter] = useState<Letter | null>(null)
+  const [forceRefresh, setForceRefresh] = useState(Date.now())
   const [loading, setLoading] = useState(true)
 
   // 检测文本是否包含中文字符
@@ -388,6 +389,7 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
                   duration_ms: (letter as any).song_duration_ms
                 }}
                 countryCode={(letter as any).countryCode}
+                forceRefresh={forceRefresh}
               />
             ) : (
               <div style={{
