@@ -202,15 +202,24 @@ function HistoryContent() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-6 flex flex-col items-center">
           {letters.map((letter) => (
             <div
               key={letter.link_id}
-              className="group bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all"
+              className="bg-white rounded-lg shadow-sm border border-gray-100 w-full max-w-md"
+              style={{ padding: '16px' }}
             >
-              <div className="flex flex-row items-center gap-4">
-                {/* 封面图片 - 40x40 圆角方形 */}
-                <div className="flex-shrink-0 w-10 h-10 rounded-md overflow-hidden shadow-sm">
+              <div className="flex flex-row items-center">
+                {/* 封面图片 - 40x40 圆角方形，左边距 */}
+                <div 
+                  className="flex-shrink-0 overflow-hidden"
+                  style={{ 
+                    width: '40px', 
+                    height: '40px', 
+                    borderRadius: '6px',
+                    marginLeft: '0'
+                  }}
+                >
                   <img
                     src={letter.song_album_cover}
                     alt={letter.song_title}
@@ -218,18 +227,18 @@ function HistoryContent() {
                   />
                 </div>
 
-                {/* 内容区域 - 三行布局 */}
-                <div className="flex-1 min-w-0">
+                {/* 内容区域 - 三行布局，左边距16px */}
+                <div className="flex-1 min-w-0" style={{ marginLeft: '16px' }}>
                   {/* 第一行：收件人 */}
-                  <div className="text-sm font-semibold text-gray-900">
+                  <div style={{ fontSize: '16px', fontWeight: 600, color: '#333' }}>
                     To: {letter.recipient_name}
                   </div>
                   {/* 第二行：歌名 - 歌手 */}
-                  <div className="text-sm text-gray-700 truncate mt-0.5">
+                  <div style={{ fontSize: '14px', color: '#555', marginTop: '2px' }} className="truncate">
                     {letter.song_title} - {letter.song_artist}
                   </div>
                   {/* 第三行：时间 */}
-                  <div className="text-xs text-gray-400 mt-0.5">
+                  <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>
                     {new Date(letter.created_at).toLocaleDateString('en-US', { 
                       month: 'short', 
                       day: 'numeric', 
@@ -240,24 +249,38 @@ function HistoryContent() {
                   </div>
                 </div>
 
-                {/* 操作按钮 */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleCopyLink(letter.link_id)}
-                    className={`px-3 py-1.5 text-xs rounded-md transition-all ${
-                      copyStatus === letter.link_id
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
-                  </button>
+                {/* 操作按钮 - 右边距 */}
+                <div className="flex items-center gap-2" style={{ marginRight: '0' }}>
                   <Link
                     href={`/letter/${letter.link_id}`}
-                    className="px-3 py-1.5 text-xs rounded-md bg-gray-900 text-white hover:bg-gray-700 transition-all"
+                    className="inline-block"
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '14px',
+                      borderRadius: '6px',
+                      background: '#f0f0f0',
+                      color: '#666',
+                      fontWeight: 500,
+                      textDecoration: 'none'
+                    }}
                   >
                     View
                   </Link>
+                  <button
+                    onClick={() => handleCopyLink(letter.link_id)}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '14px',
+                      borderRadius: '6px',
+                      background: copyStatus === letter.link_id ? '#22c55e' : '#333',
+                      color: '#fff',
+                      fontWeight: 500,
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
+                  </button>
                 </div>
               </div>
             </div>
