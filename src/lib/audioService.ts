@@ -217,29 +217,33 @@ async function executeAppleSearch(
     country: string = 'US'
 ): Promise<AppleMusicTrack | null> {
     const term = encodeURIComponent(`${songTitle} ${artistName}`)
+    const url = `https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=5&country=${country}`
+    
+    console.log('🎵 [Apple Music] Searching:', url)
     
     try {
-        const response = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=5&country=${country}`, {
+        // 添加 8 秒超时
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 8000)
+        
+        const response = await fetch(url, {
             method: 'GET',
-            cache: 'no-cache'
+            cache: 'no-cache',
+            signal: controller.signal
         })
+        
+        clearTimeout(timeoutId)
 
         if (!response.ok) {
-            // CN 搜索失败时，fallback 到 US
-            if (country === 'CN') {
-                console.log('🎵 Apple Music: CN search failed, trying US...')
-                return executeAppleSearch(songTitle, artistName, targetDurationMs, 'US')
-            }
+            console.log('🎵 [Apple Music] Response not OK:', response.status)
             return null
         }
 
         const data = await response.json()
+        console.log('🎵 [Apple Music] Results:', data.resultCount)
+        
         if (data.resultCount === 0) {
-            // If CN search returns empty, try US as fallback
-            if (country === 'CN') {
-                console.log('🎵 Apple Music: CN no results, trying US...')
-                return executeAppleSearch(songTitle, artistName, targetDurationMs, 'US')
-            }
+            console.log('🎵 [Apple Music] No results found')
             return null
         }
 
@@ -251,18 +255,21 @@ async function executeAppleSearch(
                 const diff = Math.abs(track.trackTimeMillis - targetDurationMs)
                 return diff < 5000 // Allow 5 seconds difference
             })
-            if (bestMatch) return formatAppleTrack(bestMatch)
+            if (bestMatch) {
+                console.log('🎵 [Apple Music] Found duration match:', bestMatch.trackName)
+                return formatAppleTrack(bestMatch)
+            }
         }
 
         // Default to first result if no duration match found or provided
+        console.log('🎵 [Apple Music] Using first result:', results[0].trackName)
         return formatAppleTrack(results[0])
-    } catch (error) {
-        // 网络错误时，CN fallback 到 US
-        if (country === 'CN') {
-            console.log('🎵 Apple Music: CN search error, trying US...', error)
-            return executeAppleSearch(songTitle, artistName, targetDurationMs, 'US')
+    } catch (error: any) {
+        if (error.name === 'AbortError') {
+            console.error('🎵 [Apple Music] Request timeout (8s)')
+        } else {
+            console.error('🎵 [Apple Music] Search failed:', error)
         }
-        console.error('🎵 Apple Music search failed:', error)
         return null
     }
 }
