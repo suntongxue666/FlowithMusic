@@ -156,29 +156,28 @@ function HistoryContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-16 max-w-2xl min-h-screen">
+    <div className="min-h-screen flex flex-col items-center py-8 sm:py-16" style={{ backgroundColor: '#fafafa' }}>
       {/* 顶部标题栏 - 居中 */}
       <div className="mb-8 text-center">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
           My Letters
         </h1>
-        <p className="text-xs text-gray-400">Your collection of musical messages</p>
       </div>
 
       {/* Sync Banner */}
       {isAuthenticated && unsyncedCount > 0 && (
-        <div className="mb-8 p-5 bg-black text-white rounded-[32px] flex flex-col sm:flex-row items-center justify-between gap-5 shadow-2xl shadow-gray-200">
+        <div className="mb-8 p-5 bg-black text-white rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-5 shadow-xl" style={{ width: '100%', maxWidth: '600px' }}>
           <div className="flex items-center gap-4 text-center sm:text-left">
             <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl">☁️</div>
             <div>
               <h3 className="font-bold text-white leading-tight">Sync local data</h3>
-              <p className="text-[10px] text-white/50 font-medium">Found {unsyncedCount} letters to sync</p>
+              <p className="text-xs text-white/50">Found {unsyncedCount} letters to sync</p>
             </div>
           </div>
           <button
             onClick={handleSync}
             disabled={isSyncing}
-            className="w-full sm:w-auto px-8 py-3 bg-white text-black font-bold rounded-2xl transition-all active:scale-95 disabled:opacity-50"
+            className="px-6 py-2 bg-white text-black font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50"
           >
             {isSyncing ? 'Syncing...' : 'Sync Now'}
           </button>
@@ -190,34 +189,33 @@ function HistoryContent() {
           <div className="w-10 h-10 rounded-full border-4 border-gray-100 border-t-black animate-spin"></div>
         </div>
       ) : letters.length === 0 ? (
-        <div className="text-center py-32 bg-white rounded-[40px] border border-gray-100 shadow-sm">
+        <div className="text-center py-32 bg-white rounded-2xl border border-gray-100 shadow-sm" style={{ width: '100%', maxWidth: '600px' }}>
           <div className="text-6xl mb-6 grayscale opacity-20">📭</div>
           <h3 className="text-2xl font-bold text-gray-900 mb-2">Nothing here</h3>
-          <p className="text-gray-400 mb-10 text-sm max-w-xs mx-auto">Start sharing your thoughts through music.</p>
+          <p className="text-gray-400 mb-10 text-sm">Start sharing your thoughts through music.</p>
           <Link
             href="/send"
-            className="inline-flex px-12 py-4 bg-black text-white rounded-full font-bold hover:scale-105 transition-all shadow-xl shadow-gray-200"
+            className="inline-flex px-8 py-3 bg-black text-white rounded-full font-bold hover:scale-105 transition-all"
           >
             Create Letter
           </Link>
         </div>
       ) : (
-        <div className="space-y-6 flex flex-col items-center">
+        <div className="space-y-6 flex flex-col items-center" style={{ width: '100%' }}>
           {letters.map((letter) => (
             <div
               key={letter.link_id}
-              className="bg-white rounded-lg shadow-sm border border-gray-100 w-full max-w-md"
-              style={{ padding: '16px' }}
+              className="bg-white rounded-lg shadow-sm border border-gray-100"
+              style={{ padding: '16px', width: '100%', maxWidth: '600px' }}
             >
               <div className="flex flex-row items-center">
-                {/* 封面图片 - 40x40 圆角方形，左边距 */}
+                {/* 封面图片 - 60x60 圆角方形（增大50%） */}
                 <div 
                   className="flex-shrink-0 overflow-hidden"
                   style={{ 
-                    width: '40px', 
-                    height: '40px', 
-                    borderRadius: '6px',
-                    marginLeft: '0'
+                    width: '60px', 
+                    height: '60px', 
+                    borderRadius: '8px'
                   }}
                 >
                   <img
@@ -234,11 +232,11 @@ function HistoryContent() {
                     To: {letter.recipient_name}
                   </div>
                   {/* 第二行：歌名 - 歌手 */}
-                  <div style={{ fontSize: '14px', color: '#555', marginTop: '2px' }} className="truncate">
+                  <div style={{ fontSize: '14px', color: '#555', marginTop: '4px' }} className="truncate">
                     {letter.song_title} - {letter.song_artist}
                   </div>
                   {/* 第三行：时间 */}
-                  <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>
+                  <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
                     {new Date(letter.created_at).toLocaleDateString('en-US', { 
                       month: 'short', 
                       day: 'numeric', 
