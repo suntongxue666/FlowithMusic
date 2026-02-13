@@ -217,32 +217,54 @@ async function executeAppleSearch(
     country: string = 'US'
 ): Promise<AppleMusicTrack | null> {
     const term = encodeURIComponent(`${songTitle} ${artistName}`)
-    const response = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=5&country=${country}`)
+    
+    try {
+        const response = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=5&country=${country}`, {
+            method: 'GET',
+            cache: 'no-cache'
+        })
 
-    if (!response.ok) return null
+        if (!response.ok) {
+            // CN 搜索失败时，fallback 到 US
+            if (country === 'CN') {
+                console.log('🎵 Apple Music: CN search failed, trying US...')
+                return executeAppleSearch(songTitle, artistName, targetDurationMs, 'US')
+            }
+            return null
+        }
 
-    const data = await response.json()
-    if (data.resultCount === 0) {
-        // If CN search fails, try US as fallback
+        const data = await response.json()
+        if (data.resultCount === 0) {
+            // If CN search returns empty, try US as fallback
+            if (country === 'CN') {
+                console.log('🎵 Apple Music: CN no results, trying US...')
+                return executeAppleSearch(songTitle, artistName, targetDurationMs, 'US')
+            }
+            return null
+        }
+
+        const results: any[] = data.results
+
+        // If duration is provided, find the best match
+        if (targetDurationMs) {
+            const bestMatch = results.find(track => {
+                const diff = Math.abs(track.trackTimeMillis - targetDurationMs)
+                return diff < 5000 // Allow 5 seconds difference
+            })
+            if (bestMatch) return formatAppleTrack(bestMatch)
+        }
+
+        // Default to first result if no duration match found or provided
+        return formatAppleTrack(results[0])
+    } catch (error) {
+        // 网络错误时，CN fallback 到 US
         if (country === 'CN') {
+            console.log('🎵 Apple Music: CN search error, trying US...', error)
             return executeAppleSearch(songTitle, artistName, targetDurationMs, 'US')
         }
+        console.error('🎵 Apple Music search failed:', error)
         return null
     }
-
-    const results: any[] = data.results
-
-    // If duration is provided, find the best match
-    if (targetDurationMs) {
-        const bestMatch = results.find(track => {
-            const diff = Math.abs(track.trackTimeMillis - targetDurationMs)
-            return diff < 5000 // Allow 5 seconds difference
-        })
-        if (bestMatch) return formatAppleTrack(bestMatch)
-    }
-
-    // Default to first result if no duration match found or provided
-    return formatAppleTrack(results[0])
 }
 
 /**

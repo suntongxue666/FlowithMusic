@@ -126,8 +126,9 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   const fetchAppleMusicFallback = async (isCN: boolean) => {
     try {
       if (!track || !track.artists?.[0]) return
-      const searchCountry = isCN ? 'CN' : 'US'
-      const result = await searchAppleMusic(track.name, track.artists[0].name, track.duration_ms, searchCountry)
+      // 统一使用 US 搜索，iTunes CN 库歌曲较少
+      // 搜索结果成功后，previewUrl 在中国大陆仍然可以播放
+      const result = await searchAppleMusic(track.name, track.artists[0].name, track.duration_ms, 'US')
       if (result) setAppleTrack(result)
       else setFallbackError('Song not available in your region')
     } catch (e) {
