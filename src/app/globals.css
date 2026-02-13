@@ -159,7 +159,7 @@ nav {
 }
 
 .hero h1 {
-  font-family: 'Caveat', cursive; font-family: 'Nanum Pen Script', cursive;
+  font-family: 'Caveat', cursive;
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
   line-height: 1.4;
@@ -296,7 +296,7 @@ nav {
 }
 
 .card .message {
-  font-family: 'Caveat', cursive; font-family: 'Nanum Pen Script', cursive;
+  font-family: 'Caveat', cursive;
   font-size: 24px;
   color: #333;
   margin: 1rem 0;
@@ -1978,7 +1978,7 @@ nav {
 }
 
 .message-content.handwritten {
-  font-family: 'Caveat', cursive; font-family: 'Nanum Pen Script', cursive;
+  font-family: 'Caveat', cursive;
   font-size: 1.2rem;
   background: transparent;
   border: none;
@@ -2032,7 +2032,7 @@ nav {
 }
 
 .handwritten-greeting {
-  font-family: 'Caveat', cursive; font-family: 'Nanum Pen Script', cursive;
+  font-family: 'Caveat', cursive;
   font-size: 2rem;
   color: #333;
 }
@@ -2453,7 +2453,7 @@ nav {
 }
 
 .footer-tagline.handwritten {
-  font-family: 'Caveat', cursive; font-family: 'Nanum Pen Script', cursive;
+  font-family: 'Caveat', cursive;
   font-size: 1.3rem;
   color: #555;
 }
@@ -3119,7 +3119,7 @@ art Spotify Player Styles */
 }
 
 .artist-header h2 {
-  font-family: 'Caveat', cursive; font-family: 'Nanum Pen Script', cursive;
+  font-family: 'Caveat', cursive;
   font-size: 1.8rem;
   color: #333;
   margin: 0;
