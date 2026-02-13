@@ -459,8 +459,9 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
             alt="Spotify"
             width={16}
             height={16}
+            style={{ marginRight: '8px' }}
           />
-          <span>  Log in to Spotify in your browser to listen to the full song.</span>
+          <span>Log in to Spotify in your browser to listen to the full song.</span>
         </div>
 
         <LetterQRCode />

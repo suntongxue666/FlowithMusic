@@ -123,14 +123,23 @@ export class LetterService {
    * 获取用户的 Letters (仅 Database)
    * 用于 HistoryPage 的 "Synced" 部分
    */
-  async getUserLetters(userId: string): Promise<Letter[]> {
-    if (!supabase || !userId) return []
+  async getUserLetters(userId?: string, anonymousId?: string): Promise<Letter[]> {
+    if (!supabase) return []
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('letters')
       .select('*')
-      .eq('user_id', userId)
       .order('created_at', { ascending: false })
+
+    if (userId) {
+      query = query.eq('user_id', userId)
+    } else if (anonymousId) {
+      query = query.eq('anonymous_id', anonymousId)
+    } else {
+      return []
+    }
+
+    const { data, error } = await query
 
     if (error) {
       console.error('❌ LetterService: Failed to fetch user letters for ID:', userId, error)

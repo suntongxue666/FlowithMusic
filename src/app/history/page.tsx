@@ -6,6 +6,7 @@ import Header from '@/components/Header'
 import { letterService } from '@/lib/letterService'
 import { userService } from '@/lib/userService'
 import { Letter } from '@/lib/supabase'
+import { ImprovedUserIdentity } from '@/lib/improvedUserIdentity'
 import Link from 'next/link'
 
 function HistoryContent() {
@@ -83,27 +84,32 @@ function HistoryContent() {
 
       let dbLetters: Letter[] = []
 
-      // 3. 如果已登录，加载 DB Letters
-      if (currentUser) {
-        try {
+      // 3. 加载 DB Letters (登录用户用 userId，未登录用 anonymousId)
+      const anonymousId = ImprovedUserIdentity.getOrCreateIdentity().id
+      console.log('📋 History: Loading letters', { currentUser: !!currentUser, anonymousId })
+      try {
+        if (currentUser) {
           dbLetters = await letterService.getUserLetters(currentUser.id)
-          dbLetters = (dbLetters || []).filter(l => l && l.link_id)
-
-          // 4. 检查是否有未同步的本地信件
-          if (localLetters.length > 0) {
-            const dbLinkIds = new Set(dbLetters.map(l => l.link_id))
-            const unsynced = localLetters.filter(l => !dbLinkIds.has(l.link_id))
-
-            if (unsynced.length > 0) {
-              setUnsyncedCount(unsynced.length)
-              setLocalLettersToSync(unsynced)
-            } else {
-              setUnsyncedCount(0)
-            }
-          }
-        } catch (err) {
-          console.error('❌ History: Failed to load DB letters:', err)
+        } else {
+          dbLetters = await letterService.getUserLetters(undefined, anonymousId)
         }
+        console.log('📋 History: DB letters loaded', dbLetters.length, dbLetters.map(l => l.link_id))
+        dbLetters = (dbLetters || []).filter(l => l && l.link_id)
+
+        // 4. 检查是否有未同步的本地信件 (仅登录用户)
+        if (currentUser && localLetters.length > 0) {
+          const dbLinkIds = new Set(dbLetters.map(l => l.link_id))
+          const unsynced = localLetters.filter(l => !dbLinkIds.has(l.link_id))
+
+          if (unsynced.length > 0) {
+            setUnsyncedCount(unsynced.length)
+            setLocalLettersToSync(unsynced)
+          } else {
+            setUnsyncedCount(0)
+          }
+        }
+      } catch (err) {
+        console.error('❌ History: Failed to load DB letters:', err)
       }
 
       // 5. 合并并去重
@@ -158,7 +164,7 @@ function HistoryContent() {
   return (
     <div className="min-h-screen flex flex-col items-center py-8 sm:py-16" style={{ backgroundColor: '#fafafa' }}>
       {/* 顶部标题栏 - 居中 */}
-      <div className="mb-10 text-center">
+      <div className="mb-10 text-center" style={{ marginTop: '24px', marginBottom: '24px' }}>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
           My Letters
         </h1>
@@ -169,13 +175,14 @@ function HistoryContent() {
           <div className="w-10 h-10 rounded-full border-4 border-gray-100 border-t-black animate-spin"></div>
         </div>
       ) : letters.length === 0 ? (
-        <div className="text-center py-32 bg-white rounded-2xl border border-gray-100 shadow-sm" style={{ width: '100%', maxWidth: '600px' }}>
+        <div className="text-center bg-white rounded-2xl border border-gray-100 shadow-sm" style={{ width: '100%', maxWidth: '600px', paddingTop: '85px', paddingBottom: '85px' }}>
           <div className="text-6xl mb-6 grayscale opacity-20">📭</div>
           <h3 className="text-2xl font-bold text-gray-900 mb-2">Nothing here</h3>
           <p className="text-gray-400 mb-10 text-sm">Start sharing your thoughts through music.</p>
           <Link
             href="/send"
             className="inline-flex px-8 py-3 bg-black text-white rounded-full font-bold hover:scale-105 transition-all"
+            style={{ fontSize: 'calc(1rem - 4px)' }}
           >
             Create Letter
           </Link>
