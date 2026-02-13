@@ -66,7 +66,7 @@ export default function Footer() {
                 alt="FlowithMusic" 
                 className="footer-logo"
               />
-              <h2 className="footer-brand-name" style={{ fontFamily: "'Nanum Pen Script', cursive" }}>FlowithMusic</h2>
+              <h2 className="footer-brand-name" style={{ fontFamily: "'Caveat', cursive" }}>FlowithMusic</h2>
             </div>
             <p className="footer-tagline handwritten">Songs carry your unsaid words — that connects hearts.</p>
           </div>

@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Nanum+Pen+Script&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Caveat:wght@400;500;600;700&display=swap');
 
 /* 中文字体样式 */
 .chinese-text {
@@ -54,7 +54,7 @@ header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: 'Caveat', cursive; font-family: 'Nanum Pen Script', cursive;
+  font-family: 'Caveat', cursive;
   font-size: 1.5rem;
   text-decoration: none;
   color: inherit;
