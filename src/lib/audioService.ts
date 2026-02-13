@@ -1,15 +1,112 @@
+// 中国时区列表
+const CHINA_TIMEZONES = [
+    'Asia/Shanghai',
+    'Asia/Chongqing',
+    'Asia/Harbin',
+    'Asia/Urumqi',
+    'Asia/Beijing'
+]
+
+// 缓存相关常量
+const CACHE_KEY = 'flowithmusic_china_detection'
+const CACHE_DURATION = 24 * 60 * 60 * 1000 // 24小时
+
+interface CacheData {
+    isChina: boolean
+    timestamp: number
+}
+
+// 检查缓存
+function getCachedResult(): { isChina: boolean; valid: boolean } {
+    try {
+        const cached = localStorage.getItem(CACHE_KEY)
+        if (cached) {
+            const data: CacheData = JSON.parse(cached)
+            const now = Date.now()
+            if (now - data.timestamp < CACHE_DURATION) {
+                console.log('🌍 [Detection] ✅ Using cached result:', data.isChina)
+                return { isChina: data.isChina, valid: true }
+            }
+        }
+    } catch (e) {
+        console.warn('🌍 [Detection] Cache read failed:', e)
+    }
+    return { isChina: false, valid: false }
+}
+
+// 保存缓存
+function saveCache(isChina: boolean): void {
+    try {
+        const data: CacheData = {
+            isChina,
+            timestamp: Date.now()
+        }
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data))
+        console.log('🌍 [Detection] 📦 Cached result:', isChina)
+    } catch (e) {
+        console.warn('🌍 [Detection] Cache save failed:', e)
+    }
+}
+
+// 时区检测
+function checkTimezone(): boolean {
+    try {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+        console.log('🌍 [Detection] Timezone:', timezone)
+        
+        if (CHINA_TIMEZONES.includes(timezone)) {
+            console.log('🌍 [Detection] ✅ China timezone detected')
+            return true
+        }
+    } catch (e) {
+        console.warn('🌍 [Detection] Timezone check failed:', e)
+    }
+    return false
+}
+
+// 浏览器语言检测
+function checkBrowserLanguage(): boolean {
+    try {
+        const browserLang = navigator.language || ''
+        const languages = navigator.languages || []
+        
+        console.log('🌍 [Detection] Browser language:', browserLang, 'languages:', languages)
+        
+        // 检查主语言
+        if (browserLang.toLowerCase().startsWith('zh')) {
+            // 排除香港和台湾
+            const lowerLang = browserLang.toLowerCase()
+            if (!lowerLang.includes('hk') && !lowerLang.includes('tw') && !lowerLang.includes('hong') && !lowerLang.includes('taiwan')) {
+                console.log('🌍 [Detection] ✅ Browser language suggests China (zh-CN)')
+                return true
+            }
+        }
+        
+        // 检查语言列表
+        for (const lang of languages) {
+            const lowerLang = lang.toLowerCase()
+            if (lowerLang.startsWith('zh') && !lowerLang.includes('hk') && !lowerLang.includes('tw')) {
+                console.log('🌍 [Detection] ✅ Found zh-CN in language list')
+                return true
+            }
+        }
+    } catch (e) {
+        console.warn('🌍 [Detection] Browser language check failed:', e)
+    }
+    return false
+}
+
 export async function checkIsChinaIP(): Promise<boolean> {
     try {
         console.log('🌍 [Detection] Starting IP detection...')
 
-        // 尝试多个 IP API 提高可靠性
-        const apis = [
-            { url: 'https://ipapi.co/json/', field: 'country_code' },
-            { url: 'https://api.ipify.org?format=json', field: null }, // 这个API不返回国家码，跳过
-            { url: 'https://ipapi.co/json/', field: 'country' }
-        ]
+        // 1. 首先检查缓存
+        const cached = getCachedResult()
+        if (cached.valid) {
+            return cached.isChina
+        }
 
-        // 首先尝试更可靠的 API
+        // 2. IP API 检测
         const reliableApis = [
             'https://api.ipgeolocation.io/ipgeo?apiKey=free',
             'https://ipapi.co/json/'
@@ -44,6 +141,7 @@ export async function checkIsChinaIP(): Promise<boolean> {
                         
                         if (countryCode === 'CN' || countryCode === 'CHN' || countryCode === 'CHINA') {
                             console.log('🌍 [Detection] ✅ Confirmed China IP')
+                            saveCache(true)
                             return true
                         }
                     }
@@ -54,17 +152,22 @@ export async function checkIsChinaIP(): Promise<boolean> {
             }
         }
 
-        // 备用方案：使用浏览器语言检测
-        console.log('🌍 [Detection] IP APIs failed, checking browser language as fallback')
-        const browserLang = navigator.language || ''
-        console.log('🌍 [Detection] Browser language:', browserLang)
-        
-        if (browserLang.startsWith('zh') || browserLang.startsWith('ZH')) {
-            console.log('🌍 [Detection] ✅ Browser language suggests China')
+        // 3. 备用方案：时区检测
+        console.log('🌍 [Detection] IP APIs failed, checking timezone as fallback')
+        if (checkTimezone()) {
+            saveCache(true)
+            return true
+        }
+
+        // 4. 备用方案：浏览器语言检测
+        console.log('🌍 [Detection] Checking browser language as final fallback')
+        if (checkBrowserLanguage()) {
+            saveCache(true)
             return true
         }
 
         console.log('🌍 [Detection] ❌ Not detected as China')
+        saveCache(false)
         return false
     } catch (error) {
         console.warn('🌍 [Detection] Failed, defaulting to false:', error)

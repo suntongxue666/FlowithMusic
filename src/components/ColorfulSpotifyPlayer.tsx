@@ -63,8 +63,9 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   useEffect(() => {
     async function checkIn() {
       try {
+        // 延长超时到3秒，给移动网络更多时间
         const timeoutPromise = new Promise<boolean>((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout')), 1000)
+          setTimeout(() => reject(new Error('Timeout')), 3000)
         )
         const isCN = await Promise.race([checkIsChinaIP(), timeoutPromise])
         if (isCN) {
@@ -76,6 +77,46 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
           setIsChinaDetails({ isChina: false, checked: true })
         }
       } catch (e) {
+        // 超时或失败时，检查缓存和时区作为 fallback
+        console.log('⏱️ Detection timeout or failed, checking fallback...')
+        
+        // 检查缓存
+        try {
+          const cached = localStorage.getItem('flowithmusic_china_detection')
+          if (cached) {
+            const data = JSON.parse(cached)
+            const now = Date.now()
+            if (now - data.timestamp < 24 * 60 * 60 * 1000 && data.isChina) {
+              console.log('📍 Using cached China detection')
+              setIsChinaDetails({ isChina: true, checked: true })
+              fetchAppleMusicFallback(true)
+              return
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+        
+        // 检查时区
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+        const chinaTimezones = ['Asia/Shanghai', 'Asia/Chongqing', 'Asia/Harbin', 'Asia/Urumqi', 'Asia/Beijing']
+        if (chinaTimezones.includes(timezone)) {
+          console.log('📍 Fallback: China timezone detected')
+          setIsChinaDetails({ isChina: true, checked: true })
+          fetchAppleMusicFallback(true)
+          return
+        }
+        
+        // 检查浏览器语言
+        const lang = navigator.language || ''
+        if (lang.toLowerCase().startsWith('zh') && !lang.toLowerCase().includes('hk') && !lang.toLowerCase().includes('tw')) {
+          console.log('📍 Fallback: Chinese browser language detected')
+          setIsChinaDetails({ isChina: true, checked: true })
+          fetchAppleMusicFallback(true)
+          return
+        }
+        
+        console.log('🌐 Fallback: Defaulting to global (Spotify)')
         setIsChinaDetails({ isChina: false, checked: true })
       }
     }
