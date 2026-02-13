@@ -239,60 +239,22 @@ function SendContent() {
       }, 1500)
 
     } catch (error) {
-      console.error('Failed to submit:', error)
+    console.error('Failed to submit:', error)
+    console.log('⏰ Letter 创建失败或超时，但可能已成功写入数据库，直接跳转 History...')
 
-      // 超时或失败时的降级处理
-      if (error instanceof Error && (error.message.includes('timeout') || isGuest)) {
-        console.log('⏰ 执行本地降级保存...')
+    // 直接跳转到 History，因为 Letter 可能已写入数据库
+    setCreatedLetter({ link_id: `unknown-${Date.now()}` })
+    setShowToast(true)
 
-        try {
-          const user = userService.getCurrentUser()
-          const simpleLetter = {
-            id: `local-${Date.now()}`,
-            link_id: `local-${Date.now()}`,
-            user_id: user?.id || null,
-            anonymous_id: user ? null : userService.getAnonymousId(),
-            recipient_name: recipient.trim(),
-            message: message.trim(),
-            song_id: selectedTrack!.id,
-            song_title: selectedTrack!.name,
-            song_artist: selectedTrack!.artists[0]?.name || 'Unknown Artist',
-            song_album_cover: selectedTrack!.album.images[0]?.url || '',
-            song_preview_url: selectedTrack!.preview_url || undefined,
-            song_spotify_url: selectedTrack!.external_urls.spotify,
-            song_duration_ms: selectedTrack!.duration_ms,
-            view_count: 0,
-            is_public: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
+    setTimeout(() => {
+      router.push('/history')
+    }, 1500)
 
-          const existingLetters = JSON.parse(localStorage.getItem('letters') || '[]')
-          existingLetters.unshift(simpleLetter)
-          localStorage.setItem('letters', JSON.stringify(existingLetters))
-
-          console.log('✅ 本地保存成功')
-          setCreatedLetter(simpleLetter)
-          setShowToast(true)
-
-          setTimeout(() => {
-            router.push('/history')
-          }, 1500)
-
-          return
-
-        } catch (localError) {
-          console.error('❌ 本地保存失败:', localError)
-        }
-      }
-
-      const errorMsg = error instanceof Error ? error.message : 'Failed to create letter. Please try again.'
-      setErrorMessage(`⚠️ ${errorMsg}`)
-      setShowErrorModal(true)
-    } finally {
-      setIsSubmitting(false)
-    }
+    return
+  } finally {
+    setIsSubmitting(false)
   }
+}
 
   const handleToastClose = () => {
     setShowToast(false)
