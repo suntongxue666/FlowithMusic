@@ -126,13 +126,30 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   const fetchAppleMusicFallback = async (isCN: boolean) => {
     try {
       if (!track || !track.artists?.[0]) return
-      // 统一使用 US 搜索，iTunes CN 库歌曲较少
-      // 搜索结果成功后，previewUrl 在中国大陆仍然可以播放
-      const result = await searchAppleMusic(track.name, track.artists[0].name, track.duration_ms, 'US')
-      if (result) setAppleTrack(result)
-      else setFallbackError('Song not available in your region')
+      console.log('🎵 Fetching Apple Music for:', track.name, track.artists[0].name)
+      
+      // 添加 5 秒超时
+      const timeoutPromise = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error('Apple Music search timeout')), 5000)
+      )
+      
+      const result = await Promise.race([
+        searchAppleMusic(track.name, track.artists[0].name, track.duration_ms, 'US'),
+        timeoutPromise
+      ])
+      
+      if (result) {
+        console.log('🎵 Apple Music found:', result.trackName)
+        setAppleTrack(result)
+      } else {
+        // Apple Music 搜索无结果，fallback 到 Spotify
+        console.log('🎵 Apple Music not found, falling back to Spotify')
+        setIsChinaDetails({ isChina: false, checked: true })
+      }
     } catch (e) {
-      setFallbackError('Song not available in your region')
+      // Apple Music 搜索失败，fallback 到 Spotify
+      console.error('🎵 Apple Music fetch error, falling back to Spotify:', e)
+      setIsChinaDetails({ isChina: false, checked: true })
     }
   }
 
