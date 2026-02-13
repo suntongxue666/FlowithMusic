@@ -106,7 +106,7 @@ export async function checkIsChinaIP(): Promise<boolean> {
             return cached.isChina
         }
 
-        // 2. IP API 检测
+        // 2. IP API 检测 - 只依赖 IP API
         const reliableApis = [
             'https://api.ipgeolocation.io/ipgeo?apiKey=free',
             'https://ipapi.co/json/'
@@ -139,8 +139,6 @@ export async function checkIsChinaIP(): Promise<boolean> {
                         const countryCode = String(data[field]).toUpperCase()
                         console.log('🌍 [Detection] Found country code:', countryCode, 'from field:', field)
                         
-                        // IP API 成功返回了国家码，直接根据结果返回
-                        // 不再执行 fallback 检测
                         if (countryCode === 'CN' || countryCode === 'CHN' || countryCode === 'CHINA') {
                             console.log('🌍 [Detection] ✅ Confirmed China IP')
                             saveCache(true)
@@ -158,21 +156,10 @@ export async function checkIsChinaIP(): Promise<boolean> {
             }
         }
 
-        // 3. 备用方案：时区检测（仅在所有 IP API 都失败时使用）
-        console.log('🌍 [Detection] IP APIs failed, checking timezone as fallback')
-        if (checkTimezone()) {
-            saveCache(true)
-            return true
-        }
-
-        // 4. 备用方案：浏览器语言检测（仅在所有 IP API 都失败时使用）
-        console.log('🌍 [Detection] Checking browser language as final fallback')
-        if (checkBrowserLanguage()) {
-            saveCache(true)
-            return true
-        }
-
-        console.log('🌍 [Detection] ❌ Not detected as China')
+        // 所有 IP API 都失败，默认返回 false（使用 Spotify）
+        console.log('🌍 [Detection] ❌ All IP APIs failed, defaulting to Spotify')
+        saveCache(false)
+        return false
         saveCache(false)
         return false
     } catch (error) {

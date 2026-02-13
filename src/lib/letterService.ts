@@ -31,8 +31,9 @@ export class LetterService {
 
   /**
    * 创建 Letter
-   * - 登录用户：写入数据库，永远保存
-   * - 游客用户：仅返回对象，由前端保存到 LocalStorage (Local Only Mode)
+   * - 无论登录与否，都写入数据库
+   * - 登录用户：关联 user_id
+   * - 游客用户：只关联 anonymous_id
    */
   async createLetter(data: CreateLetterData): Promise<Letter> {
     const currentUser = userService.getCurrentUser()
@@ -41,46 +42,19 @@ export class LetterService {
     // 1. 构造基础 Letter 对象
     const linkId = this.generateLinkId()
 
-    // 2. 游客模式 (Guest Mode) - 仅本地
-    if (!currentUser) {
-      console.log('📝 LetterService: Guest Mode - Creating local-only letter')
-
-      // 返回一个符合 Letter 接口的对象，但不写入数据库
-      // 前端 SendPage 会负责将其保存到 localStorage
-      return {
-        id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-        link_id: linkId,
-        user_id: undefined, // undefined to match optional property
-        anonymous_id: anonymousId || undefined,
-        recipient_name: data.to,
-        message: data.message,
-        song_id: data.song.id,
-        song_title: data.song.title,
-        song_artist: data.song.artist,
-        song_album_cover: data.song.albumCover,
-        song_preview_url: data.song.previewUrl || undefined,
-        song_spotify_url: data.song.spotifyUrl,
-        song_duration_ms: data.song.duration_ms,
-        view_count: 0,
-        is_public: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString() // Added to match interface
-      }
-    }
-
-    // 3. 登录模式 (Auth Mode) - 写入数据库
-    console.log('📝 LetterService: Auth Mode - Writing to database for user:', currentUser.id)
-
     if (!supabase) {
       throw new Error('Supabase client not initialized')
     }
+
+    // 2. 写入数据库（无论登录与否）
+    console.log('📝 LetterService: Creating letter', currentUser ? `(Auth user: ${currentUser.id})` : '(Guest mode)')
 
     const { data: newLetter, error } = await supabase
       .from('letters')
       .insert({
         link_id: linkId,
-        user_id: currentUser.id,
-        anonymous_id: anonymousId, // 仍记录 anonymous_id 以便追踪设备来源
+        user_id: currentUser?.id || null,
+        anonymous_id: anonymousId,
         recipient_name: data.to,
         message: data.message,
         song_id: data.song.id,
@@ -103,6 +77,7 @@ export class LetterService {
     console.log('✅ LetterService: Letter saved to DB:', {
       link_id: newLetter.link_id,
       user_id: newLetter.user_id,
+      anonymous_id: newLetter.anonymous_id,
       is_public: newLetter.is_public,
       created_at: newLetter.created_at
     })

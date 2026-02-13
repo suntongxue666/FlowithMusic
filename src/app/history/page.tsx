@@ -166,18 +166,18 @@ function HistoryContent() {
 
       {/* Sync Banner */}
       {isAuthenticated && unsyncedCount > 0 && (
-        <div className="mb-8 p-5 bg-black text-white rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-5 shadow-xl" style={{ width: '100%', maxWidth: '600px' }}>
-          <div className="flex items-center gap-4 text-center sm:text-left">
-            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl">☁️</div>
+        <div className="mb-8 p-4 bg-white rounded-xl border border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ width: '100%', maxWidth: '600px' }}>
+          <div className="flex items-center gap-3 text-center sm:text-left">
+            <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-lg">☁️</div>
             <div>
-              <h3 className="font-bold text-white leading-tight">Sync local data</h3>
-              <p className="text-xs text-white/50">Found {unsyncedCount} letters to sync</p>
+              <h3 className="font-semibold text-gray-900 leading-tight">Sync local data</h3>
+              <p className="text-xs text-gray-500">Found {unsyncedCount} letters to sync</p>
             </div>
           </div>
           <button
             onClick={handleSync}
             disabled={isSyncing}
-            className="px-6 py-2 bg-white text-black font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50"
+            className="px-5 py-2 bg-gray-900 text-white font-medium rounded-lg transition-all active:scale-95 disabled:opacity-50"
           >
             {isSyncing ? 'Syncing...' : 'Sync Now'}
           </button>
