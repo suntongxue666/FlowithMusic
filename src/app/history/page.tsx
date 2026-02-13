@@ -37,7 +37,7 @@ function HistoryContent() {
     }
   }, [searchParams])
 
-  const checkAuthAndLoadLetters = async () => {
+  const checkAuthAndLoadLetters = async (forceRefresh: boolean = false) => {
     try {
       setLoading(true)
 
@@ -85,15 +85,36 @@ function HistoryContent() {
       let dbLetters: Letter[] = []
 
       // 3. 加载 DB Letters (登录用户用 userId，未登录用 anonymousId)
+      // 优先使用缓存，避免每次都从数据库加载
+      const cacheKey = 'history_letters_cache'
+      const cacheTimeKey = 'history_letters_cache_time'
+      const CACHE_DURATION = 5 * 60 * 1000 // 5分钟缓存
+
+      const cachedData = localStorage.getItem(cacheKey)
+      const cacheTime = localStorage.getItem(cacheTimeKey)
+      const now = Date.now()
+      const isCacheValid = cacheTime && (now - parseInt(cacheTime)) < CACHE_DURATION
+
       const anonymousId = ImprovedUserIdentity.getOrCreateIdentity().id
-      console.log('📋 History: Loading letters', { currentUser: !!currentUser, anonymousId })
+      console.log('📋 History: Loading letters', { currentUser: !!currentUser, anonymousId, isCacheValid, forceRefresh: forceRefresh })
+
       try {
-        if (currentUser) {
-          dbLetters = await letterService.getUserLetters(currentUser.id)
+        if (!forceRefresh && isCacheValid && cachedData) {
+          // 使用缓存数据
+          dbLetters = JSON.parse(cachedData)
+          console.log('📋 History: Using cached letters', dbLetters.length)
         } else {
-          dbLetters = await letterService.getUserLetters(undefined, anonymousId)
+          // 从数据库加载
+          if (currentUser) {
+            dbLetters = await letterService.getUserLetters(currentUser.id)
+          } else {
+            dbLetters = await letterService.getUserLetters(undefined, anonymousId)
+          }
+          console.log('📋 History: DB letters loaded', dbLetters.length, dbLetters.map(l => l.link_id))
+          // 更新缓存
+          localStorage.setItem(cacheKey, JSON.stringify(dbLetters))
+          localStorage.setItem(cacheTimeKey, now.toString())
         }
-        console.log('📋 History: DB letters loaded', dbLetters.length, dbLetters.map(l => l.link_id))
         dbLetters = (dbLetters || []).filter(l => l && l.link_id)
 
         // 4. 检查是否有未同步的本地信件 (仅登录用户)
@@ -163,11 +184,22 @@ function HistoryContent() {
 
   return (
     <div className="min-h-screen flex flex-col items-center py-8 sm:py-16" style={{ backgroundColor: '#fafafa' }}>
-      {/* 顶部标题栏 - 居中 */}
-      <div className="mb-10 text-center" style={{ marginTop: '24px', marginBottom: '24px' }}>
+      {/* 顶部标题栏 - 居中，带刷新按钮 */}
+      <div className="mb-10 flex items-center justify-center gap-4" style={{ marginTop: '24px', marginBottom: '24px' }}>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
           My Letters
         </h1>
+        <button
+          onClick={() => checkAuthAndLoadLetters(true)}
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          title="刷新"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M23 4v6h-6"></path>
+            <path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
       </div>
 
       {loading ? (
