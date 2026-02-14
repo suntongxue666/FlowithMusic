@@ -40,6 +40,10 @@ function HistoryContent() {
   }, [searchParams])
 
   const checkAuthAndLoadLetters = async (forceRefresh: boolean = false) => {
+    // 初始化变量，确保在所有作用域中可用
+    let localLetters: Letter[] = [];
+    let currentUser = null;
+
     try {
       setLoading(true)
 
@@ -54,47 +58,24 @@ function HistoryContent() {
         }
       }
 
-      /*
-      // 1. 检查登录状态 (增加等待初始化确保状态准确)
-      let currentUser = userService.getCurrentUser()
-      
-      // 如果没有用户，尝试从 Supabase Auth 恢复 (更积极的检查)
-      if (!currentUser && supabase) {
-         try {
-           const { data: { user } } = await supabase.auth.getUser()
-           if (user) {
-             console.log('🔄 History: Recovered user from Supabase Auth:', user.id)
-             currentUser = await userService.ensureUserExists(user)
-           }
-         } catch (e) {
-            console.warn('⚠️ History: Auth check failed:', e)
-         }
+      // 1. 强制刷新用户状态（增加超时保护）
+      try {
+        const userPromise = userService.getCurrentUserAsync();
+        const userTimeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Auth check timeout')), 5000)
+        );
+        currentUser = await Promise.race([userPromise, userTimeout]) as any;
+        console.log('📋 History: Auth check result:', currentUser?.id);
+      } catch (e) {
+        console.warn('⚠️ History: Auth check timed out or failed, using fallback:', e);
+        // 超时后使用本地缓存的用户状态（如果有的话）
+        currentUser = userService.getCurrentUser();
       }
-      
-      if (!currentUser) {
-        console.log('⏳ History: User not in cache, waiting for initializeUser...')
-        const initTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('init timeout')), 3000)
-        )
-        try {
-          await Promise.race([userService.initializeUser(), initTimeout])
-        } catch (e) {
-          console.warn('⚠️ History: User initialization timed out, using local fallback')
-        }
-        currentUser = userService.getCurrentUser()
-      }
-      */
-
-      // 1. 强制刷新用户状态
-      let currentUser = await userService.getCurrentUserAsync();
-
-      console.log('📋 History: Auth check result:', currentUser?.id);
 
       setIsAuthenticated(!!currentUser)
       setUser(currentUser)
 
       // 2. 加载本地 Letters (Guest Mode) - 增加鲁棒性过滤
-      let localLetters: Letter[] = []
       try {
         const raw = localStorage.getItem('letters')
         localLetters = JSON.parse(raw || '[]')
@@ -127,12 +108,17 @@ function HistoryContent() {
           dbLetters = JSON.parse(cachedData)
           console.log('📋 History: Using cached letters', dbLetters.length)
         } else {
-          // 从数据库加载
-          if (currentUser) {
-            dbLetters = await letterService.getUserLetters(currentUser.id)
-          } else {
-            dbLetters = await letterService.getUserLetters(undefined, anonymousId)
-          }
+          // 从数据库加载（增加超时保护）
+          const dbPromise = currentUser
+            ? letterService.getUserLetters(currentUser.id)
+            : letterService.getUserLetters(undefined, anonymousId);
+
+          const dbTimeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('DB query timeout')), 10000)
+          );
+
+          dbLetters = await Promise.race([dbPromise, dbTimeout]) as Letter[];
+
           console.log('📋 History: DB letters loaded', dbLetters.length, dbLetters.map(l => l.link_id))
           // 更新缓存
           localStorage.setItem(cacheKey, JSON.stringify(dbLetters))
@@ -153,7 +139,12 @@ function HistoryContent() {
           }
         }
       } catch (err) {
-        console.error('❌ History: Failed to load DB letters:', err)
+        console.error('❌ History: Failed to load DB letters:', err);
+        // 如果数据库加载失败，清除缓存，下次重试
+        localStorage.removeItem(cacheKey);
+        localStorage.removeItem(cacheTimeKey);
+        // 继续使用本地数据，不阻断用户
+        dbLetters = [];
       }
 
       // 5. 合并并去重 (关键修复：深度合并，确保本地的 animation_config 不被 DB 的覆盖)
@@ -180,6 +171,8 @@ function HistoryContent() {
 
     } catch (error) {
       console.error('💥 History: Error loading data:', error)
+      // 发生错误时，至少显示本地数据
+      setLetters(localLetters)
     } finally {
       setLoading(false)
     }

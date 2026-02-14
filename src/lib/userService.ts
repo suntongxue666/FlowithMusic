@@ -508,7 +508,13 @@ export class UserService {
     // 快速清理localStorage中的用户数据
     if (typeof window !== 'undefined') {
       console.log('🧹 快速清理localStorage用户数据...')
-      const keysToRemove = ['user', 'isAuthenticated', 'supabase_auth_error']
+      const keysToRemove = [
+        'user',
+        'isAuthenticated',
+        'supabase_auth_error',
+        'history_letters_cache',  // 清理 History 缓存
+        'history_letters_cache_time'  // 清理 History 缓存时间
+      ]
       keysToRemove.forEach(key => localStorage.removeItem(key))
 
       // 异步清除Supabase会话数据，不阻塞主流程

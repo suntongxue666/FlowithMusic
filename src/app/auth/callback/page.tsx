@@ -14,6 +14,7 @@ function AuthCallbackComponent() {
   useEffect(() => {
     let mounted = true;
     let timeoutId: NodeJS.Timeout;
+    let subscription: any = null;
 
     const handleAuth = async () => {
       console.log('🚀 AuthCallback: Starting Google OAuth callback handling...');
@@ -27,35 +28,20 @@ function AuthCallbackComponent() {
 
         if (code) {
           console.log('🔍 AuthCallback: Found OAuth code, exchanging for session...');
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+          // 为 code exchange 添加超时保护
+          const exchangePromise = supabase.auth.exchangeCodeForSession(code);
+          const exchangeTimeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Code exchange timeout')), 8000)
+          );
+
+          const { data, error } = await Promise.race([exchangePromise, exchangeTimeout]) as any;
+
           if (error) throw error;
 
           if (data.session?.user) {
             console.log('✅ AuthCallback: Code exchanged for user:', data.session.user.email);
             await userService.handleAuthCallback(data.session.user);
-            if (mounted) {
-              if (mounted) {
-                const pendingLetter = localStorage.getItem('pending_letter');
-                if (pendingLetter) {
-                  console.log('📝 AuthCallback: Found pending letter, redirecting to send page...');
-                  router.push('/send?resume=1');
-                } else {
-                  router.push('/history?login=success');
-                }
-                return;
-              }
-            }
-          }
-        }
-
-        // 2. 检查现有会话 (可能适用于 Implicit/Hash flows)
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
-
-        if (session?.user) {
-          console.log('✅ AuthCallback: Session found for user:', session.user.email);
-          await userService.handleAuthCallback(session.user);
-          if (mounted) {
             if (mounted) {
               const pendingLetter = localStorage.getItem('pending_letter');
               if (pendingLetter) {
@@ -69,52 +55,79 @@ function AuthCallbackComponent() {
           }
         }
 
-        // 3. 兜底方案：监听 AuthStateChange
+        // 2. 检查现有会话 (可能适用于 Implicit/Hash flows)
+        const sessionPromise = supabase.auth.getSession();
+        const sessionTimeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Session check timeout')), 5000)
+        );
+
+        const { data: { session }, error: sessionError } = await Promise.race([sessionPromise, sessionTimeout]) as any;
+
+        if (sessionError) throw sessionError;
+
+        if (session?.user) {
+          console.log('✅ AuthCallback: Session found for user:', session.user.email);
+          await userService.handleAuthCallback(session.user);
+          if (mounted) {
+            const pendingLetter = localStorage.getItem('pending_letter');
+            if (pendingLetter) {
+              console.log('📝 AuthCallback: Found pending letter, redirecting to send page...');
+              router.push('/send?resume=1');
+            } else {
+              router.push('/history?login=success');
+            }
+            return;
+          }
+        }
+
+        // 3. 兜底方案：监听 AuthStateChange（减少超时时间）
         console.log('⏳ AuthCallback: No immediate session, waiting for auth state change...');
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const { data: { subscription: sub } } = supabase.auth.onAuthStateChange(async (event, session) => {
           if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
             console.log('✅ AuthCallback: Auth event:', event, 'for:', session.user.email);
-            subscription.unsubscribe();
+            sub.unsubscribe();
             clearTimeout(timeoutId);
 
             try {
               await userService.handleAuthCallback(session.user);
               if (mounted) {
-                if (mounted) {
-                  const pendingLetter = localStorage.getItem('pending_letter');
-                  if (pendingLetter) {
-                    console.log('📝 AuthCallback: Found pending letter, redirecting to send page...');
-                    router.push('/send?resume=1');
-                  } else {
-                    router.push('/history?login=success');
-                  }
+                const pendingLetter = localStorage.getItem('pending_letter');
+                if (pendingLetter) {
+                  console.log('📝 AuthCallback: Found pending letter, redirecting to send page...');
+                  router.push('/send?resume=1');
+                } else {
+                  router.push('/history?login=success');
                 }
               }
             } catch (err) {
               console.error('💥 AuthCallback: DB sync error:', err);
               if (mounted) {
                 setError('Failed to sync user data.');
-                setTimeout(() => router.push('/history?login=error'), 3000);
+                setTimeout(() => router.push('/history?login=error'), 2000);
               }
             }
           }
         });
 
-        // 设置 15 秒超时
+        subscription = sub;
+
+        // 减少超时时间到 10 秒
         timeoutId = setTimeout(() => {
-          subscription.unsubscribe();
+          if (subscription) {
+            subscription.unsubscribe();
+          }
           if (mounted) {
             console.error('💥 AuthCallback: Auth state change timeout');
             setError('Verification timeout. Please try logging in again.');
-            setTimeout(() => router.push('/history?login=error'), 3000);
+            setTimeout(() => router.push('/history?login=error'), 2000);
           }
-        }, 15000);
+        }, 10000);
 
       } catch (err: any) {
         console.error('💥 AuthCallback: Error:', err);
         if (mounted) {
           setError(err.message || 'Login failed');
-          setTimeout(() => router.push('/history?login=error'), 3000);
+          setTimeout(() => router.push('/history?login=error'), 2000);
         }
       } finally {
         if (mounted) setLoading(false);
@@ -126,6 +139,7 @@ function AuthCallbackComponent() {
     return () => {
       mounted = false;
       if (timeoutId) clearTimeout(timeoutId);
+      if (subscription) subscription.unsubscribe();
     };
   }, [router])
 
