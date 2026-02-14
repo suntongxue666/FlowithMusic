@@ -8,6 +8,7 @@ import { userService } from '@/lib/userService'
 import { Letter } from '@/lib/supabase'
 import { ImprovedUserIdentity } from '@/lib/improvedUserIdentity'
 import Link from 'next/link'
+import FlowingEffects from '@/components/FlowingEffects'
 
 function HistoryContent() {
   const router = useRouter()
@@ -17,6 +18,7 @@ function HistoryContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [copyStatus, setCopyStatus] = useState<string | null>(null)
+  const [previewLetter, setPreviewLetter] = useState<Letter | null>(null)
 
   // 同步状态
   const [unsyncedCount, setUnsyncedCount] = useState(0)
@@ -203,6 +205,21 @@ function HistoryContent() {
     })
   }
 
+  const handleUnlock = async (letter: Letter) => {
+    if (!confirm(`Unlock "${letter.song_title}" with Flowing Emoji for $1.99?\n(Test Mode: This will simulate a successful payment)`)) return
+
+    // Simulate API call
+    const success = await letterService.updateLetterPaymentStatus(letter.link_id, 'flowing_emoji')
+
+    if (success) {
+      alert('Payment Successful! Link unlocked with Flowing Emoji.')
+      // Refresh list to show "Copy Link" state
+      checkAuthAndLoadLetters(true)
+    } else {
+      alert('Payment Failed. Please try again.')
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center py-8 sm:py-16" style={{ backgroundColor: '#fafafa' }}>
       {/* 顶部标题栏 - 居中，带刷新按钮 */}
@@ -288,37 +305,73 @@ function HistoryContent() {
                 </div>
 
                 {/* 操作按钮 - 右边距 */}
-                <div className="flex items-center gap-2" style={{ marginRight: '0' }}>
-                  <Link
-                    href={`/letter/${letter.link_id}`}
-                    className="inline-block"
-                    style={{
-                      padding: '6px 12px',
-                      fontSize: '14px',
-                      borderRadius: '6px',
-                      background: '#f0f0f0',
-                      color: '#666',
-                      fontWeight: 500,
-                      textDecoration: 'none'
-                    }}
-                  >
-                    View
-                  </Link>
-                  <button
-                    onClick={() => handleCopyLink(letter.link_id)}
-                    style={{
-                      padding: '6px 12px',
-                      fontSize: '14px',
-                      borderRadius: '6px',
-                      background: copyStatus === letter.link_id ? '#22c55e' : '#333',
-                      color: '#fff',
-                      fontWeight: 500,
-                      border: 'none',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
-                  </button>
+                <div className="flex flex-col items-end gap-2" style={{ marginRight: '0' }}>
+                  {/* Logic: 
+                       1. If has emojis AND NOT unlocked -> Show Preview & Unlock
+                       2. If has emojis AND unlocked -> Show Copy Link (Premium style?)
+                       3. If no emojis -> Show Copy Link (Standard)
+                   */}
+                  {(() => {
+                    const hasEmojis = letter.animation_config &&
+                      Array.isArray(letter.animation_config.emojis) &&
+                      letter.animation_config.emojis.length > 0;
+                    const isUnlocked = letter.effect_type === 'flowing_emoji';
+
+                    if (hasEmojis && !isUnlocked) {
+                      return (
+                        <>
+                          <button
+                            onClick={() => setPreviewLetter(letter)}
+                            className="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors"
+                          >
+                            👀 Preview Flowing Emoji
+                          </button>
+                          <button
+                            onClick={() => handleUnlock(letter)}
+                            className="px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-amber-400 to-orange-500 rounded-md shadow-sm hover:shadow-md transition-all active:scale-95"
+                          >
+                            🔓 Unlock Link ($1.99)
+                          </button>
+                        </>
+                      )
+                    }
+
+                    // Default / Unlocked State
+                    return (
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/letter/${letter.link_id}`}
+                          className="inline-block"
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '14px',
+                            borderRadius: '6px',
+                            background: '#f0f0f0',
+                            color: '#666',
+                            fontWeight: 500,
+                            textDecoration: 'none'
+                          }}
+                        >
+                          View
+                        </Link>
+                        <button
+                          onClick={() => handleCopyLink(letter.link_id)}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '14px',
+                            borderRadius: '6px',
+                            background: copyStatus === letter.link_id ? '#22c55e' : (isUnlocked ? '#f59e0b' : '#333'), // Amber if unlocked
+                            color: '#fff',
+                            fontWeight: 500,
+                            border: 'none',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {copyStatus === letter.link_id ? 'Copied' : (isUnlocked ? 'Copy Link ✨' : 'Copy Link')}
+                        </button>
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             </div>
@@ -330,6 +383,43 @@ function HistoryContent() {
       <div className="mt-20 py-10 text-center opacity-10">
         <p className="text-[9px] font-black text-gray-900 uppercase tracking-[0.6em]">Flowith Music</p>
       </div>
+
+      {/* Preview Overlay */}
+      {previewLetter && previewLetter.animation_config?.emojis && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setPreviewLetter(null)}
+        >
+          <div className="absolute inset-0 pointer-events-none">
+            <FlowingEffects
+              emojis={previewLetter.animation_config.emojis}
+              mode="preview"
+            />
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-xl z-50 text-center max-w-sm mx-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-bold mb-2">Flowing Emoji Preview</h3>
+            <p className="text-gray-500 mb-6">This effect will play for everyone who opens your letter.</p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setPreviewLetter(null)}
+                className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setPreviewLetter(null);
+                  handleUnlock(previewLetter);
+                }}
+                className="px-4 py-2 bg-black text-white font-bold rounded-lg hover:bg-gray-800 transition-opacity"
+              >
+                Unlock Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         body {

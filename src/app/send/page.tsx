@@ -331,8 +331,7 @@ function SendContent() {
             </div>
           </div>
 
-          {/* 👑 Flowing Emoji (Temporarily Disabled) */}
-          {/* 
+          {/* 👑 Flowing Emoji (Re-enabled for Testing) */}
           <div className="form-section">
             <div className="flex justify-between items-center mb-2">
               <label className="flex items-center gap-2 w-full justify-between">
@@ -347,8 +346,7 @@ function SendContent() {
               onSelect={setSelectedEmojis}
               maxSelection={3}
             />
-          </div> 
-*/}
+          </div>
 
           <div className="form-section">
             <label htmlFor="song">Song</label>
@@ -399,11 +397,13 @@ function SendContent() {
               <div className="modal-header">
                 <h3>Save Your Memory 💌</h3>
                 <p>Log in to keep your letters safe forever</p>
+                {/* 
                 {selectedEmojis.length > 0 && (
                   <div className="bg-yellow-50 text-yellow-800 text-sm p-3 rounded-lg mb-4 text-left border border-yellow-100">
                     <span className="font-bold">✨ Flowing Emoji</span> requires an account to save your effects customization.
                   </div>
                 )}
+                 */}
               </div>
 
               <button className="google-login-btn" onClick={handleGoogleLogin}>
@@ -418,19 +418,15 @@ function SendContent() {
                 <span>Continue with Google</span>
               </button>
 
-              {/* Only show Guest option if NO emojis are selected */}
-              {selectedEmojis.length === 0 && (
-                <>
-                  <div className="divider">
-                    <span>OR</span>
-                  </div>
+              {/* Remove Guest restriction for testing Emoji */}
+              <div className="divider">
+                <span>OR</span>
+              </div>
 
-                  <button className="guest-login-btn" onClick={handleGuestContinue}>
-                    Continue as Guest
-                    <span className="guest-note">(Saved on this device only)</span>
-                  </button>
-                </>
-              )}
+              <button className="guest-login-btn" onClick={handleGuestContinue}>
+                Continue as Guest
+                <span className="guest-note">(Saved on this device only)</span>
+              </button>
             </div>
           </div>
         )
