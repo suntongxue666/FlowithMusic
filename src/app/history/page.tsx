@@ -156,10 +156,22 @@ function HistoryContent() {
         console.error('❌ History: Failed to load DB letters:', err)
       }
 
-      // 5. 合并并去重
+      // 5. 合并并去重 (关键修复：深度合并，确保本地的 animation_config 不被 DB 的覆盖)
       const letterMap = new Map<string, Letter>()
-      localLetters.forEach(l => letterMap.set(l.link_id, l))
-      dbLetters.forEach(l => letterMap.set(l.link_id, l))
+      localLetters.forEach(l => {
+        if (l && l.link_id) letterMap.set(l.link_id, { ...l })
+      })
+      dbLetters.forEach(l => {
+        if (l && l.link_id) {
+          const existing = letterMap.get(l.link_id)
+          // 如果本地已有且带有动画配置，而 DB 版没有，则保留动画配置
+          letterMap.set(l.link_id, {
+            ...existing,
+            ...l,
+            animation_config: l.animation_config || existing?.animation_config
+          } as Letter)
+        }
+      })
 
       const mergedLetters = Array.from(letterMap.values())
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
@@ -304,65 +316,58 @@ function HistoryContent() {
                   </div>
                 </div>
 
-                {/* 操作按钮 - 右边距 */}
+                {/* 操作按钮 - 右侧对齐 */}
                 <div className="flex flex-col items-end gap-2" style={{ marginRight: '0' }}>
-                  {/* Logic: 
-                       1. If has emojis AND NOT unlocked -> Show Preview & Unlock
-                       2. If has emojis AND unlocked -> Show Copy Link (Premium style?)
-                       3. If no emojis -> Show Copy Link (Standard)
-                   */}
                   {(() => {
                     const hasEmojis = letter.animation_config &&
                       Array.isArray(letter.animation_config.emojis) &&
                       letter.animation_config.emojis.length > 0;
                     const isUnlocked = letter.effect_type === 'flowing_emoji';
 
+                    // 如果有 Emoji 且未解锁：显示 View, Preview, Unlock
                     if (hasEmojis && !isUnlocked) {
                       return (
-                        <>
-                          <button
-                            onClick={() => setPreviewLetter(letter)}
-                            className="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors"
-                          >
-                            👀 Preview Flowing Emoji
-                          </button>
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/letter/${letter.link_id}`}
+                              className="px-3 py-1.5 text-sm bg-gray-100 text-gray-600 font-medium rounded-md hover:bg-gray-200 transition-colors"
+                            >
+                              View
+                            </Link>
+                            <button
+                              onClick={() => setPreviewLetter(letter)}
+                              className="px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+                            >
+                              👀 Preview Flowing Emoji
+                            </button>
+                          </div>
                           <button
                             onClick={() => handleUnlock(letter)}
-                            className="px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-amber-400 to-orange-500 rounded-md shadow-sm hover:shadow-md transition-all active:scale-95"
+                            className="px-3 py-1.5 text-sm font-bold text-white bg-gradient-to-r from-amber-400 to-orange-500 rounded-md shadow-sm hover:shadow-md transition-all active:scale-95"
+                            style={{ width: 'fit-content' }}
                           >
                             🔓 Unlock Link ($1.99)
                           </button>
-                        </>
+                        </div>
                       )
                     }
 
-                    // Default / Unlocked State
+                    // 已解锁或标准模式：显示 View, Copy Link
                     return (
                       <div className="flex items-center gap-2">
                         <Link
                           href={`/letter/${letter.link_id}`}
-                          className="inline-block"
-                          style={{
-                            padding: '6px 12px',
-                            fontSize: '14px',
-                            borderRadius: '6px',
-                            background: '#f0f0f0',
-                            color: '#666',
-                            fontWeight: 500,
-                            textDecoration: 'none'
-                          }}
+                          className="px-3 py-1.5 text-sm bg-gray-100 text-gray-600 font-medium rounded-md hover:bg-gray-200 transition-colors"
                         >
                           View
                         </Link>
                         <button
                           onClick={() => handleCopyLink(letter.link_id)}
+                          className="px-3 py-1.5 text-sm font-medium rounded-md transition-all"
                           style={{
-                            padding: '6px 12px',
-                            fontSize: '14px',
-                            borderRadius: '6px',
                             background: copyStatus === letter.link_id ? '#22c55e' : (isUnlocked ? '#f59e0b' : '#333'), // Amber if unlocked
                             color: '#fff',
-                            fontWeight: 500,
                             border: 'none',
                             cursor: 'pointer'
                           }}
