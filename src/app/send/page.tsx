@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import SongSelector from '@/components/SongSelector'
-import EmojiSelector from '@/components/EmojiSelector'
+// import EmojiSelector from '@/components/EmojiSelector' // Temporarily disabled
 import SpotifyEmbedPlayer from '@/components/SpotifyEmbedPlayer'
 import Toast from '@/components/Toast'
 import { SpotifyTrack } from '@/lib/spotify'
@@ -18,7 +18,7 @@ function SendContent() {
   const [selectedTrack, setSelectedTrack] = useState<SpotifyTrack | null>(null)
   const [recipient, setRecipient] = useState('')
   const [message, setMessage] = useState('')
-  const [selectedEmojis, setSelectedEmojis] = useState<string[]>([])
+  // const [selectedEmojis, setSelectedEmojis] = useState<string[]>([]) // Temporarily disabled
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [showErrorModal, setShowErrorModal] = useState(false)
@@ -71,7 +71,7 @@ function SendContent() {
             setRecipient(data.recipient || '')
             setMessage(data.message || '')
             setSelectedTrack(data.track || null)
-            setSelectedEmojis(data.emojis || [])
+            // setSelectedEmojis(data.emojis || []) // Temporarily disabled
 
             console.log('Restored pending letter data')
 
@@ -117,8 +117,7 @@ function SendContent() {
         localStorage.setItem('pending_letter', JSON.stringify({
           recipient,
           message,
-          track: selectedTrack,
-          emojis: selectedEmojis
+          track: selectedTrack
         }))
       }
       await userService.signInWithGoogle()
@@ -187,9 +186,6 @@ function SendContent() {
           previewUrl: selectedTrack!.preview_url || undefined,
           spotifyUrl: selectedTrack!.external_urls.spotify,
           duration_ms: selectedTrack!.duration_ms
-        },
-        animation_config: {
-          emojis: selectedEmojis
         }
       })
 
@@ -331,7 +327,7 @@ function SendContent() {
             </div>
           </div>
 
-          {/* 👑 Flowing Emoji (Re-enabled for Testing) */}
+          {/* 👑 Flowing Emoji - Temporarily disabled for stability
           <div className="form-section">
             <div className="flex justify-between items-center mb-2">
               <label className="flex items-center gap-2 w-full justify-between">
@@ -347,6 +343,7 @@ function SendContent() {
               maxSelection={3}
             />
           </div>
+          */}
 
           <div className="form-section">
             <label htmlFor="song">Song</label>
