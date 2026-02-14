@@ -230,8 +230,8 @@ function HistoryContent() {
       ) : letters.length === 0 ? (
         <div className="text-center bg-white rounded-2xl border border-gray-100 shadow-sm" style={{ width: '100%', maxWidth: '600px', paddingTop: '85px', paddingBottom: '85px' }}>
           <div className="text-6xl mb-6 grayscale opacity-20">📭</div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">Nothing here</h3>
-          <p className="text-gray-400 mb-10 text-sm">Start sharing your thoughts through music.</p>
+          <h3 className="text-2xl font-bold text-gray-900 mb-3">Nothing here</h3>
+          <p className="text-gray-400 mb-6 text-sm">Start sharing your thoughts through music.</p>
           <Link
             href="/send"
             className="inline-flex px-8 py-3 bg-black text-white rounded-full font-bold hover:scale-105 transition-all"

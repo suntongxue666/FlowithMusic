@@ -73,24 +73,31 @@ export class LetterService {
     // 2. 写入数据库（无论登录与否）
     console.log('📝 LetterService: Creating letter', finalUserId ? `(Auth user: ${finalUserId})` : '(Guest mode)')
 
+    // 构造插入数据
+    const insertData: any = {
+      link_id: linkId,
+      user_id: finalUserId,
+      anonymous_id: anonymousId,
+      recipient_name: data.to,
+      message: data.message,
+      song_id: data.song.id,
+      song_title: data.song.title,
+      song_artist: data.song.artist,
+      song_album_cover: data.song.albumCover,
+      song_preview_url: data.song.previewUrl,
+      song_spotify_url: data.song.spotifyUrl,
+      song_duration_ms: data.song.duration_ms,
+      is_public: true
+    }
+
+    // 仅当有动画配置时才添加字段，避免因数据库 Schema 缓存未更新导致的错误
+    if (data.animation_config && Object.keys(data.animation_config).length > 0) {
+      insertData.animation_config = data.animation_config
+    }
+
     const { data: newLetter, error } = await supabase
       .from('letters')
-      .insert({
-        link_id: linkId,
-        user_id: finalUserId,
-        anonymous_id: anonymousId,
-        recipient_name: data.to,
-        message: data.message,
-        song_id: data.song.id,
-        song_title: data.song.title,
-        song_artist: data.song.artist,
-        song_album_cover: data.song.albumCover,
-        song_preview_url: data.song.previewUrl,
-        song_spotify_url: data.song.spotifyUrl,
-        song_duration_ms: data.song.duration_ms,
-        is_public: true,
-        animation_config: data.animation_config || {}
-      })
+      .insert(insertData)
       .select()
       .single()
 
