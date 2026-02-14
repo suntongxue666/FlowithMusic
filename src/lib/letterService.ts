@@ -90,9 +90,15 @@ export class LetterService {
       is_public: true
     }
 
-    // 仅当有动画配置时才添加字段，避免因数据库 Schema 缓存未更新导致的错误
-    if (data.animation_config && Object.keys(data.animation_config).length > 0) {
+    // 仅当有有效的动画配置(emoji数组非空)时才添加字段
+    // 修复: 之前的检查 Object.keys > 0 对于 { emojis: [] } 无效，导致Schema错误
+    if (data.animation_config &&
+      Array.isArray(data.animation_config.emojis) &&
+      data.animation_config.emojis.length > 0) {
       insertData.animation_config = data.animation_config
+      // 只有在确定有特效配置时，才可能尝试写入 effect_type，但为了安全起见（防止列缺失），这里暂不写入 effect_type
+      // 如果确认数据库迁移已执行，可以取消注释：
+      // insertData.effect_type = 'flowing_emoji' 
     }
 
     const { data: newLetter, error } = await supabase
