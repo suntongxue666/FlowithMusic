@@ -324,10 +324,11 @@ function HistoryContent() {
                       letter.animation_config.emojis.length > 0;
                     const isUnlocked = letter.effect_type === 'flowing_emoji';
 
-                    // 如果有 Emoji 且未解锁：显示 View, Preview, Unlock
+                    // 如果有 Emoji 且未解锁：两行布局
                     if (hasEmojis && !isUnlocked) {
                       return (
-                        <div className="flex flex-col items-end gap-2">
+                        <div className="flex flex-col items-end gap-2 text-right">
+                          {/* 第一行：View + Copy Link (之前的按钮在一行) */}
                           <div className="flex items-center gap-2">
                             <Link
                               href={`/letter/${letter.link_id}`}
@@ -344,6 +345,25 @@ function HistoryContent() {
                               View
                             </Link>
                             <button
+                              onClick={() => handleCopyLink(letter.link_id)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '14px',
+                                borderRadius: '6px',
+                                background: copyStatus === letter.link_id ? '#22c55e' : '#333',
+                                color: '#fff',
+                                fontWeight: 500,
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
+                            </button>
+                          </div>
+
+                          {/* 第二行：Preview + Unlock (新增的按钮在一行) */}
+                          <div className="flex items-center gap-2">
+                            <button
                               onClick={() => setPreviewLetter(letter)}
                               style={{
                                 padding: '6px 12px',
@@ -358,28 +378,27 @@ function HistoryContent() {
                             >
                               Preview Flowing Emoji
                             </button>
+                            <button
+                              onClick={() => handleUnlock(letter)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '14px',
+                                borderRadius: '6px',
+                                background: '#f59e0b', // 橙黄色
+                                color: '#fff',
+                                fontWeight: 500,
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              🔐 Unlock Link
+                            </button>
                           </div>
-                          <button
-                            onClick={() => handleUnlock(letter)}
-                            style={{
-                              padding: '6px 12px',
-                              fontSize: '14px',
-                              borderRadius: '6px',
-                              background: '#333',
-                              color: '#fff',
-                              fontWeight: 500,
-                              border: 'none',
-                              cursor: 'pointer',
-                              width: 'fit-content'
-                            }}
-                          >
-                            🔐 Unlock Link
-                          </button>
                         </div>
                       )
                     }
 
-                    // 已解锁或标准模式：显示 View, Copy Link
+                    // 已解锁或标准模式：还是原来的 View, Copy Link 一行布局
                     return (
                       <div className="flex items-center gap-2">
                         <Link
