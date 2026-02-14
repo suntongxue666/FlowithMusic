@@ -233,6 +233,9 @@ function SendContent() {
         keys.forEach(key => {
           if (key.startsWith('cache_')) localStorage.removeItem(key)
         })
+        // 强制清除 History 页面缓存
+        localStorage.removeItem('history_letters_cache')
+        localStorage.removeItem('history_letters_cache_time')
       }
 
       // Show toast
@@ -328,8 +331,11 @@ function SendContent() {
 
           <div className="form-section">
             <div className="flex justify-between items-center mb-2">
-              <label className="flex items-center gap-2">
-                👑 Flowing Emoji <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Optional</span>
+              <label className="flex items-center gap-2 w-full justify-between">
+                <div className="flex items-center gap-2">
+                  👑 Flowing Emoji <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Optional</span>
+                </div>
+                <span className="text-sm font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded-md border border-amber-100">💰 $1.99/Letter</span>
               </label>
             </div>
             <EmojiSelector
