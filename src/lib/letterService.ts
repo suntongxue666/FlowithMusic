@@ -118,10 +118,12 @@ export class LetterService {
     }
 
     // Special handling for missing column error (Schema mismatch)
-    if (dbError && (
-      dbError.message?.includes('animation_config') ||
-      dbError.code === 'PGRST204' || // Columns not found
-      JSON.stringify(dbError).includes('schema cache')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const err = dbError as any; // Cast to any to access error properties safely
+    if (err && (
+      err.message?.includes('animation_config') ||
+      err.code === 'PGRST204' || // Columns not found
+      JSON.stringify(err).includes('schema cache')
     )) {
       console.warn('⚠️ LetterService: Schema mismatch detected (animation_config missing?), retrying without it...');
       const fallbackData = { ...insertData };
