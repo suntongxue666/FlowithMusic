@@ -159,3 +159,8 @@ WHERE l.is_public = true;
 -- ('test@example.com', 'google_123', 'anon_test_123', 'Test User');
 
 -- 注释：这个SQL文件需要在Supabase的SQL编辑器中执行
+
+-- 2026-02-14: Add Flowing Emoji feature support
+ALTER TABLE letters 
+ADD COLUMN IF NOT EXISTS effect_type TEXT,
+ADD COLUMN IF NOT EXISTS animation_config JSONB DEFAULT '{}'::jsonb;

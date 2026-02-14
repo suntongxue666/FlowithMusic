@@ -8,6 +8,8 @@ import LetterQRCode from '@/components/LetterQRCode'
 import ViewTracker from '@/components/ViewTracker'
 import { letterService } from '@/lib/letterService'
 import { ImprovedUserIdentity } from '@/lib/improvedUserIdentity'
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js"
+import FlowingEffects from '@/components/FlowingEffects'
 import type { Letter } from '@/lib/supabase'
 
 // 动物表情符号数组
@@ -160,6 +162,9 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
   const [letter, setLetter] = useState<Letter | null>(null)
   const [forceRefresh, setForceRefresh] = useState(Date.now())
   const [loading, setLoading] = useState(true)
+  const [showEffect, setShowEffect] = useState(false)
+  const [effectMode, setEffectMode] = useState<'preview' | 'full'>('preview')
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
 
   // 检测文本是否包含中文字符
   const hasChinese = (text: string) => {
@@ -213,6 +218,13 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
                 foundLetter = apiLetter
                 // If apiLetter has countryCode, we can store it or use it
                 setLetter(apiLetter)
+
+                // Check for paid effect
+                if (apiLetter.effect_type) {
+                  setEffectMode('full')
+                  setShowEffect(true)
+                }
+
                 setLoading(false)
                 console.log('✅ Letter data is complete and valid')
 
@@ -244,6 +256,13 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
               console.log('✅ Found complete letter in database')
               foundLetter = databaseLetter
               setLetter(databaseLetter)
+
+              // Check for paid effect
+              if (databaseLetter.effect_type) {
+                setEffectMode('full')
+                setShowEffect(true)
+              }
+
               setLoading(false)
 
               // 记录浏览
@@ -431,6 +450,43 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
             {/* 发送者信息 - 单独一行显示 */}
             <LetterSender user={letter.user} letter={letter} />
 
+            {/* 付费特效按钮区 */}
+            {letter.animation_config?.emojis?.length > 0 && !letter.effect_type && (
+              <div className="effect-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '20px' }}>
+                <button
+                  onClick={() => {
+                    setEffectMode('preview')
+                    setShowEffect(true)
+                    setTimeout(() => setShowEffect(false), 3000)
+                  }}
+                  className="action-btn preview-btn"
+                >
+                  ✨ Preview Effect
+                </button>
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="action-btn unlock-btn"
+                >
+                  🔓 Unlock Full Experience
+                </button>
+              </div>
+            )}
+
+            {/* 已解锁显示复制链接 (模拟逻辑，实际可能是分享功能增强) */}
+            {letter.effect_type && (
+              <div className="effect-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '20px' }}>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href)
+                    alert('Link copied! Share this premium letter with friends.')
+                  }}
+                  className="action-btn copy-btn"
+                >
+                  🔗 Copy Gold Link
+                </button>
+              </div>
+            )}
+
             <div className="letter-date centered-date" style={{ fontSize: '12px' }}>
               Sent on {new Date(letter.created_at).toLocaleDateString('en-US', {
                 year: 'numeric',
@@ -465,7 +521,94 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
         </div>
 
         <LetterQRCode />
+
+        {/* 特效层 */}
+        {showEffect && letter?.animation_config?.emojis && (
+          <FlowingEffects
+            emojis={letter.animation_config.emojis}
+            mode={effectMode}
+          />
+        )}
+
+        {/* 支付弹窗 */}
+        {showPaymentModal && (
+          <div className="modal-overlay" onClick={() => setShowPaymentModal(false)}>
+            <div className="modal-content payment-modal" onClick={e => e.stopPropagation()}>
+              <h3>Unlock Flowing Emojis 👑</h3>
+              <p>Get the full-screen animation permanently for this letter.</p>
+              <div className="paypal-container">
+                <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "test" }}>
+                  <PayPalButtons
+                    style={{ layout: "vertical" }}
+                    createOrder={(data, actions) => {
+                      return actions.order.create({
+                        intent: "CAPTURE",
+                        purchase_units: [{
+                          amount: {
+                            currency_code: "USD",
+                            value: "0.99" // TODO: Set real price
+                          }
+                        }]
+                      })
+                    }}
+                    onApprove={async (data, actions) => {
+                      if (!actions.order) return Promise.reject("Order not found");
+                      return actions.order.capture().then(async (details) => {
+                        console.log('Transaction completed by ' + details?.payer?.name?.given_name);
+                        // Update database
+                        await letterService.updateLetterPaymentStatus(linkId, 'flowing_emoji')
+                        // Update local state
+                        setLetter(prev => prev ? ({ ...prev, effect_type: 'flowing_emoji' }) : null)
+                        setEffectMode('full')
+                        setShowEffect(true)
+                        setShowPaymentModal(false)
+                      });
+                    }}
+                  />
+                </PayPalScriptProvider>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      <style jsx>{`
+        .action-btn {
+          padding: 8px 16px;
+          border-radius: 20px;
+          border: none;
+          cursor: pointer;
+          font-weight: 500;
+          transition: transform 0.2s;
+        }
+        .action-btn:hover {
+          transform: scale(1.05);
+        }
+        .preview-btn {
+          background: #f0f0f0;
+          color: #333;
+        }
+        .unlock-btn {
+          background: linear-gradient(45deg, #FFD700, #FFA500);
+          color: white;
+          box-shadow: 0 4px 10px rgba(255, 165, 0, 0.3);
+        }
+        .copy-btn {
+          background: linear-gradient(45deg, #FFD700, #DAA520);
+          color: white;
+          width: 100%;
+        }
+        .payment-modal {
+          padding: 30px;
+        }
+        .payment-modal h3 {
+          margin-bottom: 10px;
+        }
+        .paypal-container {
+          margin-top: 20px;
+          min-height: 150px;
+        }
+      `}</style>
     </main>
   )
 }

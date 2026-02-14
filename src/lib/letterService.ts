@@ -13,6 +13,9 @@ export interface CreateLetterData {
     spotifyUrl: string
     duration_ms: number
   }
+  animation_config?: {
+    emojis: string[]
+  }
 }
 
 
@@ -64,7 +67,8 @@ export class LetterService {
         song_preview_url: data.song.previewUrl,
         song_spotify_url: data.song.spotifyUrl,
         song_duration_ms: data.song.duration_ms,
-        is_public: true
+        is_public: true,
+        animation_config: data.animation_config || {}
       })
       .select()
       .single()
@@ -319,6 +323,30 @@ export class LetterService {
 
     console.log(`✅ LetterService: Migration complete. Success: ${success}, Fail: ${fail}`)
     return { success, fail }
+  }
+
+  /**
+   * 更新 Letter 的付费状态 (解锁特效)
+   */
+  async updateLetterPaymentStatus(linkId: string, effectType: string): Promise<boolean> {
+    if (!supabase) return false
+
+    console.log(`💰 LetterService: Updating payment status for ${linkId} to ${effectType}`)
+
+    const { error } = await supabase
+      .from('letters')
+      .update({
+        effect_type: effectType,
+        updated_at: new Date().toISOString()
+      })
+      .eq('link_id', linkId)
+
+    if (error) {
+      console.error('❌ LetterService: Failed to update payment status:', error)
+      return false
+    }
+
+    return true
   }
 
   private generateLinkId(): string {

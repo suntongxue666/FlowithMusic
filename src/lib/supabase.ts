@@ -181,6 +181,8 @@ export interface Letter {
   updated_at: string
   view_count: number
   is_public: boolean
+  effect_type?: string | null // 付费特效类型，如 'flowing_emoji'
+  animation_config?: any // 特效配置，如 { emojis: ["🐶", "🐱"] }
   shareable_link?: string // 包含数据的可分享链接
   user?: User // 关联用户信息
 }

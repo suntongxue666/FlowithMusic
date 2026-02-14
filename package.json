@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@paypal/react-paypal-js": "^8.9.2",
     "@supabase/supabase-js": "^2.52.1",
     "@tailwindcss/postcss": "^4.1.11",
     "@types/node": "^24.1.0",
