@@ -71,6 +71,7 @@ function SendContent() {
             setRecipient(data.recipient || '')
             setMessage(data.message || '')
             setSelectedTrack(data.track || null)
+            setSelectedEmojis(data.emojis || [])
 
             console.log('Restored pending letter data')
 
@@ -116,7 +117,8 @@ function SendContent() {
         localStorage.setItem('pending_letter', JSON.stringify({
           recipient,
           message,
-          track: selectedTrack
+          track: selectedTrack,
+          emojis: selectedEmojis
         }))
       }
       await userService.signInWithGoogle()
