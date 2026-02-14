@@ -54,10 +54,10 @@ export class LetterService {
 
     if (!finalUserId && supabase) {
       try {
-        // 增加 2秒 超时，防止 await supabase.auth.getUser() 导致死锁或长时间等待
+        // 增加到 5秒 超时，防止 await supabase.auth.getUser() 导致死锁或长时间等待
         console.log('🔍 LetterService: Checking Supabase Auth with timeout...')
         const authPromise = supabase.auth.getUser();
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth check timeout')), 2000));
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth check timeout')), 5000));
 
         const { data: { user } } = await Promise.race([authPromise, timeoutPromise]) as any;
 
@@ -74,10 +74,11 @@ export class LetterService {
     console.log('📝 LetterService: Creating letter', finalUserId ? `(Auth user: ${finalUserId})` : '(Guest mode)')
 
     // 构造插入数据
+    // 注意: DB CHECK constraint `letters_owner_check` 要求 user_id 和 anonymous_id 只能设其一
     const insertData: any = {
       link_id: linkId,
-      user_id: finalUserId,
-      anonymous_id: anonymousId,
+      user_id: finalUserId || null,
+      anonymous_id: finalUserId ? null : anonymousId,
       recipient_name: data.to,
       message: data.message,
       song_id: data.song.id,

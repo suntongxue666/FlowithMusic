@@ -175,26 +175,58 @@ function SendContent() {
         console.warn('User service initialization timed out or failed, but continuing:', userError)
       }
 
-      const letterPromise = letterService.createLetter({
-        to: recipient.trim(),
-        message: message.trim(),
-        song: {
-          id: selectedTrack!.id,
-          title: selectedTrack!.name,
-          artist: selectedTrack!.artists[0]?.name || 'Unknown Artist',
-          albumCover: selectedTrack!.album.images[0]?.url || '',
-          previewUrl: selectedTrack!.preview_url || undefined,
-          spotifyUrl: selectedTrack!.external_urls.spotify,
-          duration_ms: selectedTrack!.duration_ms
+      // 增加重试机制：最多重试2次
+      let lastError = null;
+      let newLetter = null;
+      const maxRetries = 2;
+
+      for (let attempt = 1; attempt <= maxRetries && !newLetter; attempt++) {
+        try {
+          console.log(`📧 Letter creation attempt ${attempt}/${maxRetries}...`);
+
+          const letterPromise = letterService.createLetter({
+            to: recipient.trim(),
+            message: message.trim(),
+            song: {
+              id: selectedTrack!.id,
+              title: selectedTrack!.name,
+              artist: selectedTrack!.artists[0]?.name || 'Unknown Artist',
+              albumCover: selectedTrack!.album.images[0]?.url || '',
+              previewUrl: selectedTrack!.preview_url || undefined,
+              spotifyUrl: selectedTrack!.external_urls.spotify,
+              duration_ms: selectedTrack!.duration_ms
+            }
+          });
+
+          // 增加超时时间到 30秒
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error(`Letter creation timeout after 30 seconds (attempt ${attempt}/${maxRetries})`)), 30000)
+          );
+
+          newLetter = await Promise.race([letterPromise, timeoutPromise]) as any;
+
+          if (!newLetter || !newLetter.link_id) {
+            throw new Error(`Letter creation failed: Empty result from server (attempt ${attempt}/${maxRetries})`);
+          }
+
+          console.log(`✅ Letter created successfully on attempt ${attempt}/${maxRetries}:`, newLetter);
+
+        } catch (error: any) {
+          lastError = error;
+          console.error(`❌ Letter creation failed on attempt ${attempt}/${maxRetries}:`, error.message);
+
+          // 如果不是最后一次尝试，等待2秒后重试
+          if (attempt < maxRetries) {
+            console.log(`⏳ Waiting 2 seconds before retry...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
         }
-      })
+      }
 
-      // 添加15秒超时保护
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Letter creation timeout after 15 seconds')), 15000)
-      )
-
-      const newLetter = await Promise.race([letterPromise, timeoutPromise]) as any
+      // 所有尝试都失败
+      if (!newLetter) {
+        throw new Error(`Failed to send letter after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`);
+      }
 
       if (!newLetter || !newLetter.link_id) {
         throw new Error('Letter creation failed: Empty result from server')
