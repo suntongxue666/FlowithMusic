@@ -361,7 +361,13 @@ export class UserService {
 
     try {
       // 1. 确保用户在数据库中存在（修复外键问题的关键）
-      const dbUser = await this.ensureUserExists(user)
+      // 添加超时保护，防止老用户登录时数据库操作卡住
+      const ensureUserPromise = this.ensureUserExists(user);
+      const ensureUserTimeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('ensureUserExists timeout')), 20000)
+      );
+
+      const dbUser = await Promise.race([ensureUserPromise, ensureUserTimeout]) as User;
       console.log('✅ UserService: 数据库用户同步成功:', dbUser.id)
 
       // 2. 更新本地状态
@@ -387,6 +393,7 @@ export class UserService {
     } catch (error) {
       console.error('💥 UserService: 处理登录回调失败:', error)
       // 降级处理：仅本地保存，允许用户继续使用（虽然可能会有部分功能受限）
+      console.log('⚠️ UserService: 使用 fallback 用户模式')
       return this.createFallbackUser(user)
     }
   }

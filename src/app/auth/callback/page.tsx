@@ -29,10 +29,10 @@ function AuthCallbackComponent() {
         if (code) {
           console.log('🔍 AuthCallback: Found OAuth code, exchanging for session...');
 
-          // 为 code exchange 添加超时保护
+          // 为 code exchange 添加超时保护（增加到 15秒）
           const exchangePromise = supabase.auth.exchangeCodeForSession(code);
           const exchangeTimeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Code exchange timeout')), 8000)
+            setTimeout(() => reject(new Error('Code exchange timeout')), 15000)
           );
 
           const { data, error } = await Promise.race([exchangePromise, exchangeTimeout]) as any;
@@ -58,7 +58,7 @@ function AuthCallbackComponent() {
         // 2. 检查现有会话 (可能适用于 Implicit/Hash flows)
         const sessionPromise = supabase.auth.getSession();
         const sessionTimeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Session check timeout')), 5000)
+          setTimeout(() => reject(new Error('Session check timeout')), 10000)
         );
 
         const { data: { session }, error: sessionError } = await Promise.race([sessionPromise, sessionTimeout]) as any;
@@ -80,7 +80,7 @@ function AuthCallbackComponent() {
           }
         }
 
-        // 3. 兜底方案：监听 AuthStateChange（减少超时时间）
+        // 3. 兜底方案：监听 AuthStateChange（增加到 30秒，适应老用户数据库操作）
         console.log('⏳ AuthCallback: No immediate session, waiting for auth state change...');
         const { data: { subscription: sub } } = supabase.auth.onAuthStateChange(async (event, session) => {
           if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
@@ -111,7 +111,7 @@ function AuthCallbackComponent() {
 
         subscription = sub;
 
-        // 减少超时时间到 10 秒
+        // 增加超时时间到 30 秒，适应老用户登录时的数据库操作
         timeoutId = setTimeout(() => {
           if (subscription) {
             subscription.unsubscribe();
@@ -121,7 +121,7 @@ function AuthCallbackComponent() {
             setError('Verification timeout. Please try logging in again.');
             setTimeout(() => router.push('/history?login=error'), 2000);
           }
-        }, 10000);
+        }, 30000);
 
       } catch (err: any) {
         console.error('💥 AuthCallback: Error:', err);
