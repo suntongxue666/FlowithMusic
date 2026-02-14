@@ -101,15 +101,46 @@ export class LetterService {
       // insertData.effect_type = 'flowing_emoji' 
     }
 
-    const { data: newLetter, error } = await supabase
-      .from('letters')
-      .insert(insertData)
-      .select()
-      .single()
+    let newLetter: Letter | null = null;
+    let dbError = null;
 
-    if (error) {
-      console.error('❌ LetterService: Database write failed:', error)
-      throw new Error(`Failed to save letter: ${error.message}`)
+    try {
+      const { data, error } = await supabase
+        .from('letters')
+        .insert(insertData)
+        .select()
+        .single()
+
+      newLetter = data;
+      dbError = error;
+    } catch (e) {
+      dbError = e;
+    }
+
+    // Special handling for missing column error (Schema mismatch)
+    if (dbError && (
+      dbError.message?.includes('animation_config') ||
+      dbError.code === 'PGRST204' || // Columns not found
+      JSON.stringify(dbError).includes('schema cache')
+    )) {
+      console.warn('⚠️ LetterService: Schema mismatch detected (animation_config missing?), retrying without it...');
+      const fallbackData = { ...insertData };
+      delete fallbackData.animation_config;
+
+      const { data, error } = await supabase
+        .from('letters')
+        .insert(fallbackData)
+        .select()
+        .single();
+
+      newLetter = data;
+      dbError = error;
+    }
+
+    if (dbError) {
+      const err = dbError as any;
+      console.error('❌ LetterService: Database write failed:', dbError)
+      throw new Error(`Failed to save letter: ${err.message || 'Unknown error'}`)
     }
 
     // Safety fallback: If select() returns null but no error (RLS issue?), construct a response
