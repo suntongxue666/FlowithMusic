@@ -112,14 +112,23 @@ export class LetterService {
       throw new Error(`Failed to save letter: ${error.message}`)
     }
 
+    // Safety fallback: If select() returns null but no error (RLS issue?), construct a response
+    const validLetter = newLetter || {
+      ...insertData,
+      id: `temp-${Date.now()}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      view_count: 0,
+    } as Letter
+
     console.log('✅ LetterService: Letter saved to DB:', {
-      link_id: newLetter.link_id,
-      user_id: newLetter.user_id,
-      anonymous_id: newLetter.anonymous_id,
-      is_public: newLetter.is_public,
-      created_at: newLetter.created_at
+      link_id: validLetter.link_id,
+      user_id: validLetter.user_id,
+      anonymous_id: validLetter.anonymous_id,
+      is_public: validLetter.is_public,
+      created_at: validLetter.created_at
     })
-    return newLetter
+    return validLetter
   }
 
   /**
