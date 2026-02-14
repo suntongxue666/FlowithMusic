@@ -54,13 +54,19 @@ export class LetterService {
 
     if (!finalUserId && supabase) {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        // 增加 2秒 超时，防止 await supabase.auth.getUser() 导致死锁或长时间等待
+        console.log('🔍 LetterService: Checking Supabase Auth with timeout...')
+        const authPromise = supabase.auth.getUser();
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Auth check timeout')), 2000));
+
+        const { data: { user } } = await Promise.race([authPromise, timeoutPromise]) as any;
+
         if (user) {
-          console.log('⚠️ LetterService: User loaded from Supabase Auth directly:', user.id)
+          console.log('✅ LetterService: User loaded from Supabase Auth directly:', user.id)
           finalUserId = user.id
         }
       } catch (e) {
-        console.warn('⚠️ LetterService: Failed to check for auth user:', e)
+        console.warn('⚠️ LetterService: Failed to check for auth user (timeout or error):', e)
       }
     }
 

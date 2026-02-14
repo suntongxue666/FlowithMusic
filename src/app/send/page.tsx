@@ -331,6 +331,8 @@ function SendContent() {
             </div>
           </div>
 
+          {/* 👑 Flowing Emoji (Temporarily Disabled) */}
+          {/* 
           <div className="form-section">
             <div className="flex justify-between items-center mb-2">
               <label className="flex items-center gap-2 w-full justify-between">
@@ -345,7 +347,8 @@ function SendContent() {
               onSelect={setSelectedEmojis}
               maxSelection={3}
             />
-          </div>
+          </div> 
+*/}
 
           <div className="form-section">
             <label htmlFor="song">Song</label>
