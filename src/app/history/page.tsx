@@ -52,8 +52,23 @@ function HistoryContent() {
         }
       }
 
+      /*
       // 1. 检查登录状态 (增加等待初始化确保状态准确)
       let currentUser = userService.getCurrentUser()
+      
+      // 如果没有用户，尝试从 Supabase Auth 恢复 (更积极的检查)
+      if (!currentUser && supabase) {
+         try {
+           const { data: { user } } = await supabase.auth.getUser()
+           if (user) {
+             console.log('🔄 History: Recovered user from Supabase Auth:', user.id)
+             currentUser = await userService.ensureUserExists(user)
+           }
+         } catch (e) {
+            console.warn('⚠️ History: Auth check failed:', e)
+         }
+      }
+      
       if (!currentUser) {
         console.log('⏳ History: User not in cache, waiting for initializeUser...')
         const initTimeout = new Promise((_, reject) =>
@@ -66,6 +81,12 @@ function HistoryContent() {
         }
         currentUser = userService.getCurrentUser()
       }
+      */
+
+      // 1. 强制刷新用户状态
+      let currentUser = await userService.getCurrentUserAsync();
+
+      console.log('📋 History: Auth check result:', currentUser?.id);
 
       setIsAuthenticated(!!currentUser)
       setUser(currentUser)
@@ -229,11 +250,11 @@ function HistoryContent() {
             >
               <div className="flex flex-row items-center">
                 {/* 封面图片 - 60x60 圆角方形（增大50%） */}
-                <div 
+                <div
                   className="flex-shrink-0 overflow-hidden"
-                  style={{ 
-                    width: '60px', 
-                    height: '60px', 
+                  style={{
+                    width: '60px',
+                    height: '60px',
                     borderRadius: '8px'
                   }}
                 >
@@ -256,9 +277,9 @@ function HistoryContent() {
                   </div>
                   {/* 第三行：时间 */}
                   <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
-                    {new Date(letter.created_at).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric', 
+                    {new Date(letter.created_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
                       year: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit'

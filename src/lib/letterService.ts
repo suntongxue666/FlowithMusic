@@ -49,14 +49,29 @@ export class LetterService {
       throw new Error('Supabase client not initialized')
     }
 
+    // 0. 确保获取最新的 User ID (从 Supabase Auth 直接获取，防止 userService 状态滞后)
+    let finalUserId = currentUser?.id || null;
+
+    if (!finalUserId && supabase) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          console.log('⚠️ LetterService: User loaded from Supabase Auth directly:', user.id)
+          finalUserId = user.id
+        }
+      } catch (e) {
+        console.warn('⚠️ LetterService: Failed to check for auth user:', e)
+      }
+    }
+
     // 2. 写入数据库（无论登录与否）
-    console.log('📝 LetterService: Creating letter', currentUser ? `(Auth user: ${currentUser.id})` : '(Guest mode)')
+    console.log('📝 LetterService: Creating letter', finalUserId ? `(Auth user: ${finalUserId})` : '(Guest mode)')
 
     const { data: newLetter, error } = await supabase
       .from('letters')
       .insert({
         link_id: linkId,
-        user_id: currentUser?.id || null,
+        user_id: finalUserId,
         anonymous_id: anonymousId,
         recipient_name: data.to,
         message: data.message,
