@@ -248,17 +248,19 @@ function SendContent() {
         router.push('/history')
       }, 1500)
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to submit:', error)
-      console.log('⏰ Letter 创建失败或超时，但可能已成功写入数据库，直接跳转 History...')
+      // 显示具体错误信息，不再自动跳转
+      setErrorMessage(`Failed to send letter: ${error.message || 'Unknown error'}`)
+      setShowErrorModal(true)
 
-      // 直接跳转到 History，因为 Letter 可能已写入数据库
-      setCreatedLetter({ link_id: `unknown-${Date.now()}` })
-      setShowToast(true)
-
-      setTimeout(() => {
-        router.push('/history')
-      }, 1500)
+      // 只有在明确是超时的情况下才尝试跳转（可选）
+      /*
+      if (error.message && error.message.includes('timeout')) {
+         console.log('⏰ Timeout detected, redirecting anyway...')
+         setTimeout(() => router.push('/history'), 2000)
+      }
+      */
 
       return
     } finally {
