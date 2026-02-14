@@ -34,8 +34,16 @@ function AuthCallbackComponent() {
             console.log('✅ AuthCallback: Code exchanged for user:', data.session.user.email);
             await userService.handleAuthCallback(data.session.user);
             if (mounted) {
-              router.push('/history?login=success');
-              return;
+              if (mounted) {
+                const pendingLetter = localStorage.getItem('pending_letter');
+                if (pendingLetter) {
+                  console.log('📝 AuthCallback: Found pending letter, redirecting to send page...');
+                  router.push('/send?resume=1');
+                } else {
+                  router.push('/history?login=success');
+                }
+                return;
+              }
             }
           }
         }
@@ -48,8 +56,16 @@ function AuthCallbackComponent() {
           console.log('✅ AuthCallback: Session found for user:', session.user.email);
           await userService.handleAuthCallback(session.user);
           if (mounted) {
-            router.push('/history?login=success');
-            return;
+            if (mounted) {
+              const pendingLetter = localStorage.getItem('pending_letter');
+              if (pendingLetter) {
+                console.log('📝 AuthCallback: Found pending letter, redirecting to send page...');
+                router.push('/send?resume=1');
+              } else {
+                router.push('/history?login=success');
+              }
+              return;
+            }
           }
         }
 
@@ -64,7 +80,15 @@ function AuthCallbackComponent() {
             try {
               await userService.handleAuthCallback(session.user);
               if (mounted) {
-                router.push('/history?login=success');
+                if (mounted) {
+                  const pendingLetter = localStorage.getItem('pending_letter');
+                  if (pendingLetter) {
+                    console.log('📝 AuthCallback: Found pending letter, redirecting to send page...');
+                    router.push('/send?resume=1');
+                  } else {
+                    router.push('/history?login=success');
+                  }
+                }
               }
             } catch (err) {
               console.error('💥 AuthCallback: DB sync error:', err);
