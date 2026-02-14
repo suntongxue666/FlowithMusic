@@ -331,23 +331,49 @@ function HistoryContent() {
                           <div className="flex items-center gap-2">
                             <Link
                               href={`/letter/${letter.link_id}`}
-                              className="px-3 py-1.5 text-sm bg-gray-100 text-gray-600 font-medium rounded-md hover:bg-gray-200 transition-colors"
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '14px',
+                                borderRadius: '6px',
+                                background: '#f0f0f0',
+                                color: '#666',
+                                fontWeight: 500,
+                                textDecoration: 'none'
+                              }}
                             >
                               View
                             </Link>
                             <button
                               onClick={() => setPreviewLetter(letter)}
-                              className="px-3 py-1.5 text-sm font-medium text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '14px',
+                                borderRadius: '6px',
+                                background: '#f0f0f0',
+                                color: '#666',
+                                fontWeight: 500,
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
                             >
-                              👀 Preview Flowing Emoji
+                              Preview Flowing Emoji
                             </button>
                           </div>
                           <button
                             onClick={() => handleUnlock(letter)}
-                            className="px-3 py-1.5 text-sm font-bold text-white bg-gradient-to-r from-amber-400 to-orange-500 rounded-md shadow-sm hover:shadow-md transition-all active:scale-95"
-                            style={{ width: 'fit-content' }}
+                            style={{
+                              padding: '6px 12px',
+                              fontSize: '14px',
+                              borderRadius: '6px',
+                              background: '#333',
+                              color: '#fff',
+                              fontWeight: 500,
+                              border: 'none',
+                              cursor: 'pointer',
+                              width: 'fit-content'
+                            }}
                           >
-                            🔓 Unlock Link ($1.99)
+                            🔐 Unlock Link
                           </button>
                         </div>
                       )
@@ -358,16 +384,27 @@ function HistoryContent() {
                       <div className="flex items-center gap-2">
                         <Link
                           href={`/letter/${letter.link_id}`}
-                          className="px-3 py-1.5 text-sm bg-gray-100 text-gray-600 font-medium rounded-md hover:bg-gray-200 transition-colors"
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '14px',
+                            borderRadius: '6px',
+                            background: '#f0f0f0',
+                            color: '#666',
+                            fontWeight: 500,
+                            textDecoration: 'none'
+                          }}
                         >
                           View
                         </Link>
                         <button
                           onClick={() => handleCopyLink(letter.link_id)}
-                          className="px-3 py-1.5 text-sm font-medium rounded-md transition-all"
                           style={{
+                            padding: '6px 12px',
+                            fontSize: '14px',
+                            borderRadius: '6px',
                             background: copyStatus === letter.link_id ? '#22c55e' : (isUnlocked ? '#f59e0b' : '#333'), // Amber if unlocked
                             color: '#fff',
+                            fontWeight: 500,
                             border: 'none',
                             cursor: 'pointer'
                           }}
