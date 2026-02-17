@@ -138,17 +138,16 @@ function SendContent() {
   const handleSubmit = async () => {
     if (!selectedTrack || !recipient.trim() || !message.trim()) return
 
-    // For testing: Bypass login modal, directly submit as guest (or auth user if already logged in)
-    // const isAuthenticated = userService.isAuthenticated()
+    const isAuthenticated = userService.isAuthenticated()
 
-    // if (!isAuthenticated) {
-    //   // 未登录则显示登录弹窗
-    //   setShowLoginModal(true)
-    //   return
-    // }
+    if (!isAuthenticated) {
+      // 未登录则显示登录弹窗
+      setShowLoginModal(true)
+      return
+    }
 
-    // 已登录直接提交，未登录则以 Guest 模式提交
-    submitLetter(!userService.isAuthenticated())
+    // 已登录直接提交
+    submitLetter(false)
   }
 
   const submitLetter = async (isGuest: boolean) => {
@@ -273,7 +272,7 @@ function SendContent() {
       localStorage.removeItem('pending_letter')
 
       setTimeout(() => {
-        router.push('/history')
+        router.push('/history?refresh=1')
       }, 1500)
 
     } catch (error: any) {

@@ -26,7 +26,9 @@ function HistoryContent() {
   const [localLettersToSync, setLocalLettersToSync] = useState<Letter[]>([])
 
   useEffect(() => {
-    checkAuthAndLoadLetters()
+    // 检查是否从Send页面跳转来，需要强制刷新
+    const needRefresh = searchParams.get('refresh') === '1'
+    checkAuthAndLoadLetters(needRefresh)
 
     // 新增：当窗口获得焦点时刷新数据（例如从社交媒体分享回来或从发送页返回）
     if (typeof window !== 'undefined') {
@@ -251,13 +253,13 @@ function HistoryContent() {
         </div>
       ) : letters.length === 0 ? (
         <div className="text-center bg-white rounded-2xl border border-gray-100 shadow-sm" style={{ width: '100%', maxWidth: '600px', paddingTop: '85px', paddingBottom: '85px' }}>
-          <div className="text-6xl mb-6 grayscale opacity-20">📭</div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">Nothing here</h3>
-          <p className="text-gray-400 mb-6 text-sm">Start sharing your thoughts through music.</p>
+          <div className="text-6xl grayscale opacity-20" style={{ marginBottom: '18px' }}>📭</div>
+          <h3 className="text-2xl font-bold text-gray-900" style={{ marginBottom: '18px' }}>Nothing here</h3>
+          <p className="text-gray-400 text-sm" style={{ marginBottom: '18px' }}>Start sharing your thoughts through music.</p>
           <Link
             href="/send"
-            className="inline-flex px-8 py-3 bg-black text-white rounded-full font-bold hover:scale-105 transition-all"
-            style={{ fontSize: 'calc(1rem - 4px)' }}
+            className="inline-flex bg-black text-white rounded-full font-bold hover:scale-105 transition-all"
+            style={{ fontSize: 'calc(1rem - 4px)', padding: '8px 12px' }}
           >
             Create Letter
           </Link>
