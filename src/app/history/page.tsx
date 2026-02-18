@@ -458,7 +458,7 @@ function HistoryContent() {
                           </div>
 
                           {/* 第二行：Preview + Unlock (新增的按钮在一行) */}
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-col items-end gap-2">
                             <button
                               onClick={() => setPreviewLetter(letter)}
                               style={{
@@ -488,83 +488,48 @@ function HistoryContent() {
                                 boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
                               }}
                             >
-                              🔐 Unlock
+                              🔐 Unlock Letter
                             </button>
                           </div>
                         </div>
                       )
                     }
 
-                    // 已解锁：显示 View + Copy Link + Preview + 金色 Copy Link
+                    // 已解锁：只显示 Preview + 金色 Copy Link
                     if (hasEmojis && isUnlocked) {
                       return (
                         <div className="flex flex-col items-end gap-2 text-right">
-                          {/* 第一行：View + Copy Link */}
-                          <div className="flex items-center gap-2">
-                            <Link
-                              href={`/letter/${letter.link_id}`}
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '14px',
-                                borderRadius: '6px',
-                                background: '#f0f0f0',
-                                color: '#666',
-                                fontWeight: 500,
-                                textDecoration: 'none'
-                              }}
-                            >
-                              View
-                            </Link>
-                            <button
-                              onClick={() => handleCopyLink(letter.link_id)}
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '14px',
-                                borderRadius: '6px',
-                                background: copyStatus === letter.link_id ? '#22c55e' : '#333',
-                                color: '#fff',
-                                fontWeight: 500,
-                                border: 'none',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
-                            </button>
-                          </div>
-                          {/* 第二行：Preview + 金色 Copy Link */}
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setPreviewLetter(letter)}
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '14px',
-                                borderRadius: '6px',
-                                background: '#22c55e',
-                                color: '#fff',
-                                fontWeight: 500,
-                                border: 'none',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              👁 Flowing Emoji
-                            </button>
-                            <button
-                              onClick={() => handleCopyFlowingLink(letter.link_id)}
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '14px',
-                                borderRadius: '6px',
-                                background: copyStatus === letter.link_id + '-flowing' ? '#22c55e' : 'linear-gradient(45deg, #FFD700, #FFA500)',
-                                color: '#fff',
-                                fontWeight: 500,
-                                border: 'none',
-                                cursor: 'pointer',
-                                boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
-                              }}
-                            >
-                              {copyStatus === letter.link_id + '-flowing' ? 'Copied' : 'Copy Link ✨'}
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => setPreviewLetter(letter)}
+                            style={{
+                              padding: '6px 12px',
+                              fontSize: '14px',
+                              borderRadius: '6px',
+                              background: '#22c55e',
+                              color: '#fff',
+                              fontWeight: 500,
+                              border: 'none',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            👁 Flowing Emoji
+                          </button>
+                          <button
+                            onClick={() => handleCopyFlowingLink(letter.link_id)}
+                            style={{
+                              padding: '6px 12px',
+                              fontSize: '14px',
+                              borderRadius: '6px',
+                              background: copyStatus === letter.link_id + '-flowing' ? '#22c55e' : 'linear-gradient(45deg, #FFD700, #FFA500)',
+                              color: '#fff',
+                              fontWeight: 500,
+                              border: 'none',
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
+                            }}
+                          >
+                            {copyStatus === letter.link_id + '-flowing' ? 'Copied' : 'Copy Link ✨'}
+                          </button>
                         </div>
                       )
                     }
