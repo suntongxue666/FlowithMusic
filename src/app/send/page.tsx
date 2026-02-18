@@ -21,6 +21,25 @@ const FLOWING_EMOJIS = [
   '🤝', '✨', '🌟', '⭐', '💫', '🌈', '🌸', '🌹', '🦋', '💌'
 ]
 
+// 完整的 Emoji 列表（用于"All Emojis"选项）
+const ALL_EMOJIS = [
+  // 爱情类
+  '❤️', '💕', '💖', '💗', '💓', '💝', '💘', '💞', '💟', '🩷', '❣️', '💔', '💕', '💖', '💗',
+  // 温馨类
+  '🥰', '😊', '🥺', '😍', '🤗', '🫂', '😌', '🥹', '🙂', '😘', '😙', '😚', '🥲', '🤩', '😇',
+  // 友情类
+  '🤝', '✨', '🌟', '⭐', '💫', '🌈', '🌸', '🌹', '🦋', '💌', '🎀', '🎁', '🎈', '🎉', '🎊',
+  // 动物类
+  '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵',
+  '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋',
+  // 自然类
+  '🌸', '🌺', '🌻', '🌹', '🌷', '💐', '🌴', '🌵', '🌾', '🍀', '🍁', '🍂', '🍃', '🌊', '🌙',
+  // 食物类
+  '🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍑', '🥝', '🍅', '🥑', '🍆', '🥕', '🌽',
+  // 其他
+  '🎵', '🎶', '🎹', '🎸', '🎺', '🎷', '🎻', '🥁', '💃', '🕺', '🎭', '🎨', '🎬', '📷', '🎥'
+]
+
 function SendContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -42,6 +61,7 @@ function SendContent() {
   // Flowing Emoji 状态
   const [flowingEmojiEnabled, setFlowingEmojiEnabled] = useState(true) // 默认打开
   const [selectedEmojis, setSelectedEmojis] = useState<string[]>(['❤️']) // 默认选择一个
+  const [showAllEmojis, setShowAllEmojis] = useState(false) // 是否显示所有 Emoji
 
   // 检测中文字符
   const hasChinese = (text: string) => {
@@ -417,31 +437,90 @@ function SendContent() {
             </div>
             
             {flowingEmojiEnabled && (
-              <div className="flowing-emoji-selector">
-                {/* 选中的表情显示在上方 */}
-                {selectedEmojis.length > 0 && (
-                  <div className="selected-preview">
-                    {selectedEmojis.map((emoji, index) => (
-                      <span key={index} className="preview-emoji" onClick={() => handleEmojiSelect(emoji)} title="点击取消">{emoji}</span>
-                    ))}
-                    <span className="preview-hint">点击可取消</span>
-                  </div>
-                )}
-                <div className="emoji-hint">Select up to 3 emojis ({selectedEmojis.length}/3 selected)</div>
-                <div className="emoji-options">
-                  {FLOWING_EMOJIS.map(emoji => (
-                    <button
-                      key={emoji}
-                      className="emoji-option"
-                      onClick={() => handleEmojiSelect(emoji)}
-                      disabled={selectedEmojis.length >= 3 && !selectedEmojis.includes(emoji)}
-                    >
-                      <span className="emoji-char">{emoji}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            
+                          <div className="flowing-emoji-selector">
+            
+                            {/* 选中的表情显示在上方 */}
+            
+                            {selectedEmojis.length > 0 && (
+            
+                              <div className="selected-preview">
+            
+                                {selectedEmojis.map((emoji, index) => (
+            
+                                  <span key={index} className="preview-emoji" onClick={() => handleEmojiSelect(emoji)} title="点击取消">{emoji}</span>
+            
+                                ))}
+            
+                                <span className="preview-hint">Tap to Cancel</span>
+            
+                              </div>
+            
+                            )}
+            
+                            <div className="emoji-hint">Select up to 3 emojis ({selectedEmojis.length}/3 selected)</div>
+            
+            
+            
+                            {/* 切换按钮 */}
+            
+                            <div className="emoji-toggle-container">
+            
+                              <button
+            
+                                className={`emoji-toggle-btn ${!showAllEmojis ? 'active' : ''}`}
+            
+                                onClick={() => setShowAllEmojis(false)}
+            
+                              >
+            
+                                Popular
+            
+                              </button>
+            
+                              <button
+            
+                                className={`emoji-toggle-btn ${showAllEmojis ? 'active' : ''}`}
+            
+                                onClick={() => setShowAllEmojis(true)}
+            
+                              >
+            
+                                All Emojis
+            
+                              </button>
+            
+                            </div>
+            
+            
+            
+                            <div className="emoji-options">
+            
+                              {(showAllEmojis ? ALL_EMOJIS : FLOWING_EMOJIS).map(emoji => (
+            
+                                <button
+            
+                                  key={emoji}
+            
+                                  className="emoji-option"
+            
+                                  onClick={() => handleEmojiSelect(emoji)}
+            
+                                  disabled={selectedEmojis.length >= 3 && !selectedEmojis.includes(emoji)}
+            
+                                >
+            
+                                  <span className="emoji-char">{emoji}</span>
+            
+                                </button>
+            
+                              ))}
+            
+                            </div>
+            
+                          </div>
+            
+                        )}
           </div>
 
           <div className="form-section">
@@ -769,6 +848,38 @@ function SendContent() {
 
         .preview-hint {
           font-size: 11px;
+          color: #999;
+          margin-left: 8px;
+        }
+
+        .emoji-toggle-container {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+
+        .emoji-toggle-btn {
+          flex: 1;
+          padding: 8px 16px;
+          border: 1px solid #e0e0e0;
+          background: white;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          color: #666;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .emoji-toggle-btn:hover {
+          background: #f5f5f5;
+        }
+
+        .emoji-toggle-btn.active {
+          background: #4CAF50;
+          color: white;
+          border-color: #4CAF50;
+        }
           color: #aaa;
         }
 
@@ -810,6 +921,22 @@ function SendContent() {
 
         .emoji-char {
           font-size: 18px;
+        }
+
+        /* H5 移动端适配 */
+        @media (max-width: 768px) {
+          .emoji-options {
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+          }
+
+          .emoji-option {
+            padding: 2px;
+          }
+
+          .emoji-char {
+            font-size: 16px;
+          }
         }
         }
 

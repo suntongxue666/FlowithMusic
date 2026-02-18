@@ -44,8 +44,12 @@ export default function FlowingEffects({ emojis, mode, intensity = 1 }: FlowingE
                 this.x = Math.random() * canvas!.width
                 this.y = canvas!.height + Math.random() * 100 // Start below screen
                 this.emoji = emojis[Math.floor(Math.random() * emojis.length)]
-                // 放大 5-10 倍：基础大小 20px，放大后 100-200px
-                this.size = 100 + Math.random() * 100 // 100-200px (5-10x of 20px)
+
+                // H5 移动端适配：检测屏幕宽度，如果是移动端则缩小到 1/3
+                const isMobile = window.innerWidth < 768
+                const baseSize = isMobile ? 33 + Math.random() * 33 : 100 + Math.random() * 100 // 移动端: 33-66px, 桌面端: 100-200px
+                this.size = baseSize
+
                 this.speedY = 0.8 + Math.random() * 1.5 // 稍慢一点，让动效更明显
                 this.speedX = (Math.random() - 0.5) * 0.8
                 this.opacity = mode === 'preview' ? 0.4 : 0.9
