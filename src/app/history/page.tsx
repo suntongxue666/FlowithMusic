@@ -9,6 +9,82 @@ import { Letter } from '@/lib/supabase'
 import { ImprovedUserIdentity } from '@/lib/improvedUserIdentity'
 import Link from 'next/link'
 import FlowingEffects from '@/components/FlowingEffects'
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js"
+
+// 预览弹窗组件 - 5秒自动关闭
+function PreviewOverlay({ 
+  letter, 
+  onClose, 
+  onUnlock 
+}: { 
+  letter: Letter
+  onClose: () => void
+  onUnlock: (letter: Letter) => void 
+}) {
+  const [countdown, setCountdown] = useState(10)
+
+  useEffect(() => {
+    // 10秒倒计时
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          onClose()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [onClose])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 pointer-events-none">
+        <FlowingEffects
+          emojis={letter.animation_config?.emojis || []}
+          mode="preview"
+        />
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-xl z-50 text-center max-w-sm mx-4" style={{ padding: "12px" }} onClick={e => e.stopPropagation()}>
+        <h3 className="text-xl font-bold mb-3">✨ Flowing Emoji Preview</h3>
+        <p className="text-gray-500 mb-2 text-sm leading-relaxed">This effect will play for everyone who opens your letter.</p>
+        <p className="text-sm text-gray-400 mb-6">Auto-close in {countdown}s</p>
+        <div className="flex gap-4 justify-center">
+          <button
+            onClick={onClose}
+            className="px-6 py-3 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors"
+          >
+            Close
+          </button>
+          <button
+            onClick={() => {
+              onClose();
+              onUnlock(letter);
+            }}
+            style={{
+              padding: '8px 16px',
+              background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+              color: '#fff',
+              fontWeight: 600,
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
+            }}
+          >
+            🔐 Unlock Now
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function HistoryContent() {
   const router = useRouter()
@@ -19,6 +95,8 @@ function HistoryContent() {
   const [user, setUser] = useState<any>(null)
   const [copyStatus, setCopyStatus] = useState<string | null>(null)
   const [previewLetter, setPreviewLetter] = useState<Letter | null>(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentLetter, setPaymentLetter] = useState<Letter | null>(null)
 
   // 同步状态
   const [unsyncedCount, setUnsyncedCount] = useState(0)
@@ -212,18 +290,41 @@ function HistoryContent() {
     })
   }
 
-  const handleUnlock = async (letter: Letter) => {
-    if (!confirm(`Unlock "${letter.song_title}" with Flowing Emoji for $1.99?\n(Test Mode: This will simulate a successful payment)`)) return
+  // 复制带Flowing Emoji效果的链接
+  const handleCopyFlowingLink = (linkId: string) => {
+    const url = `${window.location.origin}/letter/${linkId}?emoji=flowing`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopyStatus(linkId + '-flowing')
+      setTimeout(() => setCopyStatus(null), 2000)
+    })
+  }
 
-    // Simulate API call
+  // 旧的handleCopyLink函数（将被删除）
+  const _handleCopyLinkOld = (linkId: string) => {
+    const url = `${window.location.origin}/letter/${linkId}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopyStatus(linkId)
+      setTimeout(() => setCopyStatus(null), 2000)
+    })
+  }
+
+  const handleUnlock = async (letter: Letter) => {
+    // 设置支付弹窗
+    setPaymentLetter(letter)
+    setShowPaymentModal(true)
+  }
+
+  const handlePaymentSuccess = async (letter: Letter) => {
+    // 更新数据库
     const success = await letterService.updateLetterPaymentStatus(letter.link_id, 'flowing_emoji')
 
     if (success) {
-      alert('Payment Successful! Link unlocked with Flowing Emoji.')
+      setShowPaymentModal(false)
+      setPaymentLetter(null)
       // Refresh list to show "Copy Link" state
       checkAuthAndLoadLetters(true)
     } else {
-      alert('Payment Failed. Please try again.')
+      alert('Payment verification failed. Please try again.')
     }
   }
 
@@ -364,14 +465,14 @@ function HistoryContent() {
                                 padding: '6px 12px',
                                 fontSize: '14px',
                                 borderRadius: '6px',
-                                background: '#f0f0f0',
-                                color: '#666',
+                                background: '#22c55e', // 绿色
+                                color: '#fff',
                                 fontWeight: 500,
                                 border: 'none',
                                 cursor: 'pointer'
                               }}
                             >
-                              Preview Flowing Emoji
+                              👁 Flowing Emoji
                             </button>
                             <button
                               onClick={() => handleUnlock(letter)}
@@ -379,21 +480,96 @@ function HistoryContent() {
                                 padding: '6px 12px',
                                 fontSize: '14px',
                                 borderRadius: '6px',
-                                background: '#f59e0b', // 橙黄色
+                                background: 'linear-gradient(45deg, #FFD700, #FFA500)', // 金色渐变
                                 color: '#fff',
                                 fontWeight: 500,
                                 border: 'none',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
                               }}
                             >
-                              🔐 Unlock Link
+                              🔐 Unlock
                             </button>
                           </div>
                         </div>
                       )
                     }
 
-                    // 已解锁或标准模式：还是原来的 View, Copy Link 一行布局
+                    // 已解锁：显示 View + Copy Link + Preview + 金色 Copy Link
+                    if (hasEmojis && isUnlocked) {
+                      return (
+                        <div className="flex flex-col items-end gap-2 text-right">
+                          {/* 第一行：View + Copy Link */}
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/letter/${letter.link_id}`}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '14px',
+                                borderRadius: '6px',
+                                background: '#f0f0f0',
+                                color: '#666',
+                                fontWeight: 500,
+                                textDecoration: 'none'
+                              }}
+                            >
+                              View
+                            </Link>
+                            <button
+                              onClick={() => handleCopyLink(letter.link_id)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '14px',
+                                borderRadius: '6px',
+                                background: copyStatus === letter.link_id ? '#22c55e' : '#333',
+                                color: '#fff',
+                                fontWeight: 500,
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
+                            </button>
+                          </div>
+                          {/* 第二行：Preview + 金色 Copy Link */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setPreviewLetter(letter)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '14px',
+                                borderRadius: '6px',
+                                background: '#22c55e',
+                                color: '#fff',
+                                fontWeight: 500,
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              👁 Flowing Emoji
+                            </button>
+                            <button
+                              onClick={() => handleCopyFlowingLink(letter.link_id)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '14px',
+                                borderRadius: '6px',
+                                background: copyStatus === letter.link_id + '-flowing' ? '#22c55e' : 'linear-gradient(45deg, #FFD700, #FFA500)',
+                                color: '#fff',
+                                fontWeight: 500,
+                                border: 'none',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
+                              }}
+                            >
+                              {copyStatus === letter.link_id + '-flowing' ? 'Copied' : 'Copy Link ✨'}
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    // 标准模式（无Emoji）
                     return (
                       <div className="flex items-center gap-2">
                         <Link
@@ -416,11 +592,12 @@ function HistoryContent() {
                             padding: '6px 12px',
                             fontSize: '14px',
                             borderRadius: '6px',
-                            background: copyStatus === letter.link_id ? '#22c55e' : (isUnlocked ? '#f59e0b' : '#333'), // Amber if unlocked
+                            background: copyStatus === letter.link_id ? '#22c55e' : (isUnlocked ? 'linear-gradient(45deg, #FFD700, #FFA500)' : '#333'), // 金色 if unlocked
                             color: '#fff',
                             fontWeight: 500,
                             border: 'none',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            boxShadow: isUnlocked ? '0 2px 8px rgba(255, 165, 0, 0.3)' : 'none'
                           }}
                         >
                           {copyStatus === letter.link_id ? 'Copied' : (isUnlocked ? 'Copy Link ✨' : 'Copy Link')}
@@ -440,39 +617,64 @@ function HistoryContent() {
         <p className="text-[9px] font-black text-gray-900 uppercase tracking-[0.6em]">Flowith Music</p>
       </div>
 
-      {/* Preview Overlay */}
+      {/* Preview Overlay - 5秒自动消失 */}
       {previewLetter && previewLetter.animation_config?.emojis && (
-        <div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm"
-          onClick={() => setPreviewLetter(null)}
-        >
-          <div className="absolute inset-0 pointer-events-none">
-            <FlowingEffects
-              emojis={previewLetter.animation_config.emojis}
-              mode="preview"
-            />
-          </div>
+        <PreviewOverlay 
+          letter={previewLetter} 
+          onClose={() => setPreviewLetter(null)} 
+          onUnlock={handleUnlock}
+        />
+      )}
 
-          <div className="bg-white p-6 rounded-2xl shadow-xl z-50 text-center max-w-sm mx-4" onClick={e => e.stopPropagation()}>
-            <h3 className="text-xl font-bold mb-2">Flowing Emoji Preview</h3>
-            <p className="text-gray-500 mb-6">This effect will play for everyone who opens your letter.</p>
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => setPreviewLetter(null)}
-                className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  setPreviewLetter(null);
-                  handleUnlock(previewLetter);
-                }}
-                className="px-4 py-2 bg-black text-white font-bold rounded-lg hover:bg-gray-800 transition-opacity"
-              >
-                Unlock Now
-              </button>
+      {/* PayPal Payment Modal */}
+      {showPaymentModal && paymentLetter && (
+        <div className="modal-overlay" onClick={() => setShowPaymentModal(false)}>
+          <div className="modal-content payment-modal" onClick={e => e.stopPropagation()}>
+            <h3>✨ Unlock Flowing Emoji</h3>
+            <p className="payment-description">
+              Get the full-screen animation permanently for this letter.
+            </p>
+            <div className="payment-letter-info">
+              <img src={paymentLetter.song_album_cover} alt={paymentLetter.song_title} className="payment-cover" />
+              <div className="payment-details">
+                <div className="payment-recipient">To: {paymentLetter.recipient_name}</div>
+                <div className="payment-song">{paymentLetter.song_title}</div>
+                <div className="payment-artist">{paymentLetter.song_artist}</div>
+              </div>
             </div>
+            <div className="paypal-container">
+              <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "test", currency: "USD" }}>
+                <PayPalButtons
+                  style={{ layout: "vertical", shape: "pill" }}
+                  createOrder={(data, actions) => {
+                    return actions.order.create({
+                      intent: "CAPTURE",
+                      purchase_units: [{
+                        description: `Flowing Emoji for Letter: ${paymentLetter.song_title}`,
+                        amount: {
+                          currency_code: "USD",
+                          value: "1.99"
+                        }
+                      }]
+                    })
+                  }}
+                  onApprove={async (data, actions) => {
+                    if (!actions.order) return Promise.reject("Order not found");
+                    return actions.order.capture().then(async (details) => {
+                      console.log('Transaction completed by ' + details?.payer?.name?.given_name);
+                      handlePaymentSuccess(paymentLetter);
+                    });
+                  }}
+                  onError={(err) => {
+                    console.error('PayPal Error:', err);
+                    alert('Payment failed. Please try again.');
+                  }}
+                />
+              </PayPalScriptProvider>
+            </div>
+            <button className="close-payment-btn" onClick={() => setShowPaymentModal(false)}>
+              Cancel
+            </button>
           </div>
         </div>
       )}
@@ -485,6 +687,98 @@ function HistoryContent() {
           .container {
              padding-bottom: 5rem;
           }
+        }
+      `}</style>
+
+      <style jsx>{`
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          backdrop-filter: blur(4px);
+        }
+
+        .modal-content.payment-modal {
+          background: white;
+          padding: 32px 28px;
+          border-radius: 20px;
+          width: 90%;
+          max-width: 420px;
+          text-align: center;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+
+        .payment-modal h3 {
+          font-size: 22px;
+          font-weight: 700;
+          margin-bottom: 12px;
+        }
+
+        .payment-description {
+          color: #666;
+          font-size: 14px;
+          margin-bottom: 20px;
+          line-height: 1.5;
+        }
+
+        .payment-letter-info {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          background: #f8f8f8;
+          padding: 16px;
+          border-radius: 14px;
+          margin-bottom: 24px;
+        }
+
+        .payment-cover {
+          width: 56px;
+          height: 56px;
+          border-radius: 10px;
+          object-fit: cover;
+        }
+
+        .payment-details {
+          text-align: left;
+        }
+
+        .payment-song {
+          font-weight: 600;
+          font-size: 15px;
+          margin-bottom: 4px;
+        }
+
+        .payment-artist {
+          font-size: 13px;
+          color: #666;
+        }
+
+        .paypal-container {
+          min-height: 160px;
+          margin: 0 -8px;
+        }
+
+        .close-payment-btn {
+          margin-top: 20px;
+          padding: 12px 32px;
+          background: #f0f0f0;
+          color: #666;
+          border: none;
+          border-radius: 10px;
+          cursor: pointer;
+          font-weight: 500;
+          font-size: 15px;
+        }
+
+        .close-payment-btn:hover {
+          background: #e0e0e0;
         }
       `}</style>
     </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import ColorfulSpotifyPlayer from '@/components/ColorfulSpotifyPlayer'
 import LetterInteractions from '@/components/LetterInteractions'
@@ -159,6 +160,9 @@ interface LetterPageClientProps {
 }
 
 export default function LetterPageClient({ linkId }: LetterPageClientProps) {
+  const searchParams = useSearchParams()
+  const emojiParam = searchParams.get('emoji') // 检查URL参数 ?emoji=flowing
+
   const [letter, setLetter] = useState<Letter | null>(null)
   const [forceRefresh, setForceRefresh] = useState(Date.now())
   const [loading, setLoading] = useState(true)
@@ -170,6 +174,25 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
   const hasChinese = (text: string) => {
     return /[\u4e00-\u9fff]/.test(text)
   }
+
+  // 如果URL参数带有emoji=flowing，在Letter加载完成后检查并开启效果
+  useEffect(() => {
+    console.log('🔍 URL参数检查:', { emojiParam, linkId, hasLetter: !!letter })
+    console.log('🔍 Letter数据:', letter)
+    console.log('🔍 animation_config:', letter?.animation_config)
+    console.log('🔍 emojis:', letter?.animation_config?.emojis)
+
+    if (emojiParam === 'flowing' && letter?.animation_config?.emojis) {
+      console.log('🎯 触发Flowing Emoji效果!')
+      console.log('🔍 Emoji=flowing 检查（Letter加载后）:', { linkId, hasLetter: !!letter, hasAnimationConfig: !!letter?.animation_config, emojis: letter?.animation_config?.emojis })
+      setEffectMode('full')
+      setShowEffect(true)
+      console.log('✅ Flowing Emoji 效果已开启（Letter加载后）')
+      console.log('✅ 状态已更新:', { showEffect: true, effectMode: 'full' })
+    } else {
+      console.warn('⚠️ 未触发Flowing Emoji:', { emojiParam, hasLetter: !!letter, hasAnimationConfig: !!letter?.animation_config, hasEmojis: !!letter?.animation_config?.emojis })
+    }
+  }, [emojiParam, letter])
 
   // 记录浏览
   const recordView = async (linkId: string) => {
@@ -212,10 +235,33 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
             if (apiResponse.ok) {
               const apiLetter = await apiResponse.json()
               console.log('✅ Found letter via API:', apiLetter)
+              console.log('🔍 API Letter 详细数据:', {
+                link_id: apiLetter.link_id,
+                hasAnimationConfig: !!apiLetter.animation_config,
+                animationConfig: apiLetter.animation_config,
+                effect_type: apiLetter.effect_type,
+                hasEmojis: !!apiLetter.animation_config?.emojis,
+                emojis: apiLetter.animation_config?.emojis
+              })
 
               // 验证Letter数据完整性
               if (apiLetter && apiLetter.link_id && apiLetter.recipient_name && apiLetter.message) {
                 foundLetter = apiLetter
+
+                // 检查 URL 参数是否为 emoji=flowing，如果是则从 localStorage 获取 animation_config
+                if (emojiParam === 'flowing') {
+                  console.log('🔍 检测到 emoji=flowing，从 localStorage 获取 animation_config')
+                  const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
+                  const localLetter = localLetters.find((l: any) => l.link_id === linkId)
+                  console.log('🔍 localStorage 中找到的 Letter:', localLetter)
+
+                  if (localLetter?.animation_config?.emojis) {
+                    console.log('✅ 从 localStorage 获取到 animation_config:', localLetter.animation_config)
+                    // 合并 localStorage 的 animation_config 到 API 返回的 letter
+                    apiLetter.animation_config = localLetter.animation_config
+                  }
+                }
+
                 // If apiLetter has countryCode, we can store it or use it
                 setLetter(apiLetter)
 
@@ -449,28 +495,6 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
 
             {/* 发送者信息 - 单独一行显示 */}
             <LetterSender user={letter.user} letter={letter} />
-
-            {/* 付费特效按钮区 */}
-            {letter.animation_config?.emojis?.length > 0 && !letter.effect_type && (
-              <div className="effect-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '20px' }}>
-                <button
-                  onClick={() => {
-                    setEffectMode('preview')
-                    setShowEffect(true)
-                    setTimeout(() => setShowEffect(false), 3000)
-                  }}
-                  className="action-btn preview-btn"
-                >
-                  ✨ Preview Effect
-                </button>
-                <button
-                  onClick={() => setShowPaymentModal(true)}
-                  className="action-btn unlock-btn"
-                >
-                  🔓 Unlock Full Experience
-                </button>
-              </div>
-            )}
 
             {/* 已解锁显示复制链接 (模拟逻辑，实际可能是分享功能增强) */}
             {letter.effect_type && (

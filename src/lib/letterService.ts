@@ -404,26 +404,68 @@ export class LetterService {
 
   /**
    * 更新 Letter 的付费状态 (解锁特效)
+   * 先尝试更新数据库，如果失败则更新本地存储
    */
   async updateLetterPaymentStatus(linkId: string, effectType: string): Promise<boolean> {
-    if (!supabase) return false
-
     console.log(`💰 LetterService: Updating payment status for ${linkId} to ${effectType}`)
 
-    const { error } = await supabase
-      .from('letters')
-      .update({
-        effect_type: effectType,
-        updated_at: new Date().toISOString()
-      })
-      .eq('link_id', linkId)
+    // 先尝试更新数据库
+    if (supabase) {
+      const { error } = await supabase
+        .from('letters')
+        .update({
+          effect_type: effectType,
+          updated_at: new Date().toISOString()
+        })
+        .eq('link_id', linkId)
 
-    if (error) {
-      console.error('❌ LetterService: Failed to update payment status:', error)
-      return false
+      if (!error) {
+        console.log('✅ LetterService: Database updated successfully')
+        // 同时更新本地存储
+        this.updateLocalLetterPaymentStatus(linkId, effectType)
+        return true
+      }
+      
+      console.warn('⚠️ LetterService: Database update failed:', error.message)
     }
 
-    return true
+    // 如果数据库更新失败，只更新本地存储
+    const localSuccess = this.updateLocalLetterPaymentStatus(linkId, effectType)
+    
+    if (localSuccess) {
+      console.log('✅ LetterService: Local storage updated successfully (fallback)')
+      return true
+    }
+
+    console.error('❌ LetterService: Failed to update payment status')
+    return false
+  }
+
+  /**
+   * 更新本地存储的 Letter 付费状态
+   */
+  private updateLocalLetterPaymentStatus(linkId: string, effectType: string): boolean {
+    if (typeof window === 'undefined') return false
+    
+    try {
+      const rawLetters = localStorage.getItem('letters')
+      if (!rawLetters) return false
+      
+      const letters = JSON.parse(rawLetters)
+      const index = letters.findIndex((l: any) => l.link_id === linkId)
+      
+      if (index !== -1) {
+        letters[index].effect_type = effectType
+        localStorage.setItem('letters', JSON.stringify(letters))
+        console.log('✅ LetterService: Local letter payment status updated')
+        return true
+      }
+      
+      return false
+    } catch (e) {
+      console.error('❌ LetterService: Failed to update local storage:', e)
+      return false
+    }
   }
 
   private generateLinkId(): string {

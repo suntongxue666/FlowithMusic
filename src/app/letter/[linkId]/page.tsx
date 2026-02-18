@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { letterService } from '@/lib/letterService'
 import { supabase } from '@/lib/supabase'
 import type { Letter } from '@/lib/supabase'
+import { Suspense } from 'react'
 import LetterPageClient from './LetterPageClient'
 
 interface Props {
@@ -209,5 +210,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function LetterPage({ params }: Props) {
   const { linkId } = await params
   
-  return <LetterPageClient linkId={linkId} />
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+      <LetterPageClient linkId={linkId} />
+    </Suspense>
+  )
 }

@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import SongSelector from '@/components/SongSelector'
-// import EmojiSelector from '@/components/EmojiSelector' // Temporarily disabled
 import SpotifyEmbedPlayer from '@/components/SpotifyEmbedPlayer'
 import Toast from '@/components/Toast'
 import { SpotifyTrack } from '@/lib/spotify'
@@ -12,13 +11,22 @@ import { letterService } from '@/lib/letterService'
 import { userService } from '@/lib/userService'
 import { supabase } from '@/lib/supabase'
 
+// Flowing Emoji 适合写信场景的表情（亲情、爱情、友情、温馨等情感表达）
+const FLOWING_EMOJIS = [
+  // 爱情类
+  '❤️', '💕', '💖', '💗', '💓', '💝', '💘', '💞', '💟', '🩷',
+  // 温馨类
+  '🥰', '😊', '🥺', '😍', '🤗', '🫂', '😌', '🥹', '😊', '🙂',
+  // 友情类
+  '🤝', '✨', '🌟', '⭐', '💫', '🌈', '🌸', '🌹', '🦋', '💌'
+]
+
 function SendContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [selectedTrack, setSelectedTrack] = useState<SpotifyTrack | null>(null)
   const [recipient, setRecipient] = useState('')
   const [message, setMessage] = useState('')
-  // const [selectedEmojis, setSelectedEmojis] = useState<string[]>([]) // Temporarily disabled
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [showErrorModal, setShowErrorModal] = useState(false)
@@ -30,6 +38,10 @@ function SendContent() {
 
   // 新增：登录弹窗状态
   const [showLoginModal, setShowLoginModal] = useState(false)
+
+  // Flowing Emoji 状态
+  const [flowingEmojiEnabled, setFlowingEmojiEnabled] = useState(true) // 默认打开
+  const [selectedEmojis, setSelectedEmojis] = useState<string[]>(['❤️']) // 默认选择一个
 
   // 检测中文字符
   const hasChinese = (text: string) => {
@@ -44,6 +56,26 @@ function SendContent() {
     } else {
       setShowMessageHint(true)
       setTimeout(() => setShowMessageHint(false), 5000)
+    }
+  }
+
+  // Flowing Emoji 切换
+  const toggleFlowingEmoji = () => {
+    setFlowingEmojiEnabled(!flowingEmojiEnabled)
+    if (!flowingEmojiEnabled) {
+      // 重新打开时恢复默认选择
+      setSelectedEmojis(['❤️'])
+    }
+  }
+
+  // Flowing Emoji 选择（支持选择相同表情）
+  const handleEmojiSelect = (emoji: string) => {
+    if (selectedEmojis.includes(emoji)) {
+      // 已选中则取消
+      setSelectedEmojis(selectedEmojis.filter(e => e !== emoji))
+    } else if (selectedEmojis.length < 3) {
+      // 未选中且未满3个则添加
+      setSelectedEmojis([...selectedEmojis, emoji])
     }
   }
 
@@ -194,7 +226,10 @@ function SendContent() {
               previewUrl: selectedTrack!.preview_url || undefined,
               spotifyUrl: selectedTrack!.external_urls.spotify,
               duration_ms: selectedTrack!.duration_ms
-            }
+            },
+            animation_config: flowingEmojiEnabled && selectedEmojis.length > 0 ? {
+              emojis: selectedEmojis
+            } : undefined
           });
 
           // 增加超时时间到 30秒
@@ -234,6 +269,14 @@ function SendContent() {
       console.log('Letter created successfully:', newLetter)
       setCreatedLetter(newLetter)
 
+      // 确保 animation_config 被保存（如果数据库没有返回，手动添加）
+      const letterWithAnimation = {
+        ...newLetter,
+        animation_config: flowingEmojiEnabled && selectedEmojis.length > 0 
+          ? { emojis: selectedEmojis } 
+          : newLetter.animation_config
+      }
+
       // 立即将新Letter添加到localStorage中 (增加过滤，防止写入 null)
       const rawLetters = localStorage.getItem('letters')
       let existingLetters = []
@@ -247,11 +290,11 @@ function SendContent() {
       // 过滤掉可能存在的 null 或无效数据
       existingLetters = existingLetters.filter((l: any) => l && l.link_id)
 
-      const exists = existingLetters.some((letter: any) => letter.link_id === newLetter.link_id)
+      const exists = existingLetters.some((letter: any) => letter.link_id === letterWithAnimation.link_id)
       if (!exists) {
-        existingLetters.unshift(newLetter)
+        existingLetters.unshift(letterWithAnimation)
         localStorage.setItem('letters', JSON.stringify(existingLetters))
-        console.log('✅ Letter added to localStorage and sanitized')
+        console.log('✅ Letter added to localStorage with animation_config:', letterWithAnimation.animation_config)
       }
 
       // 清理相关缓存
@@ -358,23 +401,48 @@ function SendContent() {
             </div>
           </div>
 
-          {/* 👑 Flowing Emoji - Temporarily disabled for stability
+          {/* 👑 Flowing Emoji */}
           <div className="form-section">
-            <div className="flex justify-between items-center mb-2">
-              <label className="flex items-center gap-2 w-full justify-between">
-                <div className="flex items-center gap-2">
-                  👑 Flowing Emoji <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Optional</span>
+            <div className="flowing-emoji-header">
+              <div className="flowing-emoji-title" onClick={toggleFlowingEmoji}>
+                <span className="emoji-icon">✨</span>
+                <span className="title-text">Flowing Emoji</span>
+                <span className="optional-badge">Optional</span>
+              </div>
+              <div className="flowing-emoji-toggle" onClick={toggleFlowingEmoji}>
+                <div className={`toggle-track ${flowingEmojiEnabled ? 'enabled' : ''}`}>
+                  <div className={`toggle-thumb ${flowingEmojiEnabled ? 'enabled' : ''}`}></div>
                 </div>
-                <span className="text-sm font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded-md border border-amber-100">💰 $1.99/Letter</span>
-              </label>
+              </div>
             </div>
-            <EmojiSelector
-              selectedEmojis={selectedEmojis}
-              onSelect={setSelectedEmojis}
-              maxSelection={3}
-            />
+            
+            {flowingEmojiEnabled && (
+              <div className="flowing-emoji-selector">
+                {/* 选中的表情显示在上方 */}
+                {selectedEmojis.length > 0 && (
+                  <div className="selected-preview">
+                    {selectedEmojis.map((emoji, index) => (
+                      <span key={index} className="preview-emoji" onClick={() => handleEmojiSelect(emoji)} title="点击取消">{emoji}</span>
+                    ))}
+                    <span className="preview-hint">点击可取消</span>
+                  </div>
+                )}
+                <div className="emoji-hint">Select up to 3 emojis ({selectedEmojis.length}/3 selected)</div>
+                <div className="emoji-options">
+                  {FLOWING_EMOJIS.map(emoji => (
+                    <button
+                      key={emoji}
+                      className="emoji-option"
+                      onClick={() => handleEmojiSelect(emoji)}
+                      disabled={selectedEmojis.length >= 3 && !selectedEmojis.includes(emoji)}
+                    >
+                      <span className="emoji-char">{emoji}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-          */}
 
           <div className="form-section">
             <label htmlFor="song">Song</label>
@@ -602,6 +670,157 @@ function SendContent() {
         @keyframes slideUp {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Flowing Emoji Styles */
+        .flowing-emoji-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 0;
+          border-bottom: 1px solid #f0f0f0;
+          margin-bottom: 12px;
+        }
+
+        .flowing-emoji-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+        }
+
+        .emoji-icon {
+          font-size: 18px;
+        }
+
+        .title-text {
+          font-weight: 600;
+          font-size: 14px;
+          color: #333;
+        }
+
+        .optional-badge {
+          font-size: 11px;
+          font-weight: normal;
+          color: #888;
+          background: #f5f5f5;
+          padding: 2px 8px;
+          border-radius: 10px;
+        }
+
+        .flowing-emoji-toggle {
+          cursor: pointer;
+        }
+
+        .toggle-track {
+          width: 44px;
+          height: 24px;
+          background: #e0e0e0;
+          border-radius: 12px;
+          position: relative;
+          transition: background 0.2s;
+        }
+
+        .toggle-track.enabled {
+          background: #22c55e;
+        }
+
+        .toggle-thumb {
+          width: 20px;
+          height: 20px;
+          background: white;
+          border-radius: 50%;
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          transition: transform 0.2s;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .toggle-thumb.enabled {
+          transform: translateX(20px);
+        }
+
+        .flowing-emoji-selector {
+          padding: 12px;
+          background: #fafafa;
+          border-radius: 12px;
+          border: 1px solid #f0f0f0;
+        }
+
+        .selected-preview {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 12px;
+          padding-bottom: 12px;
+          border-bottom: 1px solid #e0e0e0;
+        }
+
+        .preview-emoji {
+          font-size: 28px;
+          cursor: pointer;
+          animation: popIn 0.3s ease-out;
+        }
+
+        .preview-emoji:hover {
+          opacity: 0.7;
+        }
+
+        .preview-hint {
+          font-size: 11px;
+          color: #aaa;
+        }
+
+        .emoji-hint {
+          font-size: 12px;
+          color: #888;
+          margin-bottom: 10px;
+        }
+
+        .emoji-options {
+          display: grid;
+          grid-template-columns: repeat(10, 1fr);
+          gap: 6px;
+        }
+
+        .emoji-option {
+          width: 100%;
+          aspect-ratio: 1;
+          background: white;
+          border: 1px solid #e8e8e8;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.15s;
+          padding: 4px;
+        }
+
+        .emoji-option:hover:not(:disabled) {
+          background: #f5f5f5;
+          transform: scale(1.1);
+        }
+
+        .emoji-option:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
+        .emoji-char {
+          font-size: 18px;
+        }
+        }
+
+        .preview-emoji {
+          font-size: 24px;
+          animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+          from { transform: scale(0); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
         }
       `}</style>
     </main >

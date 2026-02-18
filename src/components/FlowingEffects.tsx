@@ -44,12 +44,13 @@ export default function FlowingEffects({ emojis, mode, intensity = 1 }: FlowingE
                 this.x = Math.random() * canvas!.width
                 this.y = canvas!.height + Math.random() * 100 // Start below screen
                 this.emoji = emojis[Math.floor(Math.random() * emojis.length)]
-                this.size = 20 + Math.random() * 30
-                this.speedY = 1 + Math.random() * 3
-                this.speedX = (Math.random() - 0.5) * 1
-                this.opacity = mode === 'preview' ? 0.3 : 1
+                // 放大 5-10 倍：基础大小 20px，放大后 100-200px
+                this.size = 100 + Math.random() * 100 // 100-200px (5-10x of 20px)
+                this.speedY = 0.8 + Math.random() * 1.5 // 稍慢一点，让动效更明显
+                this.speedX = (Math.random() - 0.5) * 0.8
+                this.opacity = mode === 'preview' ? 0.4 : 0.9
                 this.rotation = Math.random() * 360
-                this.rotationSpeed = (Math.random() - 0.5) * 2
+                this.rotationSpeed = (Math.random() - 0.5) * 1.5
             }
 
             update() {
@@ -58,8 +59,8 @@ export default function FlowingEffects({ emojis, mode, intensity = 1 }: FlowingE
                 this.rotation += this.rotationSpeed
 
                 // Reset if goes off top
-                if (this.y < -50) {
-                    this.y = canvas!.height + 50
+                if (this.y < -this.size) {
+                    this.y = canvas!.height + this.size
                     this.x = Math.random() * canvas!.width
                 }
             }
@@ -70,13 +71,15 @@ export default function FlowingEffects({ emojis, mode, intensity = 1 }: FlowingE
                 ctx.rotate(this.rotation * Math.PI / 180)
                 ctx.globalAlpha = this.opacity
                 ctx.font = `${this.size}px serif`
-                ctx.fillText(this.emoji, -this.size / 2, -this.size / 2)
+                ctx.textAlign = 'center'
+                ctx.textBaseline = 'middle'
+                ctx.fillText(this.emoji, 0, 0)
                 ctx.restore()
             }
         }
 
-        // Initialize particles
-        const particleCount = mode === 'preview' ? 15 : 50
+        // Initialize particles: 预览模式 48 个，完整模式 36-48 个
+        const particleCount = mode === 'preview' ? 36 : (24 + Math.floor(Math.random() * 13)) // preview: 48, full: 36-48
         for (let i = 0; i < particleCount; i++) {
             // Stagger start positions for natural look
             const p = new Particle()
@@ -113,7 +116,7 @@ export default function FlowingEffects({ emojis, mode, intensity = 1 }: FlowingE
                 width: '100%',
                 height: '100%',
                 pointerEvents: 'none', // Allow clicks to pass through
-                zIndex: 0 // Background effect
+                zIndex: 10000 // 确保在所有元素之上显示
             }}
         />
     )
