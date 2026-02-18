@@ -39,7 +39,7 @@ function SendContent() {
   // Flowing Emoji 状态
   const [flowingEmojiEnabled, setFlowingEmojiEnabled] = useState(true) // 默认打开
   const [selectedEmojis, setSelectedEmojis] = useState<string[]>(['❤️']) // 默认选择一个
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false) // 是否显示 Emoji 选择器
+  const [showEmojiPicker, setShowEmojiPicker] = useState(true) // 默认显示 Emoji 选择器
 
   // 检测中文字符
   const hasChinese = (text: string) => {
@@ -68,7 +68,16 @@ function SendContent() {
 
   // Flowing Emoji 选择（支持选择相同表情）
   const handleEmojiSelect = (emoji: any) => {
-    const emojiChar = emoji.native || emoji // emoji-mart 返回 { native: '❤️', ... }
+    console.log('🎯 Emoji selected:', emoji)
+    // emoji-picker-react 返回 { emoji: '❤️', ... } 或直接返回 emoji 字符串
+    const emojiChar = emoji.emoji || emoji.native || emoji
+    console.log('🎯 Emoji char:', emojiChar)
+
+    if (!emojiChar) {
+      console.warn('⚠️ Invalid emoji:', emoji)
+      return
+    }
+
     if (selectedEmojis.includes(emojiChar)) {
       // 已选中则取消
       setSelectedEmojis(selectedEmojis.filter(e => e !== emojiChar))
@@ -432,25 +441,15 @@ function SendContent() {
 
                             <div className="emoji-hint">Select up to 3 emojis ({selectedEmojis.length}/3 selected)</div>
 
-                            {/* Emoji 选择器按钮 */}
-                            <button
-                              className="emoji-picker-trigger"
-                              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                            >
-                              {showEmojiPicker ? 'Close' : 'Choose Emojis'}
-                            </button>
-
-                            {/* emoji-mart 选择器 */}
-                            {showEmojiPicker && (
-                              <div className="emoji-mart-container">
-                                <EmojiPicker
-                                  onEmojiClick={handleEmojiSelect}
-                                  width="100%"
-                                  height={350}
-                                  lazyLoadEmojis={true}
-                                />
-                              </div>
-                            )}
+                            {/* emoji-picker-react 选择器 */}
+                            <div className="emoji-mart-container">
+                              <EmojiPicker
+                                onEmojiClick={handleEmojiSelect}
+                                width="100%"
+                                height={350}
+                                lazyLoadEmojis={true}
+                              />
+                            </div>
                           </div>
             
                         )}
@@ -791,36 +790,10 @@ function SendContent() {
           margin-bottom: 12px;
         }
 
-        .emoji-toggle-btn {
-          flex: 1;
-          padding: 8px 16px;
-          border: 1px solid #e0e0e0;
-          background: white;
-          border-radius: 8px;
-          font-size: 13px;
-          font-weight: 500;
-          .emoji-hint {
+        .emoji-hint {
           font-size: 12px;
           color: #888;
           margin-bottom: 10px;
-        }
-
-        .emoji-picker-trigger {
-          width: 100%;
-          padding: 10px 16px;
-          background: white;
-          border: 1px solid #e0e0e0;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 500;
-          color: #666;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .emoji-picker-trigger:hover {
-          background: #f5f5f5;
-          border-color: #d0d0d0;
         }
 
         .emoji-mart-container {
