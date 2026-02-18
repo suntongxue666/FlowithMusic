@@ -10,35 +10,13 @@ import { SpotifyTrack } from '@/lib/spotify'
 import { letterService } from '@/lib/letterService'
 import { userService } from '@/lib/userService'
 import { supabase } from '@/lib/supabase'
+import dynamic from 'next/dynamic'
 
-// Flowing Emoji 适合写信场景的表情（亲情、爱情、友情、温馨等情感表达）
-const FLOWING_EMOJIS = [
-  // 爱情类
-  '❤️', '💕', '💖', '💗', '💓', '💝', '💘', '💞', '💟', '🩷',
-  // 温馨类
-  '🥰', '😊', '🥺', '😍', '🤗', '🫂', '😌', '🥹', '😊', '🙂',
-  // 友情类
-  '🤝', '✨', '🌟', '⭐', '💫', '🌈', '🌸', '🌹', '🦋', '💌'
-]
-
-// 完整的 Emoji 列表（用于"All Emojis"选项）
-const ALL_EMOJIS = [
-  // 爱情类
-  '❤️', '💕', '💖', '💗', '💓', '💝', '💘', '💞', '💟', '🩷', '❣️', '💔', '💕', '💖', '💗',
-  // 温馨类
-  '🥰', '😊', '🥺', '😍', '🤗', '🫂', '😌', '🥹', '🙂', '😘', '😙', '😚', '🥲', '🤩', '😇',
-  // 友情类
-  '🤝', '✨', '🌟', '⭐', '💫', '🌈', '🌸', '🌹', '🦋', '💌', '🎀', '🎁', '🎈', '🎉', '🎊',
-  // 动物类
-  '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵',
-  '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋',
-  // 自然类
-  '🌸', '🌺', '🌻', '🌹', '🌷', '💐', '🌴', '🌵', '🌾', '🍀', '🍁', '🍂', '🍃', '🌊', '🌙',
-  // 食物类
-  '🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍑', '🥝', '🍅', '🥑', '🍆', '🥕', '🌽',
-  // 其他
-  '🎵', '🎶', '🎹', '🎸', '🎺', '🎷', '🎻', '🥁', '💃', '🕺', '🎭', '🎨', '🎬', '📷', '🎥'
-]
+// 动态导入 emoji-picker-react 以避免 SSR 问题
+const EmojiPicker = dynamic(
+  () => import('emoji-picker-react'),
+  { ssr: false }
+)
 
 function SendContent() {
   const router = useRouter()
@@ -61,7 +39,7 @@ function SendContent() {
   // Flowing Emoji 状态
   const [flowingEmojiEnabled, setFlowingEmojiEnabled] = useState(true) // 默认打开
   const [selectedEmojis, setSelectedEmojis] = useState<string[]>(['❤️']) // 默认选择一个
-  const [showAllEmojis, setShowAllEmojis] = useState(false) // 是否显示所有 Emoji
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false) // 是否显示 Emoji 选择器
 
   // 检测中文字符
   const hasChinese = (text: string) => {
@@ -89,14 +67,16 @@ function SendContent() {
   }
 
   // Flowing Emoji 选择（支持选择相同表情）
-  const handleEmojiSelect = (emoji: string) => {
-    if (selectedEmojis.includes(emoji)) {
+  const handleEmojiSelect = (emoji: any) => {
+    const emojiChar = emoji.native || emoji // emoji-mart 返回 { native: '❤️', ... }
+    if (selectedEmojis.includes(emojiChar)) {
       // 已选中则取消
-      setSelectedEmojis(selectedEmojis.filter(e => e !== emoji))
+      setSelectedEmojis(selectedEmojis.filter(e => e !== emojiChar))
     } else if (selectedEmojis.length < 3) {
       // 未选中且未满3个则添加
-      setSelectedEmojis([...selectedEmojis, emoji])
+      setSelectedEmojis([...selectedEmojis, emojiChar])
     }
+    setShowEmojiPicker(false) // 选择后关闭选择器
   }
 
   // 初始化用户
@@ -439,85 +419,38 @@ function SendContent() {
             {flowingEmojiEnabled && (
             
                           <div className="flowing-emoji-selector">
-            
+
                             {/* 选中的表情显示在上方 */}
-            
                             {selectedEmojis.length > 0 && (
-            
                               <div className="selected-preview">
-            
                                 {selectedEmojis.map((emoji, index) => (
-            
                                   <span key={index} className="preview-emoji" onClick={() => handleEmojiSelect(emoji)} title="点击取消">{emoji}</span>
-            
                                 ))}
-            
                                 <span className="preview-hint">Tap to Cancel</span>
-            
                               </div>
-            
                             )}
-            
+
                             <div className="emoji-hint">Select up to 3 emojis ({selectedEmojis.length}/3 selected)</div>
-            
-            
-            
-                            {/* 切换按钮 */}
-            
-                            <div className="emoji-toggle-container">
-            
-                              <button
-            
-                                className={`emoji-toggle-btn ${!showAllEmojis ? 'active' : ''}`}
-            
-                                onClick={() => setShowAllEmojis(false)}
-            
-                              >
-            
-                                Popular
-            
-                              </button>
-            
-                              <button
-            
-                                className={`emoji-toggle-btn ${showAllEmojis ? 'active' : ''}`}
-            
-                                onClick={() => setShowAllEmojis(true)}
-            
-                              >
-            
-                                All Emojis
-            
-                              </button>
-            
-                            </div>
-            
-            
-            
-                            <div className="emoji-options">
-            
-                              {(showAllEmojis ? ALL_EMOJIS : FLOWING_EMOJIS).map(emoji => (
-            
-                                <button
-            
-                                  key={emoji}
-            
-                                  className="emoji-option"
-            
-                                  onClick={() => handleEmojiSelect(emoji)}
-            
-                                  disabled={selectedEmojis.length >= 3 && !selectedEmojis.includes(emoji)}
-            
-                                >
-            
-                                  <span className="emoji-char">{emoji}</span>
-            
-                                </button>
-            
-                              ))}
-            
-                            </div>
-            
+
+                            {/* Emoji 选择器按钮 */}
+                            <button
+                              className="emoji-picker-trigger"
+                              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                            >
+                              {showEmojiPicker ? 'Close' : 'Choose Emojis'}
+                            </button>
+
+                            {/* emoji-mart 选择器 */}
+                            {showEmojiPicker && (
+                              <div className="emoji-mart-container">
+                                <EmojiPicker
+                                  onEmojiClick={handleEmojiSelect}
+                                  width="100%"
+                                  height={350}
+                                  lazyLoadEmojis={true}
+                                />
+                              </div>
+                            )}
                           </div>
             
                         )}
@@ -866,78 +799,47 @@ function SendContent() {
           border-radius: 8px;
           font-size: 13px;
           font-weight: 500;
-          color: #666;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .emoji-toggle-btn:hover {
-          background: #f5f5f5;
-        }
-
-        .emoji-toggle-btn.active {
-          background: #4CAF50;
-          color: white;
-          border-color: #4CAF50;
-        }
-          color: #aaa;
-        }
-
-        .emoji-hint {
+          .emoji-hint {
           font-size: 12px;
           color: #888;
           margin-bottom: 10px;
         }
 
-        .emoji-options {
-          display: grid;
-          grid-template-columns: repeat(10, 1fr);
-          gap: 6px;
-        }
-
-        .emoji-option {
+        .emoji-picker-trigger {
           width: 100%;
-          aspect-ratio: 1;
+          padding: 10px 16px;
           background: white;
-          border: 1px solid #e8e8e8;
+          border: 1px solid #e0e0e0;
           border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          font-size: 14px;
+          font-weight: 500;
+          color: #666;
           cursor: pointer;
-          transition: all 0.15s;
-          padding: 4px;
+          transition: all 0.2s;
         }
 
-        .emoji-option:hover:not(:disabled) {
+        .emoji-picker-trigger:hover {
           background: #f5f5f5;
-          transform: scale(1.1);
+          border-color: #d0d0d0;
         }
 
-        .emoji-option:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
+        .emoji-mart-container {
+          margin-top: 12px;
+          border: 1px solid #e0e0e0;
+          border-radius: 12px;
+          overflow: hidden;
+          background: white;
         }
 
-        .emoji-char {
-          font-size: 18px;
+        /* emoji-mart 自定义样式 */
+        .emoji-mart-container :global(.emoji-mart) {
+          height: 350px;
         }
 
-        /* H5 移动端适配 */
         @media (max-width: 768px) {
-          .emoji-options {
-            grid-template-columns: repeat(5, 1fr);
-            gap: 4px;
+          .emoji-mart-container :global(.emoji-mart) {
+            height: 300px;
           }
-
-          .emoji-option {
-            padding: 2px;
-          }
-
-          .emoji-char {
-            font-size: 16px;
-          }
-        }
         }
 
         .preview-emoji {
