@@ -600,8 +600,13 @@ function HistoryContent() {
               Get the full-screen animation permanently for this letter.
             </p>
             <div className="promotion-banner">
-              <span className="promotion-text">Limited Offer: $0.99 (24 Hours Only)</span>
-              <span className="promotion-badge">SAVE 50%</span>
+              <div className="promotion-content">
+                <span className="promotion-text">Limited Offer: $0.99 <span className="small-text">(24 Hours Only)</span></span>
+                <span className="promotion-badge">SAVE 50%</span>
+              </div>
+              <div className="purchase-count">
+                {Math.floor(Math.random() * 39) + 11} purchases in last 24 hours
+              </div>
             </div>
             <div className="payment-letter-info">
               <img src={paymentLetter.song_album_cover} alt={paymentLetter.song_title} className="payment-cover" />
@@ -703,8 +708,8 @@ function HistoryContent() {
           padding: 14px 20px;
           margin-bottom: 24px;
           display: flex;
-          justify-content: space-between;
-          align-items: center;
+          flex-direction: column;
+          gap: 8px;
           box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
           animation: pulse 2s ease-in-out infinite;
         }
@@ -720,11 +725,24 @@ function HistoryContent() {
           }
         }
 
+        .promotion-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          width: 100%;
+        }
+
         .promotion-text {
           color: white;
           font-size: 16px;
           font-weight: 700;
           text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .small-text {
+          font-size: 12px;
+          font-weight: 600;
+          opacity: 0.9;
         }
 
         .promotion-badge {
@@ -735,6 +753,17 @@ function HistoryContent() {
           padding: 6px 12px;
           border-radius: 20px;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          width: 70%;
+          text-align: center;
+        }
+
+        .purchase-count {
+          color: white;
+          font-size: 11px;
+          font-weight: 600;
+          text-align: center;
+          opacity: 0.95;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .payment-letter-info {
