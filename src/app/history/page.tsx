@@ -599,6 +599,10 @@ function HistoryContent() {
             <p className="payment-description">
               Get the full-screen animation permanently for this letter.
             </p>
+            <div className="promotion-banner">
+              <span className="promotion-text">Limited Offer: $0.99 (24 Hours Only)</span>
+              <span className="promotion-badge">SAVE 50%</span>
+            </div>
             <div className="payment-letter-info">
               <img src={paymentLetter.song_album_cover} alt={paymentLetter.song_title} className="payment-cover" />
               <div className="payment-details">
@@ -618,7 +622,7 @@ function HistoryContent() {
                         description: `Flowing Emoji for Letter: ${paymentLetter.song_title}`,
                         amount: {
                           currency_code: "USD",
-                          value: "1.99"
+                          value: "0.99"
                         }
                       }]
                     })
@@ -691,6 +695,46 @@ function HistoryContent() {
           font-size: 14px;
           margin-bottom: 20px;
           line-height: 1.5;
+        }
+
+        .promotion-banner {
+          background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+          border-radius: 12px;
+          padding: 14px 20px;
+          margin-bottom: 24px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+          animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+          }
+          50% {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+          }
+        }
+
+        .promotion-text {
+          color: white;
+          font-size: 16px;
+          font-weight: 700;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .promotion-badge {
+          background: white;
+          color: #FF6B6B;
+          font-size: 12px;
+          font-weight: 800;
+          padding: 6px 12px;
+          border-radius: 20px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
 
         .payment-letter-info {
