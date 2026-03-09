@@ -1,15 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useParams } from 'next/navigation'
 import Header from '@/components/Header'
 import ExploreCards from '@/components/ExploreCards'
 import Footer from '@/components/Footer'
-
-interface CategoryPageProps {
-    params: {
-        category: string
-    }
-}
 
 const categoryInfo: Record<string, { title: string, description: string }> = {
     love: {
@@ -26,8 +20,9 @@ const categoryInfo: Record<string, { title: string, description: string }> = {
     }
 }
 
-export default function CategoryPage({ params }: CategoryPageProps) {
-    const category = params.category.toLowerCase()
+export default function CategoryPage() {
+    const params = useParams()
+    const category = (params.category as string || '').toLowerCase()
     const info = categoryInfo[category] || {
         title: `${category.charAt(0).toUpperCase() + category.slice(1)} Letters`,
         description: `Explore ${category} letters paired with music.`
