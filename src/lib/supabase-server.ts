@@ -11,13 +11,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // 创建服务端Supabase客户端
-export const supabaseServer = supabaseUrl && supabaseAnonKey 
+export const supabaseServer = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    })
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  })
   : null
 
 // 数据库类型定义
@@ -55,4 +55,5 @@ export interface Letter {
   is_public: boolean
   shareable_link?: string
   user?: User
+  category?: string
 }

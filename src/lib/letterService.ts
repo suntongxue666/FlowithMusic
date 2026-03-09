@@ -16,6 +16,7 @@ export interface CreateLetterData {
   animation_config?: {
     emojis: string[]
   }
+  category?: string
 }
 
 
@@ -88,7 +89,8 @@ export class LetterService {
       song_preview_url: data.song.previewUrl,
       song_spotify_url: data.song.spotifyUrl,
       song_duration_ms: data.song.duration_ms,
-      is_public: true
+      is_public: true,
+      category: data.category
     }
 
     // 仅当有有效的动画配置(emoji数组非空)时才添加字段
@@ -310,7 +312,7 @@ export class LetterService {
     limit = 18,
     offset = 0,
     sortBy: 'created_at' | 'view_count' = 'created_at',
-    filters?: { artist?: string }
+    filters?: { artist?: string; category?: string }
   ): Promise<Letter[]> {
     if (!supabase) return []
 
@@ -322,6 +324,10 @@ export class LetterService {
     //如果有特定歌手筛选
     if (filters?.artist) {
       query = query.eq('song_artist', filters.artist)
+    }
+
+    if (filters?.category) {
+      query = query.eq('category', filters.category)
     }
 
     const { data, error } = await query
@@ -425,13 +431,13 @@ export class LetterService {
         this.updateLocalLetterPaymentStatus(linkId, effectType)
         return true
       }
-      
+
       console.warn('⚠️ LetterService: Database update failed:', error.message)
     }
 
     // 如果数据库更新失败，只更新本地存储
     const localSuccess = this.updateLocalLetterPaymentStatus(linkId, effectType)
-    
+
     if (localSuccess) {
       console.log('✅ LetterService: Local storage updated successfully (fallback)')
       return true
@@ -446,21 +452,21 @@ export class LetterService {
    */
   private updateLocalLetterPaymentStatus(linkId: string, effectType: string): boolean {
     if (typeof window === 'undefined') return false
-    
+
     try {
       const rawLetters = localStorage.getItem('letters')
       if (!rawLetters) return false
-      
+
       const letters = JSON.parse(rawLetters)
       const index = letters.findIndex((l: any) => l.link_id === linkId)
-      
+
       if (index !== -1) {
         letters[index].effect_type = effectType
         localStorage.setItem('letters', JSON.stringify(letters))
         console.log('✅ LetterService: Local letter payment status updated')
         return true
       }
-      
+
       return false
     } catch (e) {
       console.error('❌ LetterService: Failed to update local storage:', e)

@@ -24,6 +24,7 @@ function SendContent() {
   const [selectedTrack, setSelectedTrack] = useState<SpotifyTrack | null>(null)
   const [recipient, setRecipient] = useState('')
   const [message, setMessage] = useState('')
+  const [category, setCategory] = useState<string>('Love')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [showErrorModal, setShowErrorModal] = useState(false)
@@ -111,6 +112,7 @@ function SendContent() {
             const data = JSON.parse(pendingLetter)
             setRecipient(data.recipient || '')
             setMessage(data.message || '')
+            setCategory(data.category || 'Love')
             setSelectedTrack(data.track || null)
             // setSelectedEmojis(data.emojis || []) // Temporarily disabled
 
@@ -144,7 +146,7 @@ function SendContent() {
       console.log('🚀 Auto-submitting letter after login resume...')
       submitLetter(false)
     }
-  }, [recipient, message, selectedTrack, searchParams])
+  }, [recipient, message, selectedTrack, category, searchParams])
 
   const handleTrackSelect = (track: SpotifyTrack) => {
     setSelectedTrack(track)
@@ -158,6 +160,7 @@ function SendContent() {
         localStorage.setItem('pending_letter', JSON.stringify({
           recipient,
           message,
+          category,
           track: selectedTrack
         }))
       }
@@ -227,6 +230,7 @@ function SendContent() {
           const letterPromise = letterService.createLetter({
             to: recipient.trim(),
             message: message.trim(),
+            category: category,
             song: {
               id: selectedTrack!.id,
               title: selectedTrack!.name,
@@ -281,8 +285,8 @@ function SendContent() {
       // 确保 animation_config 被保存（如果数据库没有返回，手动添加）
       const letterWithAnimation = {
         ...newLetter,
-        animation_config: flowingEmojiEnabled && selectedEmojis.length > 0 
-          ? { emojis: selectedEmojis } 
+        animation_config: flowingEmojiEnabled && selectedEmojis.length > 0
+          ? { emojis: selectedEmojis }
           : newLetter.animation_config
       }
 
@@ -424,35 +428,50 @@ function SendContent() {
                 </div>
               </div>
             </div>
-            
+
             {flowingEmojiEnabled && (
-            
-                          <div className="flowing-emoji-selector">
 
-                            {/* 选中的表情显示在上方 */}
-                            {selectedEmojis.length > 0 && (
-                              <div className="selected-preview">
-                                {selectedEmojis.map((emoji, index) => (
-                                  <span key={index} className="preview-emoji" onClick={() => handleEmojiSelect(emoji)} title="点击取消">{emoji}</span>
-                                ))}
-                                <span className="preview-hint">Tap to Cancel</span>
-                              </div>
-                            )}
+              <div className="flowing-emoji-selector">
 
-                            <div className="emoji-hint">Select up to 3 emojis ({selectedEmojis.length}/3 selected)</div>
+                {/* 选中的表情显示在上方 */}
+                {selectedEmojis.length > 0 && (
+                  <div className="selected-preview">
+                    {selectedEmojis.map((emoji, index) => (
+                      <span key={index} className="preview-emoji" onClick={() => handleEmojiSelect(emoji)} title="点击取消">{emoji}</span>
+                    ))}
+                    <span className="preview-hint">Tap to Cancel</span>
+                  </div>
+                )}
 
-                            {/* emoji-picker-react 选择器 */}
-                            <div className="emoji-mart-container">
-                              <EmojiPicker
-                                onEmojiClick={handleEmojiSelect}
-                                width="100%"
-                                height={350}
-                                lazyLoadEmojis={true}
-                              />
-                            </div>
-                          </div>
-            
-                        )}
+                <div className="emoji-hint">Select up to 3 emojis ({selectedEmojis.length}/3 selected)</div>
+
+                {/* emoji-picker-react 选择器 */}
+                <div className="emoji-mart-container">
+                  <EmojiPicker
+                    onEmojiClick={handleEmojiSelect}
+                    width="100%"
+                    height={350}
+                    lazyLoadEmojis={true}
+                  />
+                </div>
+              </div>
+
+            )}
+          </div>
+
+          <div className="form-section">
+            <label htmlFor="category">Category</label>
+            <select
+              id="category"
+              className="form-input"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              style={{ width: '100%', marginTop: '10px', appearance: 'none', background: 'white url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23666\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'m6 9 6 6 6-6\'/%3E%3C/svg%3E") no-repeat right 12px center' }}
+            >
+              <option value="Love">Love</option>
+              <option value="Friendship">Friendship</option>
+              <option value="Family">Family</option>
+            </select>
           </div>
 
           <div className="form-section">

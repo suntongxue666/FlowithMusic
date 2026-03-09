@@ -1,26 +1,29 @@
 export default function Features() {
   const features = [
     {
-      title: "Share Your Message",
-      description: "Write a heartfelt message with a track that speaks for you."
+      title: "Love Letters",
+      description: "Explore romantic handwritten letters paired with meaningful songs.",
+      link: "/love"
     },
     {
-      title: "Detail Messages", 
-      description: "Handwritten feeling. Emotion that lives in your letters."
+      title: "Friendship Letters",
+      description: "Discover messages of appreciation and shared memories between friends.",
+      link: "/friendship"
     },
     {
-      title: "Browse Messages",
-      description: "Explore messages from others and find kindred souls."
+      title: "Family Letters",
+      description: "Heartfelt letters to parents, siblings, and relatives that bridge the distance.",
+      link: "/family"
     }
   ]
 
   return (
     <section className="features">
       {features.map((feature, index) => (
-        <div key={index} className="feature-box">
+        <a href={feature.link} key={index} className="feature-box" style={{ textDecoration: 'none', color: 'inherit' }}>
           <h3>{feature.title}</h3>
           <p>{feature.description}</p>
-        </div>
+        </a>
       ))}
     </section>
   )

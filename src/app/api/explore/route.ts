@@ -27,6 +27,7 @@ export async function GET(request: Request) {
     const searchQuery = rawQuery.trim()
 
     const sortBy = (searchParams.get('sortBy') || 'created_at') as 'created_at' | 'view_count'
+    const category = searchParams.get('category') || undefined
     const format = searchParams.get('format') // camelCase 或默认
 
     let fetchedLetters: Letter[] = []
@@ -36,7 +37,7 @@ export async function GET(request: Request) {
       fetchedLetters = await letterService.searchLetters(searchQuery, limit, offset)
     } else {
       // 公开流
-      fetchedLetters = await letterService.getPublicLetters(limit, offset, sortBy)
+      fetchedLetters = await letterService.getPublicLetters(limit, offset, sortBy, { category })
     }
 
     console.log(`🌐 API Explore: Fetched ${fetchedLetters.length} letters. Query: "${searchQuery}"`)

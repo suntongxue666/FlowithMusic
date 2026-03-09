@@ -8,15 +8,16 @@ import { useRef } from 'react'
 
 interface ExploreCardsProps {
   searchQuery?: string
+  category?: string
 }
 
-export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
+export default function ExploreCards({ searchQuery = '', category = '' }: ExploreCardsProps) {
   const [letters, setLetters] = useState<Letter[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(0)
-  
+
   const LETTERS_PER_PAGE = 15 // 3列 * 5排
 
   const loadLetters = useCallback(async (pageNum: number, isNewSearch = false) => {
@@ -36,6 +37,9 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
 
       if (searchQuery && searchQuery.trim()) {
         url += `&searchQuery=${encodeURIComponent(searchQuery.trim())}`;
+      }
+      if (category) {
+        url += `&category=${encodeURIComponent(category)}`;
       }
 
       const response = await fetch(url);
@@ -84,7 +88,7 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
         : !!json.hasMore;
       setHasMore(nextHasMore);
       setPage(pageNum);
-      
+
     } catch (error) {
       console.error('Failed to load letters:', error)
       setLetters([])
@@ -98,9 +102,9 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
   const observerTarget = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 首次加载或搜索查询变化时触发
-    loadLetters(0, true); 
-  }, [searchQuery]); // 依赖searchQuery，当searchQuery变化时重新加载
+    // 首次加载或搜索查询、分类变化时触发
+    loadLetters(0, true);
+  }, [searchQuery, category]); // 依赖searchQuery和category，当它们变化时重新加载
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -159,7 +163,7 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
         {letters.map((letter, index) => {
           const card = convertLetterToCard(letter)
           return (
-            <MusicCard 
+            <MusicCard
               key={letter.link_id || `${letter.id}-${index}`}
               to={card.to}
               message={card.message}
@@ -169,7 +173,7 @@ export default function ExploreCards({ searchQuery = '' }: ExploreCardsProps) {
           )
         })}
       </div>
-      
+
       {loadingMore && (
         <div className="load-more-container">
           <p>Loading more letters...</p>

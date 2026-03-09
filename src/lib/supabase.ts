@@ -97,6 +97,7 @@ export interface Letter {
   animation_config?: any // 特效配置，如 { emojis: ["🐶", "🐱"] }
   shareable_link?: string // 包含数据的可分享链接
   user?: User // 关联用户信息
+  category?: string // 'Family' | 'Love' | 'Friendship'
 }
 
 export interface AnonymousSession {

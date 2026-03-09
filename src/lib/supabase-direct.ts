@@ -26,7 +26,7 @@ export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     fetch: (url, options = {}) => {
       const urlString = typeof url === 'string' ? url : url.toString()
       console.log('🌐 直接Supabase请求:', urlString.substring(0, 50) + '...')
-      
+
       // 检查是否在浏览器环境中
       if (typeof window === 'undefined') {
         // 服务端环境
@@ -47,10 +47,10 @@ export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           throw error
         })
       }
-      
+
       // 客户端环境
       const originalFetch = window.fetch.bind(window)
-      
+
       return originalFetch(url, {
         ...options,
         headers: {
@@ -72,7 +72,7 @@ export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             url: urlString
           }
           console.error('❌ 直接Supabase请求失败:', errorInfo)
-          
+
           // 如果是401错误，不要抛出异常，而是返回响应让上层处理
           if (response.status === 401) {
             console.warn('⚠️ 401错误，但继续处理响应')
@@ -126,6 +126,7 @@ export interface Letter {
   is_public: boolean
   shareable_link?: string
   user?: User
+  category?: string
 }
 
 export interface AnonymousSession {
@@ -141,17 +142,17 @@ export const testSupabaseConnection = async () => {
   if (!supabaseClient) {
     throw new Error('Supabase client is not initialized')
   }
-  
+
   try {
     const { data, error } = await supabaseClient
       .from('letters')
       .select('count')
       .limit(1)
-    
+
     if (error) {
       throw error
     }
-    
+
     console.log('✅ 直接Supabase连接测试成功')
     return true
   } catch (error) {
