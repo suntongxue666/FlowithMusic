@@ -343,6 +343,62 @@ export class LetterService {
   }
 
   /**
+   * 获取相同歌曲的 Letters
+   */
+  async getLettersBySong(songTitle: string, limit = 6, excludeId?: string): Promise<Letter[]> {
+    if (!supabase) return []
+
+    let query = supabase
+      .from('letters')
+      .select('*')
+      .eq('is_public', true)
+      .eq('song_title', songTitle)
+
+    if (excludeId) {
+      query = query.neq('link_id', excludeId)
+    }
+
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      console.error('❌ LetterService: Fetch letters by song failed:', error)
+      return []
+    }
+
+    return data || []
+  }
+
+  /**
+   * 获取相同分类的 Letters
+   */
+  async getLettersByCategory(category: string, limit = 6, excludeId?: string): Promise<Letter[]> {
+    if (!supabase) return []
+
+    let query = supabase
+      .from('letters')
+      .select('*')
+      .eq('is_public', true)
+      .eq('category', category)
+
+    if (excludeId) {
+      query = query.neq('link_id', excludeId)
+    }
+
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      console.error('❌ LetterService: Fetch letters by category failed:', error)
+      return []
+    }
+
+    return data || []
+  }
+
+  /**
    * 迁移游客数据到当前登录用户
    * @param localLetters 本地存储的 Letter 数组
    * @param userId 当前用户ID

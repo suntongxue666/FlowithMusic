@@ -195,6 +195,18 @@ function SendContent() {
   }
 
   const submitLetter = async (isGuest: boolean) => {
+    // Check for duplicate content within 60 seconds
+    const lastContent = localStorage.getItem('last_letter_content');
+    const lastTime = localStorage.getItem('last_letter_time');
+    const currentTime = Date.now();
+    const currentMessage = message.trim();
+
+    if (lastContent === currentMessage && lastTime && (currentTime - parseInt(lastTime)) < 60000) {
+      setErrorMessage("The same content has already been posted. Please do not duplicate posts.");
+      setShowErrorModal(true);
+      return;
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -320,6 +332,10 @@ function SendContent() {
         localStorage.removeItem('history_letters_cache')
         localStorage.removeItem('history_letters_cache_time')
       }
+
+      // 记录最后一次发送的内容和时间以防止重复
+      localStorage.setItem('last_letter_content', message.trim());
+      localStorage.setItem('last_letter_time', Date.now().toString());
 
       // Show toast
       setShowToast(true)

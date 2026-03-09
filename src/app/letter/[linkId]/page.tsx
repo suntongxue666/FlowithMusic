@@ -12,34 +12,34 @@ interface Props {
 // 生成动态SEO元数据
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { linkId } = await params
-  
+
   console.log('=== 元数据生成开始 ===', new Date().toISOString())
-  
+
   try {
     // 直接使用supabase获取letter数据 - 绕过letterService的复杂逻辑
     let letter: Letter | null = null
-    
+
     try {
       console.log('=== 元数据生成开始 ===')
       console.log('Environment check:', {
         isServer: typeof window === 'undefined',
         hasSupabase: !!supabase
       })
-      
+
       if (supabase) {
         console.log('Direct supabase fetch for metadata, linkId:', linkId)
-        
+
         // 尝试多种查询方式
         let queryResult = null
-        
+
         // 方式1: 标准查询
         try {
           const { data, error } = await supabase
             .from('letters')
-            .select('song_title, song_artist, song_album_cover, created_at, is_public')
+            .select('song_title, song_artist, song_album_cover, created_at, is_public, message, category')
             .eq('link_id', linkId)
             .single()
-          
+
           if (data && !error) {
             queryResult = { data, error, method: 'standard' }
           } else {
@@ -48,16 +48,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         } catch (err) {
           console.log('Standard query error:', err)
         }
-        
+
         // 方式2: 如果标准查询失败，尝试不加single()
         if (!queryResult) {
           try {
             const { data, error } = await supabase
               .from('letters')
-              .select('song_title, song_artist, song_album_cover, created_at, is_public')
+              .select('song_title, song_artist, song_album_cover, created_at, is_public, message, category')
               .eq('link_id', linkId)
               .limit(1)
-            
+
             if (data && data.length > 0 && !error) {
               queryResult = { data: data[0], error, method: 'array_first' }
             }
@@ -65,9 +65,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             console.log('Array query error:', err)
           }
         }
-        
+
         console.log('Final query result:', queryResult)
-        
+
         if (queryResult && queryResult.data && !queryResult.error) {
           // 处理可能返回数组的情况
           const letterData = Array.isArray(queryResult.data) ? queryResult.data[0] : queryResult.data
@@ -89,14 +89,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     } catch (error) {
       console.error('Failed to fetch letter for metadata:', error)
     }
-    
+
     // 更严格的条件检查，确保字段不为空字符串
-    const hasValidSongData = letter && 
-      letter.song_title && 
-      letter.song_artist && 
-      letter.song_title.trim() !== '' && 
+    const hasValidSongData = letter &&
+      letter.song_title &&
+      letter.song_artist &&
+      letter.song_title.trim() !== '' &&
       letter.song_artist.trim() !== ''
-    
+
     if (!hasValidSongData) {
       console.log('No valid letter data found for metadata, using fallback. Letter data:', {
         letter: !!letter,
@@ -130,24 +130,42 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const songTitle = letter!.song_title
     const artistName = letter!.song_artist
+    const message = letter!.message || ""
 
-    console.log('Generating metadata for:', { songTitle, artistName })
+    // 单词统计逻辑
+    const words = message.trim().split(/\s+/).filter(w => w.length > 0)
+    const wordCount = words.length
 
-    // Title模板 (60字符以内)
-    const title = `Send the Song: Handwritten Letter with "${songTitle}" by ${artistName} | FlowithMusic`
-    
-    console.log('✅ Generated personalized title:', title)
-    
-    // Description模板 (155字符以内) - 修改为英文
-    const description = `Receive a handwritten letter paired with "${songTitle}" by ${artistName}. React with emojis, express your feelings, and find people who vibe to the same tune.`
-    
+    console.log('Generating metadata for:', { songTitle, artistName, wordCount })
+
+    // SEO 策略
+    let title = ""
+    let description = ""
+    let robots = {}
+
+    if (wordCount <= 30) {
+      // 策略 1: <= 30 字，noindex
+      title = `Musical Letter | FlowithMusic`
+      description = `Discover a handwritten letter paired with music.`
+      robots = { index: false, follow: true }
+    } else if (wordCount < 120) {
+      // 策略 2: 30-120 单词，简化 SEO
+      title = `${songTitle} | FlowithMusic`
+      description = `Listen to "${songTitle}" by ${artistName} and read a personal message.`
+    } else {
+      // 策略 3: >= 120 单词，完整 SEO
+      title = `Send the Song: Handwritten Letter with "${songTitle}" by ${artistName} | FlowithMusic`
+      description = `Receive a heartfelt handwritten letter paired with "${songTitle}" by ${artistName}. React with emojis and connect with music.`
+    }
+
     // Keywords
-    const keywords = `send the song, sendthesong, send the song ${songTitle}, musical messages, handwritten letter, send a song to a friend, emotional music sharing, vibe music letter, letter with song, emoji letter reaction, react to music, music connection, free play ${artistName}'s ${songTitle} music`
+    const keywords = `send the song, sendthesong, send the song ${songTitle}, musical messages, handwritten letter, letter with song, ${artistName} ${songTitle}`
 
     return {
       title,
       description,
       keywords,
+      robots,
       openGraph: {
         title,
         description,
@@ -209,7 +227,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function LetterPage({ params }: Props) {
   const { linkId } = await params
-  
+
   return (
     <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
       <LetterPageClient linkId={linkId} />

@@ -5,7 +5,7 @@ import Footer from '@/components/Footer'
 
 export default function SitemapPage() {
   const baseUrl = 'https://www.flowithmusic.com'
-  
+
   const pages = [
     {
       url: '/',
@@ -25,6 +25,27 @@ export default function SitemapPage() {
       url: '/explore',
       title: 'Explore Letters',
       description: 'Browse all music letters shared by our community',
+      priority: 'High',
+      frequency: 'Daily'
+    },
+    {
+      url: '/love',
+      title: 'Love Letters',
+      description: 'Explore romantic handwritten letters paired with meaningful songs',
+      priority: 'High',
+      frequency: 'Daily'
+    },
+    {
+      url: '/friendship',
+      title: 'Friendship Letters',
+      description: 'Discover messages of appreciation and shared memories between friends',
+      priority: 'High',
+      frequency: 'Daily'
+    },
+    {
+      url: '/family',
+      title: 'Family Letters',
+      description: 'Heartfelt letters to parents, siblings, and relatives through music',
       priority: 'High',
       frequency: 'Daily'
     },
@@ -59,7 +80,7 @@ export default function SitemapPage() {
           <h1>Site Map</h1>
           <p>Navigate through all pages of FlowithMusic</p>
         </div>
-        
+
         <div className="sitemap-content">
           <div className="sitemap-grid">
             {pages.map((page, index) => (
@@ -77,11 +98,11 @@ export default function SitemapPage() {
               </div>
             ))}
           </div>
-          
+
           <div className="sitemap-info">
             <h2>About This Sitemap</h2>
             <p>
-              This sitemap shows all the main pages of FlowithMusic. Each page is designed to help you 
+              This sitemap shows all the main pages of FlowithMusic. Each page is designed to help you
               share and discover music through heartfelt messages. Navigate to any page using the links above.
             </p>
             <p>
@@ -91,7 +112,7 @@ export default function SitemapPage() {
         </div>
       </div>
       <Footer />
-      
+
       <style jsx>{`
         .sitemap-container {
           max-width: 1200px;

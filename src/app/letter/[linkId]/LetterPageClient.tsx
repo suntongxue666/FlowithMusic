@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import Header from '@/components/Header'
+import MusicCard from '@/components/MusicCard'
 import ColorfulSpotifyPlayer from '@/components/ColorfulSpotifyPlayer'
 import LetterInteractions from '@/components/LetterInteractions'
 import LetterQRCode from '@/components/LetterQRCode'
@@ -169,6 +171,8 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
   const [showEffect, setShowEffect] = useState(false)
   const [effectMode, setEffectMode] = useState<'preview' | 'full'>('preview')
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [relatedBySong, setRelatedBySong] = useState<Letter[]>([])
+  const [relatedByCategory, setRelatedByCategory] = useState<Letter[]>([])
 
   // 检测文本是否包含中文字符
   const hasChinese = (text: string) => {
@@ -367,6 +371,36 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
     loadLetter()
   }, [linkId])
 
+  // 加载相关联的信件
+  useEffect(() => {
+    const loadRelated = async () => {
+      if (letter) {
+        // 1. 获取同名歌曲的信件
+        const bySong = await letterService.getLettersBySong(letter.song_title || '', 6, letter.link_id)
+        setRelatedBySong(bySong)
+
+        // 2. 获取同分类的信件
+        if (letter.category) {
+          const byCategory = await letterService.getLettersByCategory(letter.category, 6, letter.link_id)
+          setRelatedByCategory(byCategory)
+        }
+      }
+    }
+    loadRelated()
+  }, [letter])
+
+  // 转换函数
+  const convertLetterToCard = (l: Letter) => ({
+    to: l.recipient_name || 'Someone',
+    message: l.message || '',
+    song: {
+      title: l.song_title || 'Unknown Title',
+      artist: l.song_artist || 'Unknown Artist',
+      albumCover: l.song_album_cover || '/favicon.ico'
+    },
+    linkId: l.link_id
+  })
+
   if (loading) {
     return (
       <main>
@@ -545,6 +579,37 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
         </div>
 
         <LetterQRCode />
+
+        {/* 相关信件区块 */}
+        <div className="related-letters-container" style={{ marginTop: '60px', padding: '0 20px 40px' }}>
+          {relatedBySong.length > 0 && (
+            <div className="related-section" style={{ marginBottom: '40px' }}>
+              <h3 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>More Letters with "{letter.song_title}"</h3>
+              <div className="cards-grid" style={{
+                display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px'
+              }}>
+                {relatedBySong.map((l, i) => {
+                  const card = convertLetterToCard(l)
+                  return <MusicCard key={l.link_id || i} {...card} />
+                })}
+              </div>
+            </div>
+          )}
+
+          {relatedByCategory.length > 0 && (
+            <div className="related-section">
+              <h3 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>More Letters about "{letter.category}"</h3>
+              <div className="cards-grid" style={{
+                display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px'
+              }}>
+                {relatedByCategory.map((l, i) => {
+                  const card = convertLetterToCard(l)
+                  return <MusicCard key={l.link_id || i} {...card} />
+                })}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* 特效层 */}
         {showEffect && letter?.animation_config?.emojis && (
