@@ -49,7 +49,9 @@ class SpotifyService {
     })
 
     if (!response.ok) {
-      throw new Error('Failed to get Spotify access token')
+      const errorText = await response.text()
+      console.error('❌ Spotify: Token request failed:', response.status, errorText)
+      throw new Error(`Failed to get Spotify access token: ${response.status} ${errorText}`)
     }
 
     const data = await response.json()
@@ -63,7 +65,7 @@ class SpotifyService {
     const token = await this.getAccessToken()
 
     const response = await fetch(
-      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`,
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}&market=US`,
       {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -72,11 +74,13 @@ class SpotifyService {
     )
 
     if (!response.ok) {
-      throw new Error('Failed to search tracks')
+      const errorText = await response.text()
+      console.error('❌ Spotify: Search request failed:', response.status, errorText)
+      throw new Error(`Failed to search tracks: ${response.status} ${errorText}`)
     }
 
     const data: SpotifySearchResponse = await response.json()
-    return data.tracks.items
+    return data.tracks?.items || []
   }
 
   async getRecommendations(limit: number = 10): Promise<SpotifyTrack[]> {
@@ -86,7 +90,7 @@ class SpotifyService {
     const seedGenres = 'pop,rock,indie,electronic,hip-hop'
 
     const response = await fetch(
-      `https://api.spotify.com/v1/recommendations?seed_genres=${seedGenres}&limit=${limit}`,
+      `https://api.spotify.com/v1/recommendations?seed_genres=${seedGenres}&limit=${limit}&market=US`,
       {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -95,11 +99,13 @@ class SpotifyService {
     )
 
     if (!response.ok) {
-      throw new Error('Failed to get recommendations')
+      const errorText = await response.text()
+      console.error('❌ Spotify: Recommendations request failed:', response.status, errorText)
+      throw new Error(`Failed to get recommendations: ${response.status} ${errorText}`)
     }
 
     const data = await response.json()
-    return data.tracks
+    return data.tracks || []
   }
 }
 
