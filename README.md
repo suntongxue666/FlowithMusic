@@ -112,8 +112,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
 # Spotify
-SPOTIFY_CLIENT_ID=your-spotify-client-id
-SPOTIFY_CLIENT_SECRET=your-spotify-client-secret
+SPOTIFY_CLIENT_ID=ab969f52c02e4bb4b1e23d68437fe4cd
+SPOTIFY_CLIENT_SECRET=35efa8d5e10d46de83c4b29faf5006b9
 
 # Google OAuth (配置在 Supabase Dashboard)
 ```

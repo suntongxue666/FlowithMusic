@@ -40,8 +40,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 
 # Spotify API配置
-SPOTIFY_CLIENT_ID=your_spotify_client_id
-SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+SPOTIFY_CLIENT_ID=ab969f52c02e4bb4b1e23d68437fe4cd
+SPOTIFY_CLIENT_SECRET=35efa8d5e10d46de83c4b29faf5006b9
 
 # 应用配置
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -213,8 +213,8 @@ LIMIT 10;
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
-SPOTIFY_CLIENT_ID=your_spotify_client_id
-SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+SPOTIFY_CLIENT_ID=ab969f52c02e4bb4b1e23d68437fe4cd
+SPOTIFY_CLIENT_SECRET=35efa8d5e10d46de83c4b29faf5006b9
 ```
 
 ## 📋 TODO: 后续功能
@@ -248,3 +248,16 @@ A: 检查Google Cloud Console中的重定向URI配置是否正确。
 ---
 
 **系统就绪！** 🎉 现在你拥有了一个完整的用户管理和数据持久化系统。
+
+---
+
+## 📝 维护日志
+
+### 2026-03-11: Spotify 基础设施迁移
+- **变更原因**: 由于 Spotify 官方规则升级，开发者账号（App Owner）必须拥有有效的 Premium 订阅才能使用搜索和推荐接口。原有的香港账号因信用卡支付限制无法续费。
+- **操作内容**:
+  1. 创建了新的 Spotify 开发者应用。
+  2. 更新了 `.env.local` 中的 `SPOTIFY_CLIENT_ID` 和 `SPOTIFY_CLIENT_SECRET`。
+  3. 更新了云端部署平台（Vercel/Railway）的环境变量。
+  4. 同步更新了 `README.md` 和 `SETUP-GUIDE.md` 文档。
+- **状态**: ✅ 已修复 500/403 错误，歌曲搜索功能恢复正常。
