@@ -1810,21 +1810,21 @@ nav {
   }
 
   /* ColorfulSpotifyPlayer H5 适配 */
-  .letter-player > div {
+  .letter-player>div {
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
   }
 
   /* H5 Apple Music 播放器适配 - 封面 120x120，整体缩小 2/3 */
-  .letter-player > div > div {
+  .letter-player>div>div {
     padding: 10px !important;
     height: auto !important;
-    min-height: 220px !important;
+    min-height: 180px !important;
   }
 
   /* H5 端封面缩小为 120x120 */
-  .letter-player > div > div > div > div:first-child {
+  .letter-player>div>div>div>div:first-child {
     width: 120px !important;
     height: 120px !important;
     min-width: 120px !important;
@@ -1833,13 +1833,13 @@ nav {
     margin-top: 10px !important;
   }
 
-  .letter-player > div > div > div > div:first-child img {
+  .letter-player>div>div>div>div:first-child img {
     width: 120px !important;
     height: 120px !important;
   }
 
   /* H5 端右侧内容区域 */
-  .letter-player > div > div > div > div:nth-child(2) {
+  .letter-player>div>div>div>div:nth-child(2) {
     margin-top: 10px !important;
     margin-left: 15px !important;
   }
@@ -2387,6 +2387,10 @@ nav {
   }
 
   .spotify-icon-btn.mobile-only {
+    display: flex;
+  }
+
+  .h5-categories.mobile-only {
     display: flex;
   }
 }

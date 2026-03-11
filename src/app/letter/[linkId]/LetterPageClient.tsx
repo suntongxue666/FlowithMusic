@@ -567,13 +567,12 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
           </div>
         </div>
 
-        <div className="spotify-prompt desktop-only">
+        <div className="spotify-prompt desktop-only" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
           <img
             src="https://open.spotifycdn.com/cdn/images/favicon16.1c487bff.png"
             alt="Spotify"
             width={16}
             height={16}
-            style={{ marginRight: '8px' }}
           />
           <span>Log in to Spotify in your browser to listen to the full song.</span>
         </div>

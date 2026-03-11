@@ -24,7 +24,7 @@ export default function ExplorePage() {
       <Header currentPage="explore" />
       <div className="explore-container">
         <div className="explore-header">
-          <h1>Explore Music Letters</h1>
+          <h1 style={{ fontFamily: "'Caveat', cursive", fontSize: '3rem' }}>Explore Music Letters</h1>
           <p>Discover heartfelt messages shared through music by our community</p>
         </div>
 
@@ -49,7 +49,7 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        <div className="category-quick-links" style={{ display: 'flex', justifyContent: 'center', gap: '20px', margin: '30px 0', flexWrap: 'wrap' }}>
+        <div className="category-quick-links" style={{ display: 'flex', justifyContent: 'center', gap: '12px', margin: '30px 0', flexWrap: 'wrap' }}>
           {[
             { id: 'Love', label: 'Love', link: '/love', icon: '❤️' },
             { id: 'Friendship', label: 'Friendship', link: '/friendship', icon: '🤝' },
@@ -60,7 +60,7 @@ export default function ExplorePage() {
               key={cat.id}
               className="cat-link"
               style={{
-                display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
+                display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px',
                 borderRadius: '25px', background: '#f8f9fa', border: '1px solid #eee',
                 textDecoration: 'none', color: '#333', fontWeight: '500', transition: 'all 0.2s'
               }}

@@ -4,24 +4,32 @@ import { QRCodeSVG } from 'qrcode.react'
 
 export default function LetterQRCode() {
   const url = typeof window !== "undefined" ? window.location.href : ""
-  
+
   return (
     <div className="letter-qr-code">
       <p className="qr-text">View / share on 📱</p>
-      <QRCodeSVG
-        value={url}
-        size={96}
-        level="H"
-        fgColor="#000000"
-        bgColor="#ffffff"
-        includeMargin={true}
-      />
-      
+      <div className="qr-container">
+        <QRCodeSVG
+          value={url}
+          size={96}
+          level="H"
+          fgColor="#000000"
+          bgColor="#ffffff"
+          includeMargin={true}
+        />
+      </div>
+
       <style jsx>{`
         .letter-qr-code {
           text-align: center;
           margin: 1rem 0;
           display: none;
+        }
+        
+        .qr-container {
+          display: flex;
+          justify-content: center;
+          width: 100%;
         }
         
         .qr-text {

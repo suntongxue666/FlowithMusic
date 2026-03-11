@@ -1,17 +1,17 @@
 export default function Features() {
   const features = [
     {
-      title: "Love Letters",
+      title: "❤️ Love Letters",
       description: "Explore romantic handwritten letters paired with meaningful songs.",
       link: "/love"
     },
     {
-      title: "Friendship Letters",
+      title: "🤝 Friendship Letters",
       description: "Discover messages of appreciation and shared memories between friends.",
       link: "/friendship"
     },
     {
-      title: "Family Letters",
+      title: "🏠 Family Letters",
       description: "Heartfelt letters to parents, siblings, and relatives that bridge the distance.",
       link: "/family"
     }

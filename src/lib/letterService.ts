@@ -104,6 +104,33 @@ export class LetterService {
       // insertData.effect_type = 'flowing_emoji' 
     }
 
+    // 1.5 查重校验 (5分钟内，同一发送者，同一收件人，同一内容)
+    try {
+      const fiveMinutesAgo = new Date(Date.now() - 300000).toISOString();
+      const ownerFilter = finalUserId
+        ? `user_id.eq.${finalUserId}`
+        : `anonymous_id.eq.${anonymousId}`;
+
+      const { data: existingLetters, error: checkError } = await supabase
+        .from('letters')
+        .select('id')
+        .eq('recipient_name', data.to)
+        .eq('message', data.message)
+        .or(ownerFilter)
+        .gt('created_at', fiveMinutesAgo)
+        .limit(1);
+
+      if (checkError) {
+        console.warn('⚠️ LetterService: Duplicate check failed (ignoring):', checkError);
+      } else if (existingLetters && existingLetters.length > 0) {
+        console.warn('⚠️ LetterService: Duplicate letter detected');
+        throw new Error('A letter with the same content has already been published. Please check your History.');
+      }
+    } catch (e: any) {
+      if (e.message?.includes('The same content')) throw e;
+      console.warn('⚠️ LetterService: Error during duplicate check:', e);
+    }
+
     let newLetter: Letter | null = null;
     let dbError = null;
 

@@ -33,6 +33,7 @@ function SendContent() {
   const [userInitialized, setUserInitialized] = useState(false)
   const [showRecipientHint, setShowRecipientHint] = useState(false)
   const [showMessageHint, setShowMessageHint] = useState(false)
+  const [isDuplicateError, setIsDuplicateError] = useState(false)
 
   // 新增：登录弹窗状态
   const [showLoginModal, setShowLoginModal] = useState(false)
@@ -195,16 +196,24 @@ function SendContent() {
   }
 
   const submitLetter = async (isGuest: boolean) => {
-    // Check for duplicate content within 60 seconds
-    const lastContent = localStorage.getItem('last_letter_content');
-    const lastTime = localStorage.getItem('last_letter_time');
+    // Check for duplicate content within 5 minutes (300 seconds)
+    const lastSubmission = localStorage.getItem('last_letter_submission');
     const currentTime = Date.now();
     const currentMessage = message.trim();
+    const currentRecipient = recipient.trim();
 
-    if (lastContent === currentMessage && lastTime && (currentTime - parseInt(lastTime)) < 60000) {
-      setErrorMessage("The same content has already been posted. Please do not duplicate posts.");
-      setShowErrorModal(true);
-      return;
+    if (lastSubmission) {
+      try {
+        const { content, to, time } = JSON.parse(lastSubmission);
+        if (content === currentMessage && to === currentRecipient && (currentTime - time) < 300000) {
+          setErrorMessage("A letter with the same content has already been published. Please check your History.");
+          setIsDuplicateError(true);
+          setShowErrorModal(true);
+          return;
+        }
+      } catch (e) {
+        console.warn('Failed to parse last submission data', e);
+      }
     }
 
     setIsSubmitting(true)
@@ -334,8 +343,11 @@ function SendContent() {
       }
 
       // 记录最后一次发送的内容和时间以防止重复
-      localStorage.setItem('last_letter_content', message.trim());
-      localStorage.setItem('last_letter_time', Date.now().toString());
+      localStorage.setItem('last_letter_submission', JSON.stringify({
+        content: message.trim(),
+        to: recipient.trim(),
+        time: Date.now()
+      }));
 
       // Show toast
       setShowToast(true)
@@ -349,8 +361,13 @@ function SendContent() {
 
     } catch (error: any) {
       console.error('Failed to submit:', error)
+      const isDuplicate = error.message?.includes('Duplicate') || error.message?.includes('already been posted');
+      setIsDuplicateError(isDuplicate);
+
       // 显示具体错误信息，不再自动跳转
-      setErrorMessage(`Failed to send letter: ${error.message || 'Unknown error'}`)
+      setErrorMessage(isDuplicate
+        ? "A letter with the same content has already been published. Please check your History."
+        : `Failed to send letter: ${error.message || 'Unknown error'}`);
       setShowErrorModal(true)
 
       // 只有在明确是超时的情况下才尝试跳转（可选）
@@ -374,6 +391,7 @@ function SendContent() {
   const handleErrorModalClose = () => {
     setShowErrorModal(false)
     setErrorMessage('')
+    setIsDuplicateError(false)
   }
 
   // Check if all required fields are filled (removed userInitialized dependency)
@@ -513,7 +531,7 @@ function SendContent() {
           </button>
         </div>
 
-        <div className="spotify-prompt desktop-only">
+        <div className="spotify-prompt desktop-only" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
           <img
             src="https://open.spotifycdn.com/cdn/images/favicon16.1c487bff.png"
             alt="Spotify"
@@ -580,14 +598,29 @@ function SendContent() {
           <div className="modal-overlay" onClick={handleErrorModalClose}>
             <div className="modal-content error-modal" onClick={(e) => e.stopPropagation()}>
               <div className="error-icon">⚠️</div>
-              <h3>Error</h3>
+              <h3>{isDuplicateError ? 'Duplicate Content' : 'Error'}</h3>
               <p>{errorMessage}</p>
-              <button
-                className="modal-btn"
-                onClick={handleErrorModalClose}
-              >
-                OK
-              </button>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '1.5rem' }}>
+                <button
+                  className="modal-btn"
+                  onClick={handleErrorModalClose}
+                  style={{ marginTop: 0, backgroundColor: isDuplicateError ? '#eee' : '#333', color: isDuplicateError ? '#333' : 'white' }}
+                >
+                  {isDuplicateError ? 'Close' : 'OK'}
+                </button>
+                {isDuplicateError && (
+                  <button
+                    className="modal-btn"
+                    onClick={() => {
+                      handleErrorModalClose();
+                      router.push('/history');
+                    }}
+                    style={{ marginTop: 0, background: 'black', color: 'white' }}
+                  >
+                    View in History
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )

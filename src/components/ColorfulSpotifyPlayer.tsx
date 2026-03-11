@@ -80,7 +80,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
       } catch (e) {
         // 超时或失败时，检查缓存和时区作为 fallback
         console.log('⏱️ Detection timeout or failed, checking fallback...')
-        
+
         // 检查缓存
         try {
           const cached = localStorage.getItem('flowithmusic_china_detection')
@@ -97,7 +97,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
         } catch (e) {
           // ignore
         }
-        
+
         // 检查时区
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
         const chinaTimezones = ['Asia/Shanghai', 'Asia/Chongqing', 'Asia/Harbin', 'Asia/Urumqi', 'Asia/Beijing']
@@ -107,7 +107,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
           fetchAppleMusicFallback(true)
           return
         }
-        
+
         // 检查浏览器语言
         const lang = navigator.language || ''
         if (lang.toLowerCase().startsWith('zh') && !lang.toLowerCase().includes('hk') && !lang.toLowerCase().includes('tw')) {
@@ -116,7 +116,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
           fetchAppleMusicFallback(true)
           return
         }
-        
+
         console.log('🌐 Fallback: Defaulting to global (Spotify)')
         setIsChinaDetails({ isChina: false, checked: true })
       }
@@ -128,17 +128,17 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
     try {
       if (!track || !track.artists?.[0]) return
       console.log('🎵 Fetching Apple Music for:', track.name, track.artists[0].name)
-      
+
       // 添加 5 秒超时
       const timeoutPromise = new Promise<null>((_, reject) =>
         setTimeout(() => reject(new Error('Apple Music search timeout')), 5000)
       )
-      
+
       const result = await Promise.race([
         searchAppleMusic(track.name, track.artists[0].name, track.duration_ms, 'US'),
         timeoutPromise
       ])
-      
+
       if (result) {
         console.log('🎵 Apple Music found:', result.trackName)
         setAppleTrack(result)
@@ -179,7 +179,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   }
 
   // --- Layout Constants ---
-  const PLAYER_HEIGHT = 200 // Fixed height for both PC and H5
+  const PLAYER_HEIGHT = 152 // Fixed height for both PC and H5, matches Spotify embed standard
 
   if (!isChinaDetails.checked) {
     return (
@@ -214,12 +214,12 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
         {/* Left: Artwork (160x160) - FORCED PHYSICAL SIZE with 20px left and top margin */}
         <div
           className="flex-shrink-0 overflow-hidden rounded-[12px] shadow-lg border border-white/10"
-          style={{ 
-            width: '160px', 
-            height: '160px', 
-            minWidth: '160px', 
-            minHeight: '160px', 
-            marginLeft: '20px', 
+          style={{
+            width: '160px',
+            height: '160px',
+            minWidth: '160px',
+            minHeight: '160px',
+            marginLeft: '20px',
             marginTop: '20px',
             willChange: 'transform',
             backfaceVisibility: 'hidden'
@@ -229,8 +229,8 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
             src={imageUrl}
             alt={title}
             className="object-cover"
-            style={{ 
-              width: '160px', 
+            style={{
+              width: '160px',
               height: '160px',
               willChange: 'transform',
               backfaceVisibility: 'hidden'
