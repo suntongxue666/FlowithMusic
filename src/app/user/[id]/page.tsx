@@ -35,8 +35,6 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
         }
         
         // Fetch their letters
-        // User profile only shows public letters if it's not the user themselves
-        // Since get user letters returns all, we filter them below if needed
         const fetchedLetters = await letterService.getUserLetters(queryId)
         
         let displayLetters = fetchedLetters
@@ -104,12 +102,6 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
       setCopyStatus(linkId + '-flowing')
       setTimeout(() => setCopyStatus(null), 2000)
     })
-  }
-
-  const handleUnlock = (letter: Letter) => {
-    // Navigate to history or show a message? 
-    // In profile context, let's just go to the letter for now or ignore since we don't have the payment modal here
-    window.location.href = `/letter/${letter.link_id}`
   }
 
   if (loading) {
@@ -370,7 +362,6 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
           background-color: #fafafa !important;
         }
       `}</style>
-      </div>
     </main>
   )
 }
