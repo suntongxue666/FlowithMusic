@@ -8,6 +8,80 @@ import { userService } from '@/lib/userService'
 import { useUserState } from '@/hooks/useUserState'
 import { Letter } from '@/lib/supabase'
 import Header from '@/components/Header'
+import FlowingEffects from '@/components/FlowingEffects'
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js"
+
+function PreviewOverlay({ 
+  letter, 
+  onClose, 
+  onUnlock 
+}: { 
+  letter: Letter
+  onClose: () => void
+  onUnlock: (letter: Letter) => void 
+}) {
+  const [countdown, setCountdown] = useState(10)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          onClose()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [onClose])
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 pointer-events-none">
+        <FlowingEffects
+          emojis={letter.animation_config?.emojis || []}
+          mode="preview"
+        />
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-xl z-50 text-center max-w-sm mx-4" style={{ padding: "12px" }} onClick={e => e.stopPropagation()}>
+        <h3 className="text-xl font-bold mb-3">✨ Flowing Emoji Preview</h3>
+        <p className="text-gray-500 mb-2 text-sm leading-relaxed">This effect will play for everyone who opens your letter.</p>
+        <p className="text-sm text-gray-400 mb-6">Auto-close in {countdown}s</p>
+        <div className="flex gap-4 justify-center">
+          <button
+            onClick={onClose}
+            className="px-6 py-3 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors"
+          >
+            Close
+          </button>
+          <button
+            onClick={() => {
+              onClose();
+              onUnlock(letter);
+            }}
+            style={{
+              padding: '8px 16px',
+              background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+              color: '#fff',
+              fontWeight: 600,
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
+            }}
+          >
+            🔐 Unlock Now
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
@@ -21,36 +95,35 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading] = useState(true)
   const [copyStatus, setCopyStatus] = useState<string | null>(null)
   const [previewLetter, setPreviewLetter] = useState<Letter | null>(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentLetter, setPaymentLetter] = useState<Letter | null>(null)
 
   const isSelf = isAuthenticated && user && user.id === queryId
 
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true)
-      try {
-        // Fetch target user info
-        const userInfo = await letterService.getUserById(queryId)
-        if (userInfo) {
-          setTargetUser(userInfo)
-        }
-        
-        // Fetch their letters
-        const fetchedLetters = await letterService.getUserLetters(queryId)
-        
-        let displayLetters = fetchedLetters
-        if (!isSelf) {
-          // If not self, only show public letters
-          displayLetters = fetchedLetters.filter(l => l.is_public)
-        }
-        setLetters(displayLetters)
-
-      } catch (err) {
-        console.error('Failed to load profile data', err)
-      } finally {
-        setLoading(false)
+  const loadData = async () => {
+    setLoading(true)
+    try {
+      const userInfo = await letterService.getUserById(queryId)
+      if (userInfo) {
+        setTargetUser(userInfo)
       }
+      
+      const fetchedLetters = await letterService.getUserLetters(queryId)
+      
+      let displayLetters = fetchedLetters
+      if (!isSelf) {
+        displayLetters = fetchedLetters.filter(l => l.is_public)
+      }
+      setLetters(displayLetters)
+
+    } catch (err) {
+      console.error('Failed to load profile data', err)
+    } finally {
+      setLoading(false)
     }
-    
+  }
+
+  useEffect(() => {
     if (queryId) {
       loadData()
     }
@@ -104,7 +177,23 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
     })
   }
 
-  if (loading) {
+  const handleUnlock = (letter: Letter) => {
+    setPaymentLetter(letter)
+    setShowPaymentModal(true)
+  }
+
+  const handlePaymentSuccess = async (letter: Letter) => {
+    const success = await letterService.updateLetterPaymentStatus(letter.link_id, 'flowing_emoji')
+    if (success) {
+      setShowPaymentModal(false)
+      setPaymentLetter(null)
+      loadData()
+    } else {
+      alert('Payment verification failed. Please try again.')
+    }
+  }
+
+  if (loading && !targetUser) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#fafafa' }}>
         <div className="w-10 h-10 border-4 border-gray-200 border-t-black rounded-full animate-spin"></div>
@@ -129,7 +218,10 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
         
         {/* --- Profile Header (Dark Themed) --- */}
         <div className="w-full max-w-2xl px-4">
-          <div className="bg-[#1a1a1a] rounded-2xl shadow-lg pt-[12px] pb-[12px] px-8 mb-10 mt-6 flex flex-col items-center text-white relative">
+          <div 
+            className="bg-[#1a1a1a] rounded-2xl shadow-lg px-8 mb-10 mt-6 flex flex-col items-center justify-center text-white relative"
+            style={{ height: '240px' }}
+          >
             
             {/* Avatar */}
             <div className="w-20 h-20 rounded-full overflow-hidden mb-[12px] border-2 border-white/20 flex items-center justify-center bg-gray-800">
@@ -154,7 +246,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                 
                 <button 
                   onClick={handleSignOut}
-                  className="mt-[12px] mb-[12px] px-6 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/20 rounded-lg text-sm font-medium transition-colors"
+                  className="mt-[12px] px-6 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/20 rounded-lg text-sm font-medium transition-colors"
                 >
                   Sign Out
                 </button>
@@ -228,7 +320,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                     </div>
 
                     {/* 操作按钮 (History 逻辑) */}
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-end gap-2 text-right">
                       {(() => {
                         const hasEmojis = letter.animation_config &&
                           Array.isArray(letter.animation_config.emojis) &&
@@ -237,7 +329,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
 
                         if (hasEmojis && !isUnlocked) {
                           return (
-                            <div className="flex flex-col items-end gap-2 text-right">
+                            <div className="flex flex-col items-end gap-2">
                               <div className="flex items-center gap-2">
                                 <Link
                                   href={`/letter/${letter.link_id}`}
@@ -254,13 +346,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                                   View
                                 </Link>
                                 <button
-                                  onClick={() => {
-                                    const url = `${window.location.origin}/letter/${letter.link_id}`
-                                    navigator.clipboard.writeText(url).then(() => {
-                                      setCopyStatus(letter.link_id)
-                                      setTimeout(() => setCopyStatus(null), 2000)
-                                    })
-                                  }}
+                                  onClick={() => handleCopyLink(letter.link_id)}
                                   style={{
                                     padding: '6px 12px',
                                     fontSize: '14px',
@@ -275,13 +361,61 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                                   {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
                                 </button>
                               </div>
+                              <div className="flex flex-col items-end gap-2">
+                                <button
+                                  onClick={() => setPreviewLetter(letter)}
+                                  style={{
+                                    padding: '6px 12px',
+                                    fontSize: '14px',
+                                    borderRadius: '6px',
+                                    background: '#22c55e',
+                                    color: '#fff',
+                                    fontWeight: 500,
+                                    border: 'none',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  👁 Flowing Emoji
+                                </button>
+                                <button
+                                  onClick={() => handleUnlock(letter)}
+                                  style={{
+                                    padding: '6px 12px',
+                                    fontSize: '14px',
+                                    borderRadius: '6px',
+                                    background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+                                    color: '#fff',
+                                    fontWeight: 500,
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
+                                  }}
+                                >
+                                  🔐 Unlock Letter
+                                </button>
+                              </div>
                             </div>
                           )
                         }
 
                         if (hasEmojis && isUnlocked) {
                           return (
-                            <div className="flex flex-col items-end gap-2 text-right">
+                            <div className="flex flex-col items-end gap-2">
+                              <button
+                                onClick={() => setPreviewLetter(letter)}
+                                style={{
+                                  padding: '6px 12px',
+                                  fontSize: '14px',
+                                  borderRadius: '6px',
+                                  background: '#22c55e',
+                                  color: '#fff',
+                                  fontWeight: 500,
+                                  border: 'none',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                👁 Flowing Emoji
+                              </button>
                               <button
                                 onClick={() => handleCopyFlowingLink(letter.link_id)}
                                 style={{
@@ -319,26 +453,19 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                               View
                             </Link>
                             <button
-                              onClick={() => {
-                                const url = `${window.location.origin}/letter/${letter.link_id}`
-                                navigator.clipboard.writeText(url).then(() => {
-                                  setCopyStatus(letter.link_id)
-                                  setTimeout(() => setCopyStatus(null), 2000)
-                                })
-                              }}
+                              onClick={() => handleCopyLink(letter.link_id)}
                               style={{
                                 padding: '6px 12px',
                                 fontSize: '14px',
                                 borderRadius: '6px',
-                                background: copyStatus === letter.link_id ? '#22c55e' : (isUnlocked ? 'linear-gradient(45deg, #FFD700, #FFA500)' : '#333'),
+                                background: copyStatus === letter.link_id ? '#22c55e' : '#333',
                                 color: '#fff',
                                 fontWeight: 500,
                                 border: 'none',
                                 cursor: 'pointer',
-                                boxShadow: isUnlocked && copyStatus !== letter.link_id ? '0 2px 8px rgba(255, 165, 0, 0.3)' : 'none'
                               }}
                             >
-                              {copyStatus === letter.link_id ? 'Copied' : (isUnlocked ? 'Copy Link ✨' : 'Copy Link')}
+                              {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
                             </button>
                           </div>
                         )
@@ -356,6 +483,70 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
       <div className="mt-20 py-10 text-center opacity-10">
         <p className="text-[9px] font-black text-gray-900 uppercase tracking-[0.6em]">Flowith Music</p>
       </div>
+
+      {previewLetter && previewLetter.animation_config?.emojis && (
+        <PreviewOverlay 
+          letter={previewLetter} 
+          onClose={() => setPreviewLetter(null)} 
+          onUnlock={handleUnlock}
+        />
+      )}
+
+      {showPaymentModal && paymentLetter && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowPaymentModal(false)}>
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl overflow-hidden relative" onClick={e => e.stopPropagation()}>
+            <h3 className="text-2xl font-bold mb-4">✨ Unlock Flowing Emoji</h3>
+            <p className="text-gray-500 mb-6">Get the full-screen animation permanently for this letter.</p>
+            
+            <div className="bg-gradient-to-br from-[#FF6B6B] to-[#FF8E53] rounded-xl p-4 mb-6 text-white shadow-lg animate-pulse">
+              <div className="font-bold text-lg">Limited Offer: $0.99 <span className="text-xs opacity-90 ml-2">⏳ 24h</span></div>
+              <div className="text-xs opacity-80 mt-1">SAVE 50% Compared to standard price</div>
+            </div>
+
+            <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl mb-6">
+              <img src={paymentLetter.song_album_cover} alt={paymentLetter.song_title} className="w-14 h-14 rounded-lg object-cover" />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold truncate">To: {paymentLetter.recipient_name}</div>
+                <div className="text-sm text-gray-600 truncate">{paymentLetter.song_title}</div>
+                <div className="text-xs text-gray-400 truncate">{paymentLetter.song_artist}</div>
+              </div>
+            </div>
+
+            <div className="min-h-[160px] -mx-2">
+              <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "test", currency: "USD" }}>
+                <PayPalButtons
+                  style={{ layout: "vertical", shape: "pill" }}
+                  createOrder={(data, actions) => {
+                    return actions.order.create({
+                      intent: "CAPTURE",
+                      purchase_units: [{
+                        description: `Flowing Emoji for Letter: ${paymentLetter.song_id}`,
+                        amount: {
+                          currency_code: "USD",
+                          value: "0.99"
+                        }
+                      }]
+                    })
+                  }}
+                  onApprove={async (data, actions) => {
+                    if (!actions.order) return Promise.reject("Order not found");
+                    return actions.order.capture().then(async (details) => {
+                      handlePaymentSuccess(paymentLetter);
+                    });
+                  }}
+                />
+              </PayPalScriptProvider>
+            </div>
+
+            <button 
+              className="w-full mt-4 py-3 text-gray-400 font-medium hover:text-gray-600 transition-colors"
+              onClick={() => setShowPaymentModal(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         body {

@@ -296,8 +296,8 @@ export default function Header({ currentPage }: HeaderProps) {
         }
 
         .user-avatar-btn {
-          width: 32px;
-          height: 32px;
+          width: 36px;
+          height: 36px;
           border-radius: 50%;
           border: none;
           background: none;
@@ -319,8 +319,8 @@ export default function Header({ currentPage }: HeaderProps) {
         }
 
         .avatar-placeholder-small {
-          width: 32px;
-          height: 32px;
+          width: 36px;
+          height: 36px;
           border-radius: 50%;
           display: flex;
           align-items: center;
