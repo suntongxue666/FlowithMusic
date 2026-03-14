@@ -238,19 +238,19 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             <h1 className="text-2xl font-bold mb-[12px]">{targetUser.display_name || 'User'}</h1>
             
             {isSelf && (
-              <>
-                <p className="text-sm text-white/60 mb-[12px]">{targetUser.email}</p>
-                <p className="text-sm font-medium text-white/50 mb-[12px] bg-white/10 px-3 py-1 rounded-full">
-                  积分 / Points: <span className="text-white font-bold">{targetUser.coins || 0}</span>
+              <div className="flex flex-col items-center" style={{ gap: '12px' }}>
+                <p className="text-sm text-white/60">{targetUser.email}</p>
+                <p className="text-sm font-medium text-white/50 bg-white/10 px-3 py-1 rounded-full">
+                  Points: <span className="text-white font-bold">{targetUser.coins || 0}</span>
                 </p>
                 
                 <button 
                   onClick={handleSignOut}
-                  className="mt-[12px] px-6 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/20 rounded-lg text-sm font-medium transition-colors"
+                  className="px-6 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/20 rounded-lg text-sm font-medium transition-colors"
                 >
                   Sign Out
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>

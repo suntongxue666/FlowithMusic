@@ -130,9 +130,10 @@ export default function NotificationsPage() {
                 return (
                   <div 
                     key={notif.id} 
-                    className={`bg-white rounded-xl shadow-sm border px-6 py-10 flex gap-6 transition-colors mx-2 sm:mx-0 ${
+                    className={`bg-white rounded-xl shadow-sm border flex items-center transition-colors mx-2 sm:mx-0 ${
                       isUnread ? 'border-sky-100 bg-sky-50/50' : 'border-gray-100'
                     }`}
+                    style={{ padding: '12px', gap: '12px' }}
                   >
                     <Link href={`/user/${notif.actor_id}`}>
                       <div className="flex-shrink-0 w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">

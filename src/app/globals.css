@@ -16,8 +16,7 @@ body {
   font-family: 'Open Sans', sans-serif;
   background: #f9f9f9;
   line-height: 1.6;
-  padding-top: 80px;
-  /* 为固定header留出空间 */
+  padding-top: 80px; /* 改为80px */
 }
 
 /* H5端优化 */
@@ -40,7 +39,8 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
+  padding: 0 2rem;
+  height: 80px; /* 强制80像素高度 */
   background: white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   position: fixed;
