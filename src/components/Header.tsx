@@ -144,9 +144,14 @@ export default function Header({ currentPage }: HeaderProps) {
             ) : isAuthenticated && user && user.email ? (
               <Link href={`/user/${user.id}`} className="user-avatar-btn">
                 {user.avatar_url ? (
-                  <img src={user.avatar_url} alt="User Avatar" className="user-avatar" />
+                  <img 
+                    src={user.avatar_url} 
+                    alt="User Avatar" 
+                    className="user-avatar" 
+                    style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '50%' }} 
+                  />
                 ) : (
-                  <div className="avatar-placeholder-small">
+                  <div className="avatar-placeholder-small" style={{ width: '36px', height: '36px' }}>
                     {user.display_name?.charAt(0) || user.email?.charAt(0) || 'U'}
                   </div>
                 )}
@@ -165,9 +170,14 @@ export default function Header({ currentPage }: HeaderProps) {
           {isAuthenticated && user && user.email && (
             <Link href={`/user/${user.id}`} className="mobile-user-avatar-btn">
               {user.avatar_url ? (
-                <img src={user.avatar_url} alt="User Avatar" className="mobile-user-avatar" />
+                <img 
+                  src={user.avatar_url} 
+                  alt="User Avatar" 
+                  className="mobile-user-avatar" 
+                  style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '50%' }} 
+                />
               ) : (
-                <div className="mobile-avatar-placeholder">
+                <div className="mobile-avatar-placeholder" style={{ width: '36px', height: '36px' }}>
                   {user.display_name?.charAt(0) || user.email?.charAt(0) || 'U'}
                 </div>
               )}
