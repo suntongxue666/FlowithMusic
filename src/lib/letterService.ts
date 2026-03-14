@@ -1,4 +1,4 @@
-import { supabase, Letter } from './supabase'
+import { supabase, Letter, User } from './supabase'
 import { userService } from './userService'
 
 export interface CreateLetterData {
@@ -332,8 +332,38 @@ export class LetterService {
   }
 
   /**
-   * 获取公开 Letters 列表
-   * 用于 Explore 页面浏览
+   * 按ID获取公开用户信息，包括通过ID或匿名ID
+   */
+  async getUserById(queryId: string): Promise<User | null> {
+    if (!supabase) return null
+
+    try {
+      // 检查 user_id 或者 anonymous_id
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .or(`id.eq.${queryId},anonymous_id.eq.${queryId}`)
+        // 这里需要保证只返回一条
+        .limit(1)
+
+      if (error) {
+        console.error('❌ getUserById 数据库错误:', error)
+        return null
+      }
+      
+      if (data && data.length > 0) {
+        return data[0] as User
+      }
+      return null
+    } catch (error) {
+      console.error('💥 getUserById 异常:', error)
+      return null
+    }
+  }
+
+  /**
+   * 获取热门歌手
+   * 用于首页 Tag 推荐
    */
   async getPublicLetters(
     limit = 18,

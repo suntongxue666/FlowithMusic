@@ -25,6 +25,15 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# Google service account keys
+gsc-service-account.json
+*.json.bak
+
+# URL removal results
+indexed-urls.txt
+urls-to-remove.txt
+removal-failures-*.txt
+
 # vercel
 .vercel
 

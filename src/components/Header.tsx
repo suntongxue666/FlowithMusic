@@ -1,10 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { userService } from '@/lib/userService'
-import UserProfileModal from './UserProfileModal'
 import { useUserState } from '@/hooks/useUserState'
+import { supabase } from '@/lib/supabase'
 
 interface HeaderProps {
   currentPage?: string
@@ -14,6 +14,7 @@ export default function Header({ currentPage }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isUserModalOpen, setIsUserModalOpen] = useState(false)
   const [localLoading, setLocalLoading] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   
   // 使用统一的用户状态管理
   const { user, isAuthenticated, isLoading: globalLoading, signOut: globalSignOut } = useUserState()
@@ -21,7 +22,33 @@ export default function Header({ currentPage }: HeaderProps) {
   // 合并全局loading和本地loading状态
   const loading = globalLoading || localLoading
 
-  // Header组件现在使用统一的用户状态管理，不需要复杂的初始化逻辑
+  // Fetch unread notifications
+  useEffect(() => {
+    async function fetchUnreadCount() {
+      const queryId = user?.id || (typeof window !== 'undefined' ? userService.getAnonymousId() : null);
+      if (!queryId || !supabase) return
+      
+      try {
+        const { count, error } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', queryId)
+          .eq('is_read', false)
+          
+        if (!error && count !== null) {
+          setUnreadCount(count)
+        }
+      } catch (err) {
+        console.error('Failed to fetch unread notifications', err)
+      }
+    }
+    
+    fetchUnreadCount()
+    
+    const handleRead = () => setUnreadCount(0)
+    window.addEventListener('notificationsRead', handleRead)
+    return () => window.removeEventListener('notificationsRead', handleRead)
+  }, [user, isAuthenticated])
 
   const handleSignIn = async () => {
     try {
@@ -63,9 +90,6 @@ export default function Header({ currentPage }: HeaderProps) {
     try {
       console.log('🚪 Header: 开始用户登出流程')
       
-      // 先关闭用户modal
-      setIsUserModalOpen(false)
-      
       // 使用统一的登出方法
       await globalSignOut()
       console.log('✅ Header: 统一登出完成')
@@ -83,10 +107,6 @@ export default function Header({ currentPage }: HeaderProps) {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
-  }
-
-  const toggleUserModal = () => {
-    setIsUserModalOpen(!isUserModalOpen)
   }
 
   return (
@@ -109,12 +129,20 @@ export default function Header({ currentPage }: HeaderProps) {
           <Link href="/explore" className={currentPage === 'explore' ? 'active' : ''}>Explore</Link>
           <Link href="/history" className={currentPage === 'history' ? 'active' : ''}>History</Link>
           
+          {/* Notifications Tab */}
+          <Link href="/notifications" className={currentPage === 'notifications' ? 'active' : ''} style={{ position: 'relative' }}>
+            Notifications
+            {unreadCount > 0 && (
+              <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+            )}
+          </Link>
+          
           {/* 登录状态显示 */}
           <div className="auth-section">
             {loading ? (
               <div className="loading-indicator">Loading...</div>
             ) : isAuthenticated && user && user.email ? (
-              <button className="user-avatar-btn" onClick={toggleUserModal}>
+              <Link href={`/user/${user.id}`} className="user-avatar-btn">
                 {user.avatar_url ? (
                   <img src={user.avatar_url} alt="User Avatar" className="user-avatar" />
                 ) : (
@@ -122,7 +150,7 @@ export default function Header({ currentPage }: HeaderProps) {
                     {user.display_name?.charAt(0) || user.email?.charAt(0) || 'U'}
                   </div>
                 )}
-              </button>
+              </Link>
             ) : (
               <button className="sign-in-btn" onClick={handleSignIn} disabled={loading}>
                 {loading ? '...' : 'Sign in'}
@@ -135,7 +163,7 @@ export default function Header({ currentPage }: HeaderProps) {
         <div className="mobile-controls">
           {/* Mobile Avatar - 登录后显示在菜单按钮左侧 */}
           {isAuthenticated && user && user.email && (
-            <button className="mobile-user-avatar-btn" onClick={toggleUserModal}>
+            <Link href={`/user/${user.id}`} className="mobile-user-avatar-btn">
               {user.avatar_url ? (
                 <img src={user.avatar_url} alt="User Avatar" className="mobile-user-avatar" />
               ) : (
@@ -143,7 +171,7 @@ export default function Header({ currentPage }: HeaderProps) {
                   {user.display_name?.charAt(0) || user.email?.charAt(0) || 'U'}
                 </div>
               )}
-            </button>
+            </Link>
           )}
           
           <button 
@@ -164,6 +192,14 @@ export default function Header({ currentPage }: HeaderProps) {
           <Link href="/explore" className={currentPage === 'explore' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Explore</Link>
           <Link href="/history" className={currentPage === 'history' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>History</Link>
           
+          {/* Notifications Tab */}
+          <Link href="/notifications" className={currentPage === 'notifications' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            Notifications
+            {unreadCount > 0 && (
+               <span className="mobile-notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+            )}
+          </Link>
+          
           {/* 移动端登录状态 */}
           <div className="mobile-auth-section">
             {loading ? (
@@ -177,14 +213,6 @@ export default function Header({ currentPage }: HeaderProps) {
           </div>
         </nav>
       </header>
-
-      {/* User Profile Modal */}
-      <UserProfileModal 
-        isOpen={isUserModalOpen}
-        onClose={() => setIsUserModalOpen(false)}
-        user={user || {}}
-        onSignOut={handleSignOut}
-      />
 
       <style jsx>{`
         .auth-section {
@@ -349,12 +377,36 @@ export default function Header({ currentPage }: HeaderProps) {
           background-color: #f5f5f5;
         }
 
-        .mobile-user-info span {
-          font-size: 14px;
-          color: #333;
-        }
+          .mobile-user-info span {
+            font-size: 14px;
+            color: #333;
+          }
 
-        @media (max-width: 768px) {
+          .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -12px;
+            background-color: #ef4444;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 9999px;
+            line-height: 1;
+            z-index: 10;
+          }
+
+          .mobile-notification-badge {
+            background-color: #ef4444;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 9999px;
+            line-height: 1;
+          }
+
+          @media (max-width: 768px) {
           .auth-section {
             display: none;
           }

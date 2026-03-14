@@ -132,6 +132,38 @@ export async function POST(
         { status: 500 }
       )
     }
+
+    // --- 新增：记录被互动用户的通知 ---
+    try {
+      // 获取信件拥有者的 user_id 或 anonymous_id
+      const { data: letterData } = await supabase
+        .from('letters')
+        .select('user_id, anonymous_id')
+        .eq('link_id', linkId)
+        .single()
+        
+      const ownerId = letterData?.user_id || letterData?.anonymous_id;
+      const currentVisitorId = currentUser?.id || anonymousId;
+
+      if (ownerId && ownerId !== currentVisitorId) {
+        // 创建通知
+        const notificationData = {
+          user_id: ownerId,
+          actor_id: currentVisitorId || 'anonymous',
+          actor_name: userDisplayName,
+          actor_avatar: userAvatarUrl || null,
+          type: 'interaction',
+          letter_id: linkId,
+          metadata: { emoji, label }
+        }
+        await supabase.from('notifications').insert(notificationData)
+        console.log('✅ 已为信件拥有者生成互动通知')
+      }
+    } catch (notifErr) {
+      console.error('⚠️ 生成互动通知失败:', notifErr)
+      // 不中断主流程
+    }
+    // ------------------------------------
     
     // 获取该emoji的总互动次数
     const { data: countData, error: countError } = await supabase
