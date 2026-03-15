@@ -7,6 +7,7 @@ import Header from '@/components/Header'
 import { useUserState } from '@/hooks/useUserState'
 import { userService } from '@/lib/userService'
 import { supabase } from '@/lib/supabase'
+import PremiumLimitModal from '@/components/PremiumLimitModal'
 
 export default function NotificationsPage() {
   const router = useRouter()
@@ -14,6 +15,7 @@ export default function NotificationsPage() {
   
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [showPremiumModal, setShowPremiumModal] = useState(false)
 
   useEffect(() => {
     async function loadNotifications() {
@@ -127,34 +129,36 @@ export default function NotificationsPage() {
                 const isVisit = notif.type === 'profile_visit'
                 const isLoginUser = notif.actor_name !== 'Anonymous'
                 
+                const isPremium = user?.is_premium || false
+                const isLocked = !isPremium && (notif.type === 'profile_visit' || notif.type === 'interaction')
+
                 return (
                   <div 
                     key={notif.id} 
                     className={`bg-white rounded-xl shadow-sm border flex items-center transition-colors mx-2 sm:mx-0 ${
                       isUnread ? 'border-sky-100 bg-sky-50/50' : 'border-gray-100'
-                    }`}
+                    } ${isLocked ? 'relative overflow-hidden' : ''}`}
                     style={{ padding: '12px', gap: '12px' }}
                   >
-                    <Link href={`/user/${notif.actor_id}`}>
-                      <div className="flex-shrink-0 w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                        {notif.actor_avatar ? (
-                          <img src={notif.actor_avatar} alt="avatar" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-xl font-bold">
-                            {notif.actor_name?.charAt(0) || 'U'}
-                          </span>
-                        )}
-                      </div>
-                    </Link>
+                    <div className={isLocked ? 'blur-md pointer-events-none flex-shrink-0' : 'flex-shrink-0'}>
+                      <Link href={isLocked ? '#' : `/user/${notif.actor_id}`}>
+                        <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                          {notif.actor_avatar && !isLocked ? (
+                            <img src={notif.actor_avatar} alt="avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xl font-bold">
+                              {isLocked ? '?' : (notif.actor_name?.charAt(0) || 'U')}
+                            </span>
+                          )}
+                        </div>
+                      </Link>
+                    </div>
                     
-                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <div className={`flex-1 min-w-0 flex flex-col justify-center ${isLocked ? 'blur-sm pointer-events-none' : ''}`}>
                       <p className="text-base text-gray-900 leading-relaxed">
-                        <Link 
-                          href={`/user/${notif.actor_id}`} 
-                          className={`font-semibold hover:underline ${isLoginUser ? 'text-blue-500' : 'text-gray-900'}`}
-                        >
-                          {notif.actor_name}
-                        </Link>{' '}
+                        <span className={`font-semibold ${isLoginUser ? 'text-blue-500' : 'text-gray-900'}`}>
+                          {isLocked ? 'Premium User' : notif.actor_name}
+                        </span>{' '}
                         {isVisit ? (
                           <span className="text-gray-600">visited your profile.</span>
                         ) : (
@@ -164,19 +168,12 @@ export default function NotificationsPage() {
                         )}
                       </p>
                       
-                      {/* 新增：Letter URL 行 */}
                       {notif.letter_id && (
                         <div className="mt-3">
-                          <Link 
-                            href={`/letter/${notif.letter_id}`}
-                            className="text-xs text-blue-400 hover:text-blue-600 hover:underline inline-flex items-center gap-1"
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                            </svg>
-                            {`${window.location.origin}/letter/${notif.letter_id}`}
-                          </Link>
+                          <span className="text-xs text-blue-400 inline-flex items-center gap-1">
+                            {/* Link content remains for context but non-clickable if locked */}
+                            Letter link hidden
+                          </span>
                         </div>
                       )}
 
@@ -184,9 +181,18 @@ export default function NotificationsPage() {
                         {new Date(notif.created_at).toLocaleString()}
                       </div>
                     </div>
+
+                    {isLocked && (
+                      <button 
+                        onClick={() => setShowPremiumModal(true)}
+                        className="ml-auto bg-black text-white text-xs font-bold py-2 px-4 rounded-full flex items-center gap-1 hover:scale-105 transition-transform"
+                      >
+                        Unlock with 👑 Premium
+                      </button>
+                    )}
                     
-                    {isUnread && (
-                      <div className="flex items-center justify-center">
+                    {isUnread && !isLocked && (
+                      <div className="ml-auto flex items-center justify-center">
                         <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
                       </div>
                     )}
@@ -198,6 +204,13 @@ export default function NotificationsPage() {
         </div>
       </div>
       
+      {showPremiumModal && (
+        <PremiumLimitModal 
+          onClose={() => setShowPremiumModal(false)} 
+          type="notif_lock" 
+        />
+      )}
+
       {/* 底部装饰 */}
       <div className="mt-20 py-10 text-center opacity-10">
         <p className="text-[9px] font-black text-gray-900 uppercase tracking-[0.6em]">Flowith Music</p>

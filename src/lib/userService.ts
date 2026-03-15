@@ -918,7 +918,27 @@ export class UserService {
 
           return basicUser
         } else {
-          console.log('📱 getCurrentUserAsync: Supabase Auth无用户')
+          console.log('📱 getCurrentUserAsync: Supabase Auth无用户，尝试通过匿名ID查找...')
+          
+          const anonId = this.getAnonymousId()
+          if (anonId) {
+            const { data: anonUser, error: anonError } = await supabaseClient
+              .from('users')
+              .select('*')
+              .eq('anonymous_id', anonId)
+              .maybeSingle()
+
+            if (anonUser && !anonError) {
+              console.log('✅ getCurrentUserAsync: 找到匿名用户记录:', anonUser.id)
+              this.currentUser = anonUser
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('user', JSON.stringify(anonUser))
+                localStorage.setItem('isAuthenticated', 'false') // Still not "logged in" in the auth sense
+              }
+              return anonUser
+            }
+          }
+
           return null
         }
       } catch (error) {

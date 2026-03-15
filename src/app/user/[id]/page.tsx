@@ -243,11 +243,21 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                 <p className="text-sm font-medium text-white/50 bg-white/10 rounded-full" style={{ padding: '6px 12px' }}>
                   Points: <span className="text-white font-bold">{targetUser.coins || 0}</span>
                 </p>
+
+                {targetUser.is_premium ? (
+                  <div className="text-[11px] font-bold text-yellow-400 bg-yellow-400/10 px-3 py-1 rounded-full border border-yellow-400/20">
+                    👑 Premium until {targetUser.premium_until ? new Date(targetUser.premium_until).toISOString().split('T')[0] : ''}
+                  </div>
+                ) : (
+                  <Link href="/premium" className="text-[12px] font-bold text-black bg-yellow-400 px-4 py-1.5 rounded-full hover:scale-105 transition-transform">
+                    👑 Premium
+                  </Link>
+                )}
                 
                 <button 
                   onClick={handleSignOut}
                   className="bg-white/5 hover:bg-white/10 text-white border border-white/20 rounded-lg text-sm font-medium transition-colors"
-                  style={{ padding: '6px 12px' }}
+                  style={{ padding: '6px 12px', marginTop: '4px' }}
                 >
                   Sign Out
                 </button>

@@ -73,6 +73,8 @@ export interface User {
   social_media_info?: Record<string, any>
   coins: number
   is_premium: boolean
+  premium_until?: string | null
+  metadata?: Record<string, any>
 }
 
 export interface Letter {

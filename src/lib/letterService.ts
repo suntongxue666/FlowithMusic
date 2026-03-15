@@ -261,6 +261,40 @@ export class LetterService {
   }
 
   /**
+   * 获取用户今天发送的 Letter 数量
+   */
+  async getTodayCount(userId?: string, anonymousId?: string): Promise<number> {
+    if (!supabase) return 0
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayIso = today.toISOString()
+
+    let query = supabase
+      .from('letters')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', todayIso)
+
+    if (userId && anonymousId) {
+      query = query.or(`user_id.eq.${userId},anonymous_id.eq.${anonymousId}`)
+    } else if (userId) {
+      query = query.eq('user_id', userId)
+    } else if (anonymousId) {
+      query = query.eq('anonymous_id', anonymousId)
+    } else {
+      return 0
+    }
+
+    const { count, error } = await query
+    if (error) {
+      console.error('❌ LetterService: Failed to fetch today count:', error)
+      return 0
+    }
+
+    return count || 0
+  }
+
+  /**
    * 获取最近的公开 Letters
    * 用于首页轮播
    */

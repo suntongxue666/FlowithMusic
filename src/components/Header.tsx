@@ -142,7 +142,10 @@ export default function Header({ currentPage }: HeaderProps) {
             {loading ? (
               <div className="loading-indicator">Loading...</div>
             ) : isAuthenticated && user && user.email ? (
-              <Link href={`/user/${user.id}`} className="user-avatar-btn">
+                <Link href={`/user/${user.id}`} className="user-avatar-btn" style={{ position: 'relative', marginTop: '12px' }}>
+                  {user.is_premium && (
+                    <span className="premium-crown-badge">👑</span>
+                  )}
                 {user.avatar_url ? (
                   <img 
                     src={user.avatar_url} 
@@ -168,7 +171,10 @@ export default function Header({ currentPage }: HeaderProps) {
         <div className="mobile-controls">
           {/* Mobile Avatar - 登录后显示在菜单按钮左侧 */}
           {isAuthenticated && user && user.email && (
-            <Link href={`/user/${user.id}`} className="mobile-user-avatar-btn">
+            <Link href={`/user/${user.id}`} className="mobile-user-avatar-btn" style={{ position: 'relative', marginTop: '12px' }}>
+              {user.is_premium && (
+                <span className="premium-crown-badge">👑</span>
+              )}
               {user.avatar_url ? (
                 <img 
                   src={user.avatar_url} 
