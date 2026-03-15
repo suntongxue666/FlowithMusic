@@ -240,13 +240,14 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             {isSelf && (
               <div className="flex flex-col items-center" style={{ gap: '12px' }}>
                 <p className="text-sm text-white/60">{targetUser.email}</p>
-                <p className="text-sm font-medium text-white/50 bg-white/10 px-3 py-1 rounded-full">
+                <p className="text-sm font-medium text-white/50 bg-white/10 rounded-full" style={{ padding: '6px 12px' }}>
                   Points: <span className="text-white font-bold">{targetUser.coins || 0}</span>
                 </p>
                 
                 <button 
                   onClick={handleSignOut}
-                  className="px-6 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/20 rounded-lg text-sm font-medium transition-colors"
+                  className="bg-white/5 hover:bg-white/10 text-white border border-white/20 rounded-lg text-sm font-medium transition-colors"
+                  style={{ padding: '6px 12px' }}
                 >
                   Sign Out
                 </button>
@@ -257,7 +258,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
 
         {/* --- Letters List (History Style) --- */}
         <div className="w-full max-w-2xl px-4 flex flex-col items-center">
-          <h2 className="text-xl font-bold text-gray-900 mb-6 px-2 self-start w-full">
+          <h2 className="text-xl font-bold text-gray-900 px-2 self-start w-full" style={{ marginTop: '12px', marginBottom: '12px' }}>
             {isSelf ? 'My Letters' : `${targetUser.display_name}'s Letters`}
           </h2>
           
@@ -458,14 +459,15 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                                 padding: '6px 12px',
                                 fontSize: '14px',
                                 borderRadius: '6px',
-                                background: copyStatus === letter.link_id ? '#22c55e' : '#333',
+                                background: copyStatus === letter.link_id ? '#22c55e' : (isUnlocked ? 'linear-gradient(45deg, #FFD700, #FFA500)' : '#333'),
                                 color: '#fff',
                                 fontWeight: 500,
                                 border: 'none',
                                 cursor: 'pointer',
+                                boxShadow: isUnlocked ? '0 2px 8px rgba(255, 165, 0, 0.3)' : 'none'
                               }}
                             >
-                              {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
+                              {copyStatus === letter.link_id ? 'Copied' : (isUnlocked ? 'Copy Link ✨' : 'Copy Link')}
                             </button>
                           </div>
                         )

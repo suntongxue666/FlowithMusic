@@ -41,6 +41,7 @@ header {
   align-items: center;
   padding: 0 2rem;
   height: 80px; /* 强制80像素高度 */
+  line-height: 80px; /* 辅助垂直居中 */
   background: white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   position: fixed;
@@ -72,6 +73,8 @@ header {
 .desktop-nav {
   display: flex;
   gap: 1.5rem;
+  align-items: center;
+  height: 100%;
 }
 
 /* Mobile Menu Button */

@@ -229,6 +229,7 @@ export default function Header({ currentPage }: HeaderProps) {
           display: flex;
           align-items: center;
           margin-left: 20px;
+          height: 100%;
         }
 
         .loading-indicator {
@@ -394,16 +395,22 @@ export default function Header({ currentPage }: HeaderProps) {
 
           .notification-badge {
             position: absolute;
-            top: -4px;
-            right: -12px;
+            top: -6px;
+            right: -14px;
             background-color: #ef4444;
             color: white;
             font-size: 10px;
             font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 9999px;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border-radius: 9px;
             line-height: 1;
             z-index: 10;
+            box-shadow: 0 0 0 2px white;
           }
 
           .mobile-notification-badge {
