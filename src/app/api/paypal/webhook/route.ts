@@ -59,6 +59,7 @@ async function handleSubscriptionChange(resource: any, isActive: boolean) {
   const planId = resource.plan_id
   
   // Try to find user by metadata.last_subscription_id
+  if (!supabase) return
   const { data: users, error } = await supabase
     .from('users')
     .select('id, metadata')
@@ -77,7 +78,7 @@ async function handleSubscriptionChange(resource: any, isActive: boolean) {
   if (isAnnual) nextExpiry.setFullYear(nextExpiry.getFullYear() + 1)
   else nextExpiry.setMonth(nextExpiry.getMonth() + 1)
 
-  await supabase
+  await supabase!
     .from('users')
     .update({
       is_premium: isActive && (status === 'ACTIVE'),
@@ -94,7 +95,7 @@ async function handleSubscriptionChange(resource: any, isActive: boolean) {
  */
 async function handlePaymentCompleted(resource: any) {
   const subscriptionId = resource.billing_agreement_id
-  if (!subscriptionId) return
+  if (!subscriptionId || !supabase) return
 
   const { data: users } = await supabase
     .from('users')
@@ -112,7 +113,7 @@ async function handlePaymentCompleted(resource: any) {
     if (isAnnual) baseDate.setFullYear(baseDate.getFullYear() + 1)
     else baseDate.setMonth(baseDate.getMonth() + 1)
 
-    await supabase
+    await supabase!
       .from('users')
       .update({
         is_premium: true,
@@ -130,15 +131,15 @@ async function handlePaymentCompleted(resource: any) {
  */
 async function handlePaymentReversed(resource: any) {
   const subscriptionId = resource.billing_agreement_id
-  if (!subscriptionId) return
+  if (!subscriptionId || !supabase) return
 
-  await supabase
+  await supabase!
     .from('users')
     .update({
       is_premium: false,
       updated_at: new Date().toISOString()
     })
-    .match({ 'metadata->last_subscription_id': subscriptionId }) // Simplified match
+    .filter('metadata->last_subscription_id', 'eq', subscriptionId)
 
   console.log(`⚠️ Payment reversed for subscription ${subscriptionId}. Premium revoked.`)
 }
