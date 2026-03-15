@@ -316,6 +316,9 @@ export default function Header({ currentPage }: HeaderProps) {
           padding: 0;
           overflow: hidden;
           transition: opacity 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .user-avatar-btn:hover {
@@ -395,7 +398,7 @@ export default function Header({ currentPage }: HeaderProps) {
 
           .notification-badge {
             position: absolute;
-            top: -6px;
+            top: 18px;
             right: -14px;
             background-color: #ef4444;
             color: white;

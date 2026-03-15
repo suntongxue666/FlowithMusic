@@ -54,6 +54,24 @@ function generateAnonymousUser(letter: any) {
 function LetterSender({ user, letter }: { user?: any, letter?: any }) {
   const [showTooltip, setShowTooltip] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
+  const [letterCount, setLetterCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (user?.id && showTooltip && letterCount === null) {
+      const fetchCount = async () => {
+        try {
+          const res = await fetch(`/api/letters?userId=${user.id}&countOnly=true`)
+          const data = await res.json()
+          if (data.count !== undefined) {
+            setLetterCount(data.count)
+          }
+        } catch (e) {
+          console.error('Failed to fetch user letter count', e)
+        }
+      }
+      fetchCount()
+    }
+  }, [user?.id, showTooltip, letterCount])
 
   const handleMouseEnter = (e: React.MouseEvent) => {
     setTooltipPosition({ x: e.clientX, y: e.clientY })
@@ -68,26 +86,28 @@ function LetterSender({ user, letter }: { user?: any, letter?: any }) {
     // 已登录用户
     return (
       <div className="letter-sender-section">
-        <div
-          className="letter-sender-avatar"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
-          {user.avatar_url ? (
-            <img
-              src={user.avatar_url}
-              alt={user.display_name || 'Sender'}
-              className="sender-avatar-img"
-            />
-          ) : (
-            <div className="sender-avatar-placeholder">
-              {user.display_name?.charAt(0) || user.email?.charAt(0) || 'U'}
-            </div>
-          )}
-        </div>
-        <div className="letter-sender-text">
-          From {user.display_name || 'Anonymous'}
-        </div>
+        <Link href={`/user/${user.id}`} className="flex items-center gap-3 no-underline">
+          <div
+            className="letter-sender-avatar"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
+            {user.avatar_url ? (
+              <img
+                src={user.avatar_url}
+                alt={user.display_name || 'Sender'}
+                className="sender-avatar-img"
+              />
+            ) : (
+              <div className="sender-avatar-placeholder">
+                {user.display_name?.charAt(0) || user.email?.charAt(0) || 'U'}
+              </div>
+            )}
+          </div>
+          <div className="letter-sender-text hover:underline" style={{ color: '#3b82f6', fontWeight: 600 }}>
+            From {user.display_name || 'Anonymous'}
+          </div>
+        </Link>
 
         {/* 用户信息提示框 */}
         {showTooltip && (
@@ -111,6 +131,9 @@ function LetterSender({ user, letter }: { user?: any, letter?: any }) {
             </div>
             <div className="tooltip-info">
               <div className="tooltip-username">{user.display_name || 'Anonymous'}</div>
+              <div className="tooltip-letters-count" style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                Letters: {letterCount !== null ? letterCount : '...'}
+              </div>
               {user.social_media_info && (
                 <div className="tooltip-social">
                   {user.social_media_info.whatsapp && (

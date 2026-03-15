@@ -145,6 +145,9 @@ nav {
   text-decoration: none;
   color: #333;
   font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
 .desktop-nav a.active {

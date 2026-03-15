@@ -127,6 +127,28 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
     }
 
+    // 新增：支持仅返回数量
+    const countOnly = searchParams.get('countOnly') === 'true'
+    if (countOnly) {
+      let countQuery = supabaseServer
+        .from('letters')
+        .select('*', { count: 'exact', head: true })
+      
+      if (userId && anonymousId) {
+        countQuery = countQuery.or(`user_id.eq.${userId},anonymous_id.eq.${anonymousId}`)
+      } else if (userId) {
+        countQuery = countQuery.eq('user_id', userId)
+      } else if (anonymousId) {
+        countQuery = countQuery.eq('anonymous_id', anonymousId)
+      }
+
+      const { count, error } = await countQuery
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      return NextResponse.json({ count: count || 0 })
+    }
+
     // 组合 where 条件
     let query = supabaseServer
       .from('letters')
