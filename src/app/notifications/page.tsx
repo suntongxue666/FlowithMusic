@@ -140,9 +140,9 @@ export default function NotificationsPage() {
                     } ${isLocked ? 'relative overflow-hidden' : ''}`}
                     style={{ padding: '12px', gap: '12px' }}
                   >
-                    <div className={isLocked ? 'blur-md pointer-events-none flex-shrink-0' : 'flex-shrink-0'}>
-                      <Link href={isLocked ? '#' : `/user/${notif.actor_id}`}>
-                        <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                    <div className="flex-shrink-0">
+                      <Link href={isLocked ? '#' : `/user/${notif.actor_id}`} onClick={(e) => isLocked && e.preventDefault()}>
+                        <div className={`w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center transition-all ${isLocked ? 'blur-xl' : 'hover:scale-105'}`}>
                           {notif.actor_avatar && !isLocked ? (
                             <img src={notif.actor_avatar} alt="avatar" className="w-full h-full object-cover" />
                           ) : (
@@ -154,16 +154,16 @@ export default function NotificationsPage() {
                       </Link>
                     </div>
                     
-                    <div className={`flex-1 min-w-0 flex flex-col justify-center ${isLocked ? 'blur-sm pointer-events-none' : ''}`}>
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <p className="text-base text-gray-900 leading-relaxed">
-                        <span className={`font-semibold ${isLoginUser ? 'text-blue-500' : 'text-gray-900'}`}>
-                          {isLocked ? 'Premium User' : notif.actor_name}
+                        <span className={`font-semibold transition-all ${isLoginUser ? 'text-blue-500' : 'text-gray-900'} ${isLocked ? 'blur-md select-none' : ''}`}>
+                          {notif.actor_name}
                         </span>{' '}
                         {isVisit ? (
                           <span className="text-gray-600">visited your profile.</span>
                         ) : (
                           <span className="text-gray-600">
-                            reacted with <span className="text-lg">{notif.metadata?.emoji}</span> to your letter.
+                            reacted with <span className={`text-lg transition-all ${isLocked ? 'blur-md' : ''}`}>{notif.metadata?.emoji}</span> to your letter.
                           </span>
                         )}
                       </p>
@@ -171,12 +171,11 @@ export default function NotificationsPage() {
                       {notif.letter_id && (
                         <div className="mt-3">
                           <span className="text-xs text-blue-400 inline-flex items-center gap-1">
-                            {/* Link content remains for context but non-clickable if locked */}
-                            Letter link hidden
+                            {isLocked ? 'Letter link locked' : 'View Letter'}
                           </span>
                         </div>
                       )}
-
+                      
                       <div className="text-xs text-gray-400 mt-2">
                         {new Date(notif.created_at).toLocaleString()}
                       </div>
@@ -185,7 +184,8 @@ export default function NotificationsPage() {
                     {isLocked && (
                       <button 
                         onClick={() => setShowPremiumModal(true)}
-                        className="ml-auto bg-black text-white text-xs font-bold py-2 px-4 rounded-full flex items-center gap-1 hover:scale-105 transition-transform"
+                        className="ml-auto bg-black text-white text-[13px] font-bold py-2.5 px-5 rounded-full flex items-center gap-1.5 hover:scale-105 transition-all shadow-lg active:scale-95 flex-shrink-0"
+                        style={{ border: '1px solid rgba(255,255,255,0.1)' }}
                       >
                         Unlock with 👑 Premium
                       </button>
