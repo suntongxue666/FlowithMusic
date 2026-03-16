@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 // PayPal Webhook ID for verification (optional but recommended)
-const WEBHOOK_ID = '1U126713E88513036'
+const WEBHOOK_ID = '1GD69000FM652152F'
 
 export async function POST(req: Request) {
   try {
