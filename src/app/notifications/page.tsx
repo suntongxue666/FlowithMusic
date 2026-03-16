@@ -184,8 +184,8 @@ export default function NotificationsPage() {
                     {isLocked && (
                       <button 
                         onClick={() => setShowPremiumModal(true)}
-                        className="ml-auto bg-black text-white text-[13px] font-bold py-2.5 px-5 rounded-full flex items-center gap-1.5 hover:scale-105 transition-all shadow-lg active:scale-95 flex-shrink-0"
-                        style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+                        className="ml-auto bg-black text-white text-[12px] font-bold rounded-full flex items-center gap-1.5 hover:scale-105 transition-all shadow-lg active:scale-95 flex-shrink-0"
+                        style={{ border: '1px solid rgba(255,255,255,0.1)', padding: '6px 12px' }}
                       >
                         Unlock with 👑 Premium
                       </button>

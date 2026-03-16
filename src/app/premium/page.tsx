@@ -8,9 +8,9 @@ import { userService } from '@/lib/userService'
 import { supabase } from '@/lib/supabase'
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js"
 
-const PAYPAL_CLIENT_ID = 'AU2RABXZuWPa3RVG0RARkN0RKGQav5tia6-6sXJ3aNZu56OyuW_hzoV3aJOwiGa7QGCVbs06bTGo3Diy';
-const MONTHLY_PLAN_ID = 'P-2BN62675LB804572KNG3N6KI';
-const ANNUAL_PLAN_ID = 'P-6BK56971245341456NG3N6KQ';
+const PAYPAL_CLIENT_ID = 'AQCCWaOGvX92tZI1uf4511x3WG1Hp2obxM4mTNgGX-pnUfObT2bnxfVMRHzSr2zTCycyx6jQtLLRdRx8';
+const MONTHLY_PLAN_ID = 'P-0E135132J93420229NG3WTWA';
+const ANNUAL_PLAN_ID = 'P-0PU3781769776022HNG3WTWI';
 
 export default function PremiumPage() {
   const router = useRouter()

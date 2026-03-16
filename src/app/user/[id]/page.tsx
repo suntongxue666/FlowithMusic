@@ -240,16 +240,16 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             {isSelf && (
               <div className="flex flex-col items-center" style={{ gap: '12px' }}>
                 <p className="text-sm text-white/60">{targetUser.email}</p>
-                <p className="text-sm font-medium text-white/50 bg-white/10 rounded-full" style={{ padding: '6px 12px' }}>
-                  Points: <span className="text-white font-bold">{targetUser.coins || 0}</span>
-                </p>
-
                 {targetUser.is_premium ? (
-                  <div className="text-[11px] font-bold text-yellow-400 bg-yellow-400/10 px-3 py-1 rounded-full border border-yellow-400/20">
+                  <div className="text-[11px] font-bold text-yellow-400 bg-yellow-400/10 rounded-full border border-yellow-400/20" style={{ padding: '6px 12px' }}>
                     👑 Premium until {targetUser.premium_until ? new Date(targetUser.premium_until).toISOString().split('T')[0] : ''}
                   </div>
                 ) : (
-                  <Link href="/premium" className="text-[12px] font-bold text-black bg-yellow-400 px-4 py-1.5 rounded-full hover:scale-105 transition-transform">
+                  <Link 
+                    href="/premium" 
+                    className="text-[12px] font-bold text-black bg-yellow-400 rounded-full hover:scale-105 transition-transform"
+                    style={{ padding: '6px 12px' }}
+                  >
                     👑 Premium
                   </Link>
                 )}
