@@ -329,7 +329,7 @@ function HistoryContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center py-8 sm:py-16 px-4" style={{ backgroundColor: '#fafafa' }}>
+    <div className="min-h-screen flex flex-col items-center py-8 sm:py-16 px-3" style={{ backgroundColor: '#fafafa' }}>
       {/* 顶部标题栏 - 居中，带刷新按钮 */}
       <div className="mb-10 flex items-center justify-center gap-4" style={{ marginTop: '24px', marginBottom: '24px' }}>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">

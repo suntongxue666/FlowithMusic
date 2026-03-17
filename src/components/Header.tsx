@@ -216,17 +216,14 @@ export default function Header({ currentPage }: HeaderProps) {
             )}
           </Link>
           
-          {/* 移动端登录状态 */}
-          <div className="mobile-auth-section">
-            {loading ? (
-              <div className="loading-indicator">加载中...</div>
-            ) : !isAuthenticated ? (
+          {/* 移动端登录状态 - 直接作为菜单项避免多余间距 */}
+          {!isAuthenticated && !loading && (
+            <div className="mobile-sign-in-wrapper border-t border-gray-100 mt-2 pt-2">
               <button className="mobile-sign-in-btn" onClick={() => { handleSignIn(); setIsMobileMenuOpen(false); }} disabled={loading}>
-                {loading ? '登录中...' : 'Sign in'}
+                Sign in
               </button>
-            ) : null}
-            {/* 登录后不在菜单中显示用户信息，因为已经在顶部栏显示头像 */}
-          </div>
+            </div>
+          )}
         </nav>
       </header>
 

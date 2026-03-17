@@ -212,7 +212,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <main className="min-h-screen px-4" style={{ backgroundColor: '#fafafa' }}>
+    <main className="min-h-screen px-3" style={{ backgroundColor: '#fafafa' }}>
       <Header />
       <div className="flex flex-col items-center py-8 sm:py-16">
         
@@ -238,30 +238,29 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             <h1 className="text-2xl font-bold mb-[12px]">{targetUser.display_name || 'User'}</h1>
             
             {isSelf && (
-              <div className="flex flex-col items-center" style={{ gap: '12px' }}>
-                <p className="text-sm text-gray-500">{targetUser.email}</p>
-                {targetUser.is_premium ? (
-                  <div className="text-[11px] font-bold text-yellow-400 bg-yellow-400/10 rounded-full border border-yellow-400/20" style={{ padding: '6px 12px' }}>
-                    👑 Premium until {targetUser.premium_until ? new Date(targetUser.premium_until).toISOString().split('T')[0] : ''}
-                  </div>
-                ) : (
-                  <Link 
-                    href="/premium" 
-                    className="text-[12px] font-bold text-black bg-yellow-400 rounded-full hover:scale-105 transition-transform"
-                    style={{ padding: '6px 12px' }}
+                <div className="flex flex-row items-center justify-center gap-3 mt-3">
+                  {targetUser.is_premium ? (
+                    <div className="text-[11px] font-bold text-yellow-500 bg-yellow-50 rounded-full border border-yellow-100" style={{ padding: '6px 12px' }}>
+                      👑 Premium
+                    </div>
+                  ) : (
+                    <Link 
+                      href="/premium" 
+                      className="text-[12px] font-bold text-black bg-yellow-400 rounded-full hover:scale-105 transition-transform"
+                      style={{ padding: '8px 16px' }}
+                    >
+                      👑 Premium
+                    </Link>
+                  )}
+                  
+                  <button 
+                    onClick={handleSignOut}
+                    className="bg-black text-white hover:bg-gray-800 rounded-full text-[12px] font-bold transition-all hover:scale-105 active:scale-95"
+                    style={{ padding: '8px 16px' }}
                   >
-                    👑 Premium
-                  </Link>
-                )}
-                
-                <button 
-                  onClick={handleSignOut}
-                  className="bg-black text-white hover:bg-gray-800 rounded-full text-sm font-bold transition-all hover:scale-105 active:scale-95"
-                  style={{ padding: '8px 24px', marginTop: '12px' }}
-                >
-                  Sign Out
-                </button>
-              </div>
+                    Sign Out
+                  </button>
+                </div>
             )}
           </div>
         </div>

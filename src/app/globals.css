@@ -116,8 +116,10 @@ header {
 }
 
 .mobile-nav a {
-  padding: 0.5rem 1.5rem;
-  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  height: 48px; /* 统一固定高度 */
   text-decoration: none;
   color: #333;
   border-bottom: 1px solid #eee;
@@ -3278,7 +3280,7 @@ edia Inputs Styles */
 /* H5端
 轮播样式 */
 .mobile-carousel {
-  padding: 0 1rem;
+  padding: 0 0.75rem;
 }
 
 .mobile-carousel-container {

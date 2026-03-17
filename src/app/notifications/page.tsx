@@ -93,10 +93,10 @@ export default function NotificationsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#fafafa] px-4">
+    <main className="min-h-screen bg-[#fafafa] px-3">
       <Header currentPage="notifications" />
       <div className="flex flex-col items-center py-8 sm:py-16">
-        <div className="w-full max-w-2xl px-4">
+        <div className="w-full max-w-2xl px-3">
           
           {/* 顶部标题栏 - 参考History页面 */}
           <div className="mb-10 flex items-center justify-center gap-4" style={{ marginTop: '24px', marginBottom: '40px' }}>
@@ -144,7 +144,7 @@ export default function NotificationsPage() {
                       <Link href={isLocked ? '#' : `/user/${notif.actor_id}`} onClick={(e) => isLocked && e.preventDefault()}>
                         <div 
                           className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center transition-all hover:scale-105"
-                          style={isLocked ? { filter: 'blur(8px)', WebkitFilter: 'blur(8px)' } : {}}
+                          style={isLocked ? { filter: 'blur(4px)', WebkitFilter: 'blur(4px)' } : {}}
                         >
                           {notif.actor_avatar && !isLocked ? (
                             <img src={notif.actor_avatar} alt="avatar" className="w-full h-full object-cover" />
