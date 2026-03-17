@@ -212,15 +212,15 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <main className="min-h-screen px-3" style={{ backgroundColor: '#fafafa' }}>
+    <main className="min-h-screen" style={{ backgroundColor: '#fafafa' }}>
       <Header />
-      <div className="flex flex-col items-center py-8 sm:py-16">
+      <div className="flex flex-col items-center py-8 sm:py-16 px-3">
         
-        {/* --- Profile Header (Dark Themed) --- */}
-        <div className="w-full max-w-2xl px-0 sm:px-4">
+        {/* --- Profile Header --- */}
+        <div className="w-full max-w-2xl">
           <div 
-            className="px-8 mb-6 mt-6 flex flex-col items-center justify-center text-gray-900 relative w-full"
-            style={{ height: '200px' }}
+            className="mb-6 mt-6 flex flex-col items-center justify-center text-gray-900 relative w-full"
+            style={{ minHeight: '200px' }}
           >
             
             {/* Avatar */}
@@ -238,7 +238,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             <h1 className="text-2xl font-bold mb-[12px]">{targetUser.display_name || 'User'}</h1>
             
             {isSelf && (
-                <div className="flex flex-row items-center justify-center gap-3 mt-3">
+                <div className="flex flex-row items-center justify-center gap-3 mt-10">
                   {targetUser.is_premium ? (
                     <div className="text-[11px] font-bold text-yellow-500 bg-yellow-50 rounded-full border border-yellow-100" style={{ padding: '6px 12px' }}>
                       👑 Premium
@@ -265,9 +265,9 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
-        {/* --- Letters List (History Style) --- */}
-        <div className="w-full max-w-2xl px-4 flex flex-col items-center">
-          <h2 className="text-xl font-bold text-gray-900 px-2 self-start w-full" style={{ marginTop: '12px', marginBottom: '12px' }}>
+        {/* --- Letters List --- */}
+        <div className="w-full max-w-2xl flex flex-col items-center">
+          <h2 className="text-xl font-bold text-gray-900 self-start w-full" style={{ marginTop: '12px', marginBottom: '12px' }}>
             {isSelf ? 'My Letters' : `${targetUser.display_name}'s Letters`}
           </h2>
           

@@ -93,10 +93,10 @@ export default function NotificationsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#fafafa] px-3">
+    <main className="min-h-screen bg-[#fafafa]">
       <Header currentPage="notifications" />
-      <div className="flex flex-col items-center py-8 sm:py-16">
-        <div className="w-full max-w-2xl px-3">
+      <div className="flex flex-col items-center py-8 sm:py-16 px-3">
+        <div className="w-full max-w-2xl">
           
           {/* 顶部标题栏 - 参考History页面 */}
           <div className="mb-10 flex items-center justify-center gap-4" style={{ marginTop: '24px', marginBottom: '40px' }}>
@@ -142,16 +142,23 @@ export default function NotificationsPage() {
                   >
                     <div className="flex-shrink-0">
                       <Link href={isLocked ? '#' : `/user/${notif.actor_id}`} onClick={(e) => isLocked && e.preventDefault()}>
-                        <div 
-                          className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center transition-all hover:scale-105"
-                          style={isLocked ? { filter: 'blur(4px)', WebkitFilter: 'blur(4px)' } : {}}
-                        >
-                          {notif.actor_avatar && !isLocked ? (
-                            <img src={notif.actor_avatar} alt="avatar" className="w-full h-full object-cover" />
+                        <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center transition-all hover:scale-105 relative">
+                          {notif.actor_avatar ? (
+                            <img 
+                              src={notif.actor_avatar} 
+                              alt="avatar" 
+                              className="w-full h-full object-cover" 
+                              style={isLocked ? { filter: 'blur(8px)', WebkitFilter: 'blur(8px)' } : {}}
+                            />
                           ) : (
-                            <span className="text-xl font-bold">
-                              {isLocked ? '?' : (notif.actor_name?.charAt(0) || 'U')}
-                            </span>
+                            <div 
+                              className={`w-full h-full flex items-center justify-center ${isLocked ? 'bg-gradient-to-br from-blue-100 to-purple-100' : 'bg-gray-200'}`}
+                              style={isLocked ? { filter: 'blur(4px)', WebkitFilter: 'blur(4px)' } : {}}
+                            >
+                              <span className="text-xl font-bold text-gray-500">
+                                {isLocked ? '?' : (notif.actor_name?.charAt(0) || 'U')}
+                              </span>
+                            </div>
                           )}
                         </div>
                       </Link>
