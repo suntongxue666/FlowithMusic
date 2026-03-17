@@ -56,6 +56,21 @@ export async function POST(
 
     if (insertError) throw insertError
 
+    // Also record in profile_visits table for permanent data
+    const { error: visitError } = await supabase
+      .from('profile_visits')
+      .insert({
+        target_user_id: targetUserId,
+        visitor_id: visitorId,
+        visitor_name: visitorName || 'Anonymous',
+        visitor_avatar: visitorAvatar || null,
+        created_at: new Date().toISOString()
+      })
+
+    if (visitError) {
+      console.warn('⚠️ Failed to record in profile_visits table:', visitError)
+    }
+
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('Record visit error:', error)

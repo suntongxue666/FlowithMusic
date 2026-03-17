@@ -98,14 +98,14 @@ export default function PremiumPage() {
       vault: true,
       intent: "subscription"
     }}>
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-white px-4">
         <Header currentPage="premium" />
         
         <div className="premium-hero">
           <div className="container mx-auto px-4 py-20 flex flex-col items-center">
-            <div className="badge mb-6">👑 PREMIUM ACCESS</div>
-            <h1 className="hero-title mb-6">Unlock Your Full Experience</h1>
-            <p className="hero-subtitle mb-12 max-w-2xl">
+            <div className="badge mt-6 mb-[72px]">👑 PREMIUM ACCESS</div>
+            <h1 className="hero-title mb-[72px]">Unlock Your Full Experience</h1>
+            <p className="hero-subtitle mb-[144px] max-w-2xl">
               Support FlowithMusic and enjoy unlimited networking, deep interactions, and an ad-free creative space.
             </p>
 

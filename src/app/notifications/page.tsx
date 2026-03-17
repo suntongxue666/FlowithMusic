@@ -93,7 +93,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#fafafa]">
+    <main className="min-h-screen bg-[#fafafa] px-4">
       <Header currentPage="notifications" />
       <div className="flex flex-col items-center py-8 sm:py-16">
         <div className="w-full max-w-2xl px-4">
@@ -135,14 +135,17 @@ export default function NotificationsPage() {
                 return (
                   <div 
                     key={notif.id} 
-                    className={`bg-white rounded-xl shadow-sm border flex items-center transition-colors mx-2 sm:mx-0 ${
+                    className={`bg-white rounded-xl shadow-sm border flex items-center transition-colors ${
                       isUnread ? 'border-sky-100 bg-sky-50/50' : 'border-gray-100'
                     } ${isLocked ? 'relative overflow-hidden' : ''}`}
                     style={{ padding: '12px', gap: '12px' }}
                   >
                     <div className="flex-shrink-0">
                       <Link href={isLocked ? '#' : `/user/${notif.actor_id}`} onClick={(e) => isLocked && e.preventDefault()}>
-                        <div className={`w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center transition-all ${isLocked ? 'blur-xl' : 'hover:scale-105'}`}>
+                        <div 
+                          className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center transition-all hover:scale-105"
+                          style={isLocked ? { filter: 'blur(8px)', WebkitFilter: 'blur(8px)' } : {}}
+                        >
                           {notif.actor_avatar && !isLocked ? (
                             <img src={notif.actor_avatar} alt="avatar" className="w-full h-full object-cover" />
                           ) : (
@@ -156,14 +159,17 @@ export default function NotificationsPage() {
                     
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <p className="text-base text-gray-900 leading-relaxed">
-                        <span className={`font-semibold transition-all ${isLoginUser ? 'text-blue-500' : 'text-gray-900'} ${isLocked ? 'blur-md select-none' : ''}`}>
+                        <span 
+                          className={`font-semibold transition-all ${isLoginUser ? 'text-blue-500' : 'text-gray-900'}`}
+                          style={isLocked ? { filter: 'blur(4px)', WebkitFilter: 'blur(4px)', userSelect: 'none' } : {}}
+                        >
                           {notif.actor_name}
                         </span>{' '}
                         {isVisit ? (
                           <span className="text-gray-600">visited your profile.</span>
                         ) : (
                           <span className="text-gray-600">
-                            reacted with <span className={`text-lg transition-all ${isLocked ? 'blur-md' : ''}`}>{notif.metadata?.emoji}</span> to your letter.
+                            reacted with <span className="text-lg">{notif.metadata?.emoji}</span> to your letter.
                           </span>
                         )}
                       </p>

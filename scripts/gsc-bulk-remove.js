@@ -70,6 +70,7 @@ const REMOVE_PATTERNS = [
 
 // 速率限制
 const INDEXING_API_DELAY_MS = 500; // Indexing API 每秒约 2 个请求
+const SUCCESS_LOG_FILE = path.resolve(__dirname, '..', 'urls-removed-success.txt');
 
 // ============ 辅助函数 ============
 
@@ -309,8 +310,22 @@ async function batchIndexingDelete(authClient, urls) {
     let fail = 0;
     const failures = [];
 
+    // 加载已成功的纪录
+    const completedUrls = new Set();
+    if (fs.existsSync(SUCCESS_LOG_FILE)) {
+        const content = fs.readFileSync(SUCCESS_LOG_FILE, 'utf-8');
+        content.split('\n').filter(Boolean).forEach(u => completedUrls.add(u.trim()));
+    }
+
+    log(`已跳过 ${completedUrls.size} 个之前已处理成功的 URL`);
+
     for (let i = 0; i < urls.length; i++) {
         const url = urls[i];
+
+        if (completedUrls.has(url)) {
+            success++; // 计入成功总数
+            continue;
+        }
 
         try {
             await indexing.urlNotifications.publish({
@@ -320,6 +335,8 @@ async function batchIndexingDelete(authClient, urls) {
                 },
             });
             success++;
+            // 记录成功
+            fs.appendFileSync(SUCCESS_LOG_FILE, url + '\n');
         } catch (err) {
             fail++;
             failures.push({ url, error: err.message, status: err.response?.status });

@@ -212,19 +212,19 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <main className="min-h-screen" style={{ backgroundColor: '#fafafa' }}>
+    <main className="min-h-screen px-4" style={{ backgroundColor: '#fafafa' }}>
       <Header />
       <div className="flex flex-col items-center py-8 sm:py-16">
         
         {/* --- Profile Header (Dark Themed) --- */}
-        <div className="w-full max-w-2xl px-4">
+        <div className="w-full max-w-2xl px-0 sm:px-4">
           <div 
-            className="bg-[#1a1a1a] rounded-2xl shadow-lg px-8 mb-10 mt-6 flex flex-col items-center justify-center text-white relative"
+            className="bg-white border border-gray-100 rounded-2xl shadow-sm px-8 mb-10 mt-6 flex flex-col items-center justify-center text-gray-900 relative"
             style={{ height: '240px' }}
           >
             
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-full overflow-hidden mb-[12px] border-2 border-white/20 flex items-center justify-center bg-gray-800">
+            <div className="w-20 h-20 rounded-full overflow-hidden mb-[12px] border-2 border-gray-100 flex items-center justify-center bg-gray-50">
               {targetUser.avatar_url ? (
                 <img src={targetUser.avatar_url} alt="Profile Avatar" className="w-full h-full object-cover" />
               ) : (
@@ -239,7 +239,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             
             {isSelf && (
               <div className="flex flex-col items-center" style={{ gap: '12px' }}>
-                <p className="text-sm text-white/60">{targetUser.email}</p>
+                <p className="text-sm text-gray-500">{targetUser.email}</p>
                 {targetUser.is_premium ? (
                   <div className="text-[11px] font-bold text-yellow-400 bg-yellow-400/10 rounded-full border border-yellow-400/20" style={{ padding: '6px 12px' }}>
                     👑 Premium until {targetUser.premium_until ? new Date(targetUser.premium_until).toISOString().split('T')[0] : ''}
