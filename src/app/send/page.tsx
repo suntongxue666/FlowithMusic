@@ -159,7 +159,10 @@ function SendContent() {
   }
 
   const handleSubmit = async () => {
+    if (isSubmitting) return // Prevent double-click
     if (!selectedTrack || !recipient.trim() || !message.trim()) return
+
+    setIsSubmitting(true) // Immediately disable button
 
     // 确保用户已初始化 (获取匿名ID等)
     if (!userInitialized) {
@@ -178,12 +181,14 @@ function SendContent() {
       
       if (count >= 2) {
         setShowPremiumModal(true);
+        setIsSubmitting(false);
         return;
       }
     }
 
     if (!userAuth) {
       setShowLoginModal(true)
+      setIsSubmitting(false)
       return
     }
 
@@ -191,6 +196,7 @@ function SendContent() {
   }
 
   const submitLetter = async (isGuest: boolean) => {
+    if (isSubmitting) return // Prevent double-click race condition
     // 每天限额检查 (非会员限 2 封)
     const isPremium = user?.is_premium || false;
     console.log('🛡️ Subscription Check:', { isPremium, userId: user?.id });
