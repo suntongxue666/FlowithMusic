@@ -219,8 +219,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
         {/* --- Profile Header (Dark Themed) --- */}
         <div className="w-full max-w-2xl px-0 sm:px-4">
           <div 
-            className="bg-white border border-gray-100 rounded-2xl shadow-sm px-8 mb-10 mt-6 flex flex-col items-center justify-center text-gray-900 relative"
-            style={{ height: '240px' }}
+            className="px-8 mb-6 mt-6 flex flex-col items-center justify-center text-gray-900 relative w-full"
+            style={{ height: '200px' }}
           >
             
             {/* Avatar */}
@@ -256,8 +256,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                 
                 <button 
                   onClick={handleSignOut}
-                  className="bg-white/5 hover:bg-white/10 text-white border border-white/20 rounded-lg text-sm font-medium transition-colors"
-                  style={{ padding: '6px 12px', marginTop: '4px' }}
+                  className="bg-black text-white hover:bg-gray-800 rounded-full text-sm font-bold transition-all hover:scale-105 active:scale-95"
+                  style={{ padding: '8px 24px', marginTop: '12px' }}
                 >
                   Sign Out
                 </button>
