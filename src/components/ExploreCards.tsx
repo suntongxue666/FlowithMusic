@@ -136,7 +136,9 @@ export default function ExploreCards({ searchQuery = '', category = '' }: Explor
       artist: letter.song_artist || 'Unknown Artist',
       albumCover: letter.song_album_cover || '/favicon.ico'
     },
-    linkId: letter.link_id
+    linkId: letter.link_id,
+    user: (letter as any).user || undefined,
+    createdAt: letter.created_at || undefined,
   })
 
   if (loading && letters.length === 0) {
@@ -169,6 +171,8 @@ export default function ExploreCards({ searchQuery = '', category = '' }: Explor
               message={card.message}
               song={card.song}
               linkId={card.linkId}
+              user={card.user}
+              createdAt={card.createdAt}
             />
           )
         })}

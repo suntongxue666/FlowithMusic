@@ -196,6 +196,8 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [relatedBySong, setRelatedBySong] = useState<Letter[]>([])
   const [relatedByCategory, setRelatedByCategory] = useState<Letter[]>([])
+  const [artistFans, setArtistFans] = useState<Array<{ id: string; firstName: string; avatarUrl: string | null }>>([]
+  )
 
   // 检测文本是否包含中文字符
   const hasChinese = (text: string) => {
@@ -412,6 +414,24 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
     loadRelated()
   }, [letter])
 
+  // 加载同艺术家粉丝
+  useEffect(() => {
+    const loadArtistFans = async () => {
+      if (!letter?.song_artist) return
+      try {
+        const excludeParam = letter.user_id ? `&excludeUserId=${letter.user_id}` : ''
+        const res = await fetch(`/api/artist-fans?artist=${encodeURIComponent(letter.song_artist)}${excludeParam}`)
+        if (res.ok) {
+          const json = await res.json()
+          setArtistFans(json.fans || [])
+        }
+      } catch (e) {
+        console.error('Failed to load artist fans', e)
+      }
+    }
+    loadArtistFans()
+  }, [letter])
+
   // 转换函数
   const convertLetterToCard = (l: Letter) => ({
     to: l.recipient_name || 'Someone',
@@ -581,6 +601,52 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
           </div>
 
           <LetterInteractions letterId={letter.link_id} />
+
+          {/* Who also like the Artist */}
+          {artistFans.length > 0 && (
+            <div style={{ margin: '24px 0 8px' }}>
+              <p style={{ fontSize: '13px', color: '#888', fontWeight: 500, marginBottom: '12px' }}>
+                Who also like {letter.song_artist}
+              </p>
+              <div style={{
+                display: 'flex',
+                gap: '16px',
+                overflowX: 'auto',
+                paddingBottom: '4px',
+              }}>
+                {artistFans.map(fan => (
+                  <a
+                    key={fan.id}
+                    href={`/user/${fan.id}`}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      gap: '6px', textDecoration: 'none', flexShrink: 0,
+                    }}
+                  >
+                    {fan.avatarUrl ? (
+                      <img
+                        src={fan.avatarUrl}
+                        alt={fan.firstName}
+                        style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #f0f0f0' }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '44px', height: '44px', borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'white', fontWeight: 700, fontSize: '18px',
+                      }}>
+                        {fan.firstName[0]?.toUpperCase()}
+                      </div>
+                    )}
+                    <span style={{ fontSize: '11px', color: '#555', maxWidth: '52px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {fan.firstName}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="letter-footer" style={{ marginTop: '4px' }}>
             <p>Want to send a song to a friend?</p>

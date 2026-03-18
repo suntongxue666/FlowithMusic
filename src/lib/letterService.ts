@@ -104,30 +104,47 @@ export class LetterService {
       // insertData.effect_type = 'flowing_emoji' 
     }
 
-    // 1.5 查重校验 (5分钟内，同一发送者，同一收件人，同一内容)
+    // 1.5 查重校验 (30分钟内，同一发送者，相似内容)
     try {
-      const fiveMinutesAgo = new Date(Date.now() - 300000).toISOString();
+      const thirtyMinutesAgo = new Date(Date.now() - 1800000).toISOString();
       const ownerFilter = finalUserId
         ? `user_id.eq.${finalUserId}`
         : `anonymous_id.eq.${anonymousId}`;
 
-      const { data: existingLetters, error: checkError } = await supabase
+      // 获取近期的信件内容用于模糊对比
+      const { data: recentLetters, error: checkError } = await supabase
         .from('letters')
-        .select('id')
-        .eq('recipient_name', data.to)
-        .eq('message', data.message)
+        .select('id, message, recipient_name')
         .or(ownerFilter)
-        .gt('created_at', fiveMinutesAgo)
-        .limit(1);
+        .gt('created_at', thirtyMinutesAgo)
+        .limit(10);
 
       if (checkError) {
         console.warn('⚠️ LetterService: Duplicate check failed (ignoring):', checkError);
-      } else if (existingLetters && existingLetters.length > 0) {
-        console.warn('⚠️ LetterService: Duplicate letter detected');
-        throw new Error('A letter with the same content has already been published. Please check your History.');
+      } else if (recentLetters && recentLetters.length > 0) {
+        // 内容标准化：转小写、去标点、取前80个单词
+        const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim().split(' ').slice(0, 80).join(' ');
+        const newNorm = normalize(data.message);
+
+        for (const existing of recentLetters) {
+          const existingNorm = normalize(existing.message || '');
+          if (!existingNorm || !newNorm) continue;
+
+          // 计算共同词数占比（Jaccard相似度）
+          const newWords = new Set(newNorm.split(' '));
+          const existingWords = new Set(existingNorm.split(' '));
+          const intersection = Array.from(newWords).filter(w => existingWords.has(w)).length;
+          const union = new Set([...Array.from(newWords), ...Array.from(existingWords)]).size;
+          const similarity = union > 0 ? intersection / union : 0;
+
+          if (similarity >= 0.85) {
+            console.warn(`⚠️ LetterService: Fuzzy duplicate detected (similarity: ${(similarity * 100).toFixed(1)}%)`);
+            throw new Error('A letter with very similar content has already been published. Please check your History.');
+          }
+        }
       }
     } catch (e: any) {
-      if (e.message?.includes('The same content')) throw e;
+      if (e.message?.includes('similar content') || e.message?.includes('same content')) throw e;
       console.warn('⚠️ LetterService: Error during duplicate check:', e);
     }
 
