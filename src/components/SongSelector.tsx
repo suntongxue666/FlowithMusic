@@ -15,8 +15,6 @@ export default function SongSelector({ onSelect, selectedTrack }: SongSelectorPr
   const [recommendations, setRecommendations] = useState<SpotifyTrack[]>([])
   const [loading, setLoading] = useState(false)
   const [playingTrack, setPlayingTrack] = useState<string | null>(null)
-  const [isManualEntry, setIsManualEntry] = useState(false)
-  const [manualData, setManualData] = useState({ title: '', artist: '' })
   const [apiError, setApiError] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -167,11 +165,11 @@ export default function SongSelector({ onSelect, selectedTrack }: SongSelectorPr
     } catch (error: any) {
       console.error('Search failed:', error)
       setSearchResults([])
-      // 如果报错是403，记录下错误，以便UI可以展示手动输入入口
+      // 如果报错是403，记录下错误
       if (error.message?.includes('403') || error.toString()?.includes('403')) {
-        setApiError('Spotify Access Restricted. Please use manual entry below.')
+        setApiError('Spotify Access Restricted. Please try again later.')
       } else {
-        setApiError('Search failed. Please try again or use manual entry.')
+        setApiError('Search failed. Please try again.')
       }
     } finally {
       setLoading(false)
@@ -284,84 +282,11 @@ export default function SongSelector({ onSelect, selectedTrack }: SongSelectorPr
           borderRadius: '8px',
           fontSize: '0.85rem',
           color: '#D32F2F',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
         }}>
-          <span>{apiError}</span>
-          <button
-            onClick={() => { setIsManualEntry(true); setIsOpen(false); }}
-            style={{
-              padding: '4px 8px',
-              backgroundColor: '#333',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.75rem'
-            }}
-          >
-            Manual Entry
-          </button>
+          {apiError}
         </div>
       )}
 
-      {isManualEntry && (
-        <div className="manual-entry-form" style={{
-          marginTop: '15px',
-          padding: '15px',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '12px',
-          border: '1px solid #eee'
-        }}>
-          <h4 style={{ marginBottom: '12px', fontSize: '0.9rem' }}>📝 Manual Entry</h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <input
-              type="text"
-              placeholder="Song Title"
-              className="form-input"
-              value={manualData.title}
-              onChange={(e) => setManualData({ ...manualData, title: e.target.value })}
-            />
-            <input
-              type="text"
-              placeholder="Artist Name"
-              className="form-input"
-              value={manualData.artist}
-              onChange={(e) => setManualData({ ...manualData, artist: e.target.value })}
-            />
-            <button
-              className="submit-btn complete"
-              onClick={() => {
-                if (!manualData.title || !manualData.artist) return;
-                const mockTrack: SpotifyTrack = {
-                  id: 'manual-' + Date.now(),
-                  name: manualData.title,
-                  artists: [{ name: manualData.artist }],
-                  album: {
-                    name: 'Hand-picked Song',
-                    images: [{ url: '/favicon.ico' }]
-                  },
-                  duration_ms: 180000,
-                  preview_url: null,
-                  external_urls: { spotify: 'https://open.spotify.com' }
-                };
-                handleTrackSelect(mockTrack);
-                setIsManualEntry(false);
-              }}
-              style={{ marginTop: '5px' }}
-            >
-              Add Song
-            </button>
-            <button
-              onClick={() => setIsManualEntry(false)}
-              style={{ background: 'none', border: 'none', color: '#666', fontSize: '0.8rem', cursor: 'pointer' }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
       {isOpen && (
         <div className="song-dropdown">

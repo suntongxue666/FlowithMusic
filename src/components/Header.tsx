@@ -204,7 +204,7 @@ export default function Header({ currentPage }: HeaderProps) {
             <span></span>
             <span></span>
             {unreadCount > 0 && (
-              <span className="mobile-menu-notification-dot"></span>
+              <span className="mobile-menu-notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
             )}
           </button>
         </div>
@@ -476,16 +476,24 @@ export default function Header({ currentPage }: HeaderProps) {
             transform: rotate(45deg);
           }
 
-          .mobile-menu-notification-dot {
+          .mobile-menu-notification-badge {
             position: absolute;
-            top: 2px;
-            right: 2px;
-            width: 8px;
-            height: 8px;
+            top: -6px;
+            right: -6px;
             background-color: #ef4444;
-            border-radius: 50%;
-            border: 1.5px solid white;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            min-width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border-radius: 8px;
+            line-height: 1;
             z-index: 10;
+            box-shadow: 0 0 0 1.5px white;
           }
         `}</style>
     </>
