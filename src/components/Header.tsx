@@ -143,9 +143,11 @@ export default function Header({ currentPage }: HeaderProps) {
               <div className="loading-indicator">Loading...</div>
             ) : isAuthenticated && user && user.email ? (
                 <Link href={`/user/${user.id}`} className="user-avatar-btn" style={{ position: 'relative', marginTop: '12px' }}>
-                  {user.is_premium && (
+                  {user.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981' || (user as any).is_admin ? (
+                    <span className="admin-badge">👨🏻💻</span>
+                  ) : user.is_premium ? (
                     <span className="premium-crown-badge">👑</span>
-                  )}
+                  ) : null}
                 {user.avatar_url ? (
                   <img 
                     src={user.avatar_url} 
@@ -172,9 +174,11 @@ export default function Header({ currentPage }: HeaderProps) {
           {/* Mobile Avatar - 登录后显示在菜单按钮左侧 */}
           {isAuthenticated && user && user.email && (
             <Link href={`/user/${user.id}`} className="mobile-user-avatar-btn" style={{ position: 'relative', marginTop: '12px' }}>
-              {user.is_premium && (
+              {user.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981' || (user as any).is_admin ? (
+                <span className="admin-badge">👨🏻💻</span>
+              ) : user.is_premium ? (
                 <span className="premium-crown-badge">👑</span>
-              )}
+              ) : null}
               {user.avatar_url ? (
                 <img 
                   src={user.avatar_url} 
@@ -439,16 +443,29 @@ export default function Header({ currentPage }: HeaderProps) {
           }
         }
 
-        @media (min-width: 769px) {
-          .mobile-controls {
-            display: none;
+          @media (min-width: 769px) {
+            .mobile-controls {
+              display: none;
+            }
+            
+            .mobile-auth-section {
+              display: none;
+            }
           }
-          
-          .mobile-auth-section {
-            display: none;
+
+          .admin-badge, .premium-crown-badge {
+            position: absolute;
+            top: -10px;
+            right: -8px;
+            font-size: 14px;
+            z-index: 5;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
           }
-        }
-      `}</style>
+
+          .premium-crown-badge {
+            transform: rotate(45deg);
+          }
+        `}</style>
     </>
   )
 }

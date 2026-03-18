@@ -204,6 +204,16 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
     return /[\u4e00-\u9fff]/.test(text)
   }
 
+  // 检测文本是否包含Emoji表情 (charCode方式避免TS target限制)
+  const hasEmoji = (text: string) => {
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i)
+      if (code >= 0xD800 && code <= 0xDBFF) return true // surrogate pair (most emoji)
+      if (code >= 0x2600 && code <= 0x27BF) return true // misc symbols
+    }
+    return false
+  }
+
   // 如果URL参数带有emoji=flowing，在Letter加载完成后检查并开启效果
   useEffect(() => {
     console.log('🔍 URL参数检查:', { emojiParam, linkId, hasLetter: !!letter })
@@ -553,7 +563,10 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
 
           <div className="letter-message">
             {letter.message ? (
-              <div className={`message-content handwritten large-text ${hasChinese(letter.message) ? 'chinese-text' : ''}`}>
+              <div
+                className={`message-content handwritten large-text ${hasChinese(letter.message) ? 'chinese-text' : ''}`}
+                style={hasEmoji((letter.recipient_name || '') + (letter.message || '')) ? { fontSize: 'calc(2.4rem - 2px)' } : {}}
+              >
                 {letter.message}
               </div>
             ) : (
@@ -606,15 +619,15 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
           <div className="letter-footer" style={{ marginTop: '4px' }}>
             {artistFans.length > 0 && (
               <div style={{ marginBottom: '20px' }}>
-                <p style={{ fontSize: '13px', color: '#999', fontWeight: 500, marginBottom: '12px' }}>
-                  Who also like {letter.song_artist}
+                <p style={{ color: '#666', marginBottom: '12px' }}>
+                  Who also like &ldquo;{letter.song_artist}&rdquo;
                 </p>
                 <div style={{
                   display: 'flex',
                   gap: '16px',
                   overflowX: 'auto',
                   paddingBottom: '4px',
-                  justifyContent: 'center',
+                  paddingLeft: '12px',
                 }}>
                   {artistFans.map(fan => (
                     <a
@@ -669,35 +682,35 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
         <LetterQRCode />
 
         {/* 相关信件区块 */}
-        <div className="related-letters-container" style={{ marginTop: '60px', padding: '0 20px 40px' }}>
-          {relatedBySong.length > 0 && (
-            <div className="related-section" style={{ marginBottom: '40px' }}>
-              <h3 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>More Letters with "{letter.song_title}"</h3>
-              <div className="cards-grid" style={{
-                display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px'
-              }}>
-                {relatedBySong.map((l, i) => {
-                  const card = convertLetterToCard(l)
-                  return <MusicCard key={l.link_id || i} {...card} />
-                })}
+          <div className="related-letters-container" style={{ marginTop: '60px', padding: '0 20px 40px' }}>
+            {relatedBySong.length > 0 && (
+              <div className="related-section" style={{ marginBottom: '40px' }}>
+                <h3 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>More Letters with "{letter.song_title}"</h3>
+                <div className="cards-grid" style={{
+                  display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '12px'
+                }}>
+                  {relatedBySong.map((l, i) => {
+                    const card = convertLetterToCard(l)
+                    return <MusicCard key={l.link_id || i} {...card} />
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {relatedByCategory.length > 0 && (
-            <div className="related-section">
-              <h3 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>More Letters about "{letter.category}"</h3>
-              <div className="cards-grid" style={{
-                display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px'
-              }}>
-                {relatedByCategory.map((l, i) => {
-                  const card = convertLetterToCard(l)
-                  return <MusicCard key={l.link_id || i} {...card} />
-                })}
+            {relatedByCategory.length > 0 && (
+              <div className="related-section">
+                <h3 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>More Letters about "{letter.category}"</h3>
+                <div className="cards-grid" style={{
+                  display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '12px'
+                }}>
+                  {relatedByCategory.map((l, i) => {
+                    const card = convertLetterToCard(l)
+                    return <MusicCard key={l.link_id || i} {...card} />
+                  })}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
         {/* 特效层 */}
         {showEffect && letter?.animation_config?.emojis && (

@@ -1,6 +1,4 @@
-'use client'
-
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface MusicCardProps {
     to: string
@@ -43,8 +41,21 @@ function getFirstName(name?: string): string {
 }
 
 export default function MusicCard({ to, message, song, linkId, user, createdAt }: MusicCardProps) {
+    const router = useRouter()
+
+    const handleCardClick = () => {
+        router.push(`/letter/${linkId}`)
+    }
+
+    const handleUserClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (user?.id) {
+            router.push(`/user/${user.id}`)
+        }
+    }
+
     return (
-        <Link href={`/letter/${linkId}`} className="card-link">
+        <div onClick={handleCardClick} className="card-link" style={{ cursor: 'pointer', textDecoration: 'none' }}>
             <div className="card">
                 <div className="to">To: {to}</div>
 
@@ -54,33 +65,38 @@ export default function MusicCard({ to, message, song, linkId, user, createdAt }
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
-                        padding: '4px 0 6px',
+                        padding: '2px 0 3px', // 减小间距
                         fontSize: '11px',
                         color: '#888',
-                        borderBottom: '1px solid #f0f0f0',
-                        marginBottom: '4px',
+                        // borderBottom: '1px solid #f0f0f0', // 删掉浅灰色线
+                        marginBottom: '2px', // 减小底部间距
                     }}>
-                        {user?.avatar_url ? (
-                            <img
-                                src={user.avatar_url}
-                                alt={user.display_name || 'User'}
-                                width={16}
-                                height={16}
-                                style={{ borderRadius: '50%', objectFit: 'cover' }}
-                            />
-                        ) : (
-                            <div style={{
-                                width: 16, height: 16, borderRadius: '50%',
-                                background: '#e0e0e0', display: 'inline-flex',
-                                alignItems: 'center', justifyContent: 'center',
-                                fontSize: '9px', color: '#999', flexShrink: 0
-                            }}>
-                                {getFirstName(user?.display_name)[0]?.toUpperCase() || '?'}
-                            </div>
-                        )}
-                        <span style={{ fontWeight: 500, color: '#666' }}>
-                            {getFirstName(user?.display_name)}
-                        </span>
+                        <div 
+                            onClick={handleUserClick}
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                        >
+                            {user?.avatar_url ? (
+                                <img
+                                    src={user.avatar_url}
+                                    alt={user.display_name || 'User'}
+                                    width={16}
+                                    height={16}
+                                    style={{ borderRadius: '50%', objectFit: 'cover' }}
+                                />
+                            ) : (
+                                <div style={{
+                                    width: 16, height: 16, borderRadius: '50%',
+                                    background: '#e0e0e0', display: 'inline-flex',
+                                    alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '9px', color: '#999', flexShrink: 0
+                                }}>
+                                    {getFirstName(user?.display_name)[0]?.toUpperCase() || '?'}
+                                </div>
+                            )}
+                            <span style={{ fontWeight: 500, color: '#666' }} className="hover:underline">
+                                {getFirstName(user?.display_name)}
+                            </span>
+                        </div>
                         {createdAt && (
                             <span style={{ marginLeft: 'auto', flexShrink: 0 }}>
                                 {formatBeijingTime(createdAt)}
@@ -103,6 +119,6 @@ export default function MusicCard({ to, message, song, linkId, user, createdAt }
                     </div>
                 </div>
             </div>
-        </Link>
+        </div>
     )
 }

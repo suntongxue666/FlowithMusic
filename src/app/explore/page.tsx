@@ -23,9 +23,9 @@ export default function ExplorePage() {
     <main>
       <Header currentPage="explore" />
       <div className="explore-container">
-        <div className="explore-header">
-          <h1 style={{ fontFamily: "'Caveat', cursive", fontSize: '3rem' }}>Explore Music Letters</h1>
-          <p>Discover heartfelt messages shared through music by our community</p>
+        <div className="explore-header" style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <h1 style={{ fontFamily: "'Caveat', cursive", fontSize: '2.5rem', marginBottom: '0.5rem' }}>Explore Music Letters</h1>
+          <p style={{ color: '#666', fontSize: '0.9rem' }}>Discover heartfelt messages shared through music by our community</p>
         </div>
 
         <div className="search-container">
@@ -49,7 +49,7 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        <div className="category-quick-links" style={{ display: 'flex', justifyContent: 'center', gap: '12px', margin: '30px 0', flexWrap: 'wrap' }}>
+        <div className="category-quick-links" style={{ display: 'flex', justifyContent: 'center', gap: '10px', margin: '20px 0', flexWrap: 'wrap' }}>
           {[
             { id: 'Love', label: 'Love', link: '/love', icon: '❤️' },
             { id: 'Friendship', label: 'Friendship', link: '/friendship', icon: '🤝' },
@@ -58,11 +58,11 @@ export default function ExplorePage() {
             <a
               href={cat.link}
               key={cat.id}
-              className="cat-link"
+              className="h5-cat-link" // 使用同Home页一样的类名便于排查，但此处直接改style更可靠
               style={{
-                display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px',
-                borderRadius: '25px', background: '#f8f9fa', border: '1px solid #eee',
-                textDecoration: 'none', color: '#333', fontWeight: '500', transition: 'all 0.2s'
+                display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px',
+                borderRadius: '25px', background: 'white', border: '1px solid #eee',
+                textDecoration: 'none', color: '#333', fontSize: '13px', fontWeight: '500', transition: 'all 0.2s'
               }}
             >
               <span>{cat.icon}</span>
