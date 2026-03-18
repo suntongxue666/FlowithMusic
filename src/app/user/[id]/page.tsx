@@ -246,8 +246,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                   ) : (
                     <Link 
                       href="/premium" 
-                      className="text-[12px] font-bold text-black bg-yellow-400 rounded-full hover:scale-105 transition-transform"
-                      style={{ padding: '8px 16px' }}
+                      className="text-[12px] font-bold text-white bg-[#ff9800] rounded-full hover:scale-105 transition-transform flex items-center justify-center"
+                      style={{ padding: '8px 20px', minWidth: '100px', height: '36px' }}
                     >
                       👑 Premium
                     </Link>
@@ -255,8 +255,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                   
                   <button 
                     onClick={handleSignOut}
-                    className="bg-black text-white hover:bg-gray-800 rounded-full text-[12px] font-bold transition-all hover:scale-105 active:scale-95"
-                    style={{ padding: '8px 16px' }}
+                    className="bg-black text-white hover:bg-gray-800 rounded-full text-[12px] font-bold transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
+                    style={{ padding: '8px 20px', minWidth: '100px', height: '36px' }}
                   >
                     Sign Out
                   </button>

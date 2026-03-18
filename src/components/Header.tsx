@@ -144,7 +144,7 @@ export default function Header({ currentPage }: HeaderProps) {
             ) : isAuthenticated && user && user.email ? (
                 <Link href={`/user/${user.id}`} className="user-avatar-btn" style={{ position: 'relative', marginTop: '12px' }}>
                   {user.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981' || (user as any).is_admin ? (
-                    <span className="admin-badge">👨🏻💻</span>
+                    <span className="admin-badge">🤹‍♂️</span>
                   ) : user.is_premium ? (
                     <span className="premium-crown-badge">👑</span>
                   ) : null}
@@ -175,7 +175,7 @@ export default function Header({ currentPage }: HeaderProps) {
           {isAuthenticated && user && user.email && (
             <Link href={`/user/${user.id}`} className="mobile-user-avatar-btn" style={{ position: 'relative', marginTop: '12px' }}>
               {user.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981' || (user as any).is_admin ? (
-                <span className="admin-badge">👨🏻💻</span>
+                <span className="admin-badge">🤹‍♂️</span>
               ) : user.is_premium ? (
                 <span className="premium-crown-badge">👑</span>
               ) : null}
@@ -453,16 +453,22 @@ export default function Header({ currentPage }: HeaderProps) {
             }
           }
 
-          .admin-badge, .premium-crown-badge {
+          .admin-badge {
             position: absolute;
-            top: -10px;
-            right: -8px;
+            top: -6px;
+            right: -6px;
             font-size: 14px;
             z-index: 5;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
           }
 
           .premium-crown-badge {
+            position: absolute;
+            top: -10px;
+            right: -8px;
+            font-size: 14px;
+            z-index: 5;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             transform: rotate(45deg);
           }
         `}</style>

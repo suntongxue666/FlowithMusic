@@ -374,41 +374,47 @@ function HistoryContent() {
               style={{ padding: '16px', width: '100%', maxWidth: '600px' }}
             >
               <div className="flex flex-row items-center">
-                {/* 封面图片 - 60x60 圆角方形（增大50%） */}
-                <div
-                  className="flex-shrink-0 overflow-hidden"
-                  style={{
-                    width: '60px',
-                    height: '60px',
-                    borderRadius: '8px'
-                  }}
+                {/* 按钮左侧的点击区域 */}
+                <div 
+                  className="flex-1 flex flex-row items-center cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => router.push(`/letter/${letter.link_id}`)}
                 >
-                  <img
-                    src={letter.song_album_cover}
-                    alt={letter.song_title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                  {/* 封面图片 - 60x60 圆角方形（增大50%） */}
+                  <div
+                    className="flex-shrink-0 overflow-hidden"
+                    style={{
+                      width: '60px',
+                      height: '60px',
+                      borderRadius: '8px'
+                    }}
+                  >
+                    <img
+                      src={letter.song_album_cover}
+                      alt={letter.song_title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
 
-                {/* 内容区域 - 三行布局，左边距16px */}
-                <div className="flex-1 min-w-0" style={{ marginLeft: '16px' }}>
-                  {/* 第一行：收件人 */}
-                  <div style={{ fontSize: '16px', fontWeight: 600, color: '#333' }}>
-                    To: {letter.recipient_name}
-                  </div>
-                  {/* 第二行：歌名 - 歌手 */}
-                  <div style={{ fontSize: '14px', color: '#555', marginTop: '4px' }} className="truncate">
-                    {letter.song_title} - {letter.song_artist}
-                  </div>
-                  {/* 第三行：时间 */}
-                  <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
-                    {new Date(letter.created_at).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                  {/* 内容区域 - 三行布局，左边距16px */}
+                  <div className="flex-1 min-w-0" style={{ marginLeft: '16px' }}>
+                    {/* 第一行：收件人 */}
+                    <div style={{ fontSize: '16px', fontWeight: 600, color: '#333' }}>
+                      To: {letter.recipient_name}
+                    </div>
+                    {/* 第二行：歌名 - 歌手 */}
+                    <div style={{ fontSize: '14px', color: '#555', marginTop: '4px' }} className="truncate">
+                      {letter.song_title} - {letter.song_artist}
+                    </div>
+                    {/* 第三行：时间 */}
+                    <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                      {new Date(letter.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
                   </div>
                 </div>
 

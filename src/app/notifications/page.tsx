@@ -164,11 +164,24 @@ export default function NotificationsPage() {
                       </Link>
                     </div>
                     
-                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <div 
+                      className={`flex-1 min-w-0 flex flex-col justify-center ${notif.letter_id && !isLocked ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+                      onClick={() => {
+                        if (notif.letter_id && !isLocked) {
+                          router.push(`/letter/${notif.letter_id}`)
+                        }
+                      }}
+                    >
                       <p className="text-base text-gray-900 leading-relaxed">
                         <span 
-                          className={`font-semibold transition-all ${isLoginUser ? 'text-blue-500' : 'text-gray-900'}`}
+                          className={`font-semibold transition-all ${isLoginUser ? 'text-blue-500 hover:underline' : 'text-gray-900'}`}
                           style={isLocked ? { filter: 'blur(4px)', WebkitFilter: 'blur(4px)', userSelect: 'none' } : {}}
+                          onClick={(e) => {
+                            if (!isLocked) {
+                              e.stopPropagation()
+                              router.push(`/user/${notif.actor_id}`)
+                            }
+                          }}
                         >
                           {notif.actor_name}
                         </span>{' '}
@@ -184,7 +197,7 @@ export default function NotificationsPage() {
                       {notif.letter_id && (
                         <div className="mt-3">
                           <span className="text-xs text-blue-400 inline-flex items-center gap-1">
-                            {isLocked ? 'Letter link locked' : 'View Letter'}
+                            {isLocked ? 'Letter link locked' : 'View Letter →'}
                           </span>
                         </div>
                       )}

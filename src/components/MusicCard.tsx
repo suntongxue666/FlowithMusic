@@ -65,11 +65,11 @@ export default function MusicCard({ to, message, song, linkId, user, createdAt }
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
-                        padding: '2px 0 3px', // 减小间距
+                        padding: '2px 0 6px', // 恢复间距
                         fontSize: '11px',
                         color: '#888',
-                        // borderBottom: '1px solid #f0f0f0', // 删掉浅灰色线
-                        marginBottom: '2px', // 减小底部间距
+                        borderBottom: '1px solid #f0f0f0', // 恢复浅灰色线
+                        marginBottom: '4px', // 恢复间距
                     }}>
                         <div 
                             onClick={handleUserClick}
