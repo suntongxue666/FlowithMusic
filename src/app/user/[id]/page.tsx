@@ -239,7 +239,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             
             {isSelf && (
                 <div className="flex flex-row items-center justify-center gap-3" style={{ marginTop: '24px' }}>
-                  {targetUser.is_premium ? (
+                  {(targetUser.is_premium || targetUser.is_admin || targetUser.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981') ? (
                     <div className="text-[11px] font-bold text-yellow-500 bg-yellow-50 rounded-full border border-yellow-100" style={{ padding: '6px 12px' }}>
                       👑 Premium
                     </div>

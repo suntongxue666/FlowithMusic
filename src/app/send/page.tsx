@@ -361,7 +361,14 @@ function SendContent() {
                 )}
                 <div className="emoji-hint">Select up to 3 emojis ({selectedEmojis.length}/3 selected)</div>
                 <div className="emoji-mart-container">
-                  <EmojiPicker onEmojiClick={handleEmojiSelect} width="100%" height={350} />
+                  <EmojiPicker 
+                    onEmojiClick={handleEmojiSelect} 
+                    width="100%" 
+                    height={350} 
+                    searchDisabled={true}
+                    skinTonesDisabled={true}
+                    previewConfig={{ showPreview: false }}
+                  />
                 </div>
               </div>
             )}
@@ -617,6 +624,19 @@ function SendContent() {
         .toggle-thumb.enabled { transform: translateX(20px); }
         .selected-preview { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
         .preview-emoji { font-size: 24px; cursor: pointer; }
+        
+        @media (max-width: 768px) {
+          select.form-input {
+            height: 48px; /* 增大高度与手机端input一致 */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+          }
+        }
       `}</style>
     </main>
   )

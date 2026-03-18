@@ -145,7 +145,7 @@ export default function Header({ currentPage }: HeaderProps) {
                 <Link href={`/user/${user.id}`} className="user-avatar-btn" style={{ position: 'relative', marginTop: '12px' }}>
                   {user.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981' || (user as any).is_admin ? (
                     <span className="admin-badge">🤹‍♂️</span>
-                  ) : user.is_premium ? (
+                  ) : user.is_premium || (user as any).is_admin ? (
                     <span className="premium-crown-badge">👑</span>
                   ) : null}
                 {user.avatar_url ? (
@@ -198,10 +198,14 @@ export default function Header({ currentPage }: HeaderProps) {
             className="mobile-menu-btn"
             onClick={toggleMobileMenu}
             aria-label="Toggle menu"
+            style={{ position: 'relative' }}
           >
             <span></span>
             <span></span>
             <span></span>
+            {unreadCount > 0 && (
+              <span className="mobile-menu-notification-dot"></span>
+            )}
           </button>
         </div>
 
@@ -470,6 +474,18 @@ export default function Header({ currentPage }: HeaderProps) {
             z-index: 5;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
             transform: rotate(45deg);
+          }
+
+          .mobile-menu-notification-dot {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 8px;
+            height: 8px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            border: 1.5px solid white;
+            z-index: 10;
           }
         `}</style>
     </>

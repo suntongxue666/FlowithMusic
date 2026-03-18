@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { UserProvider } from '@/contexts/UserContext'
 import UserIdentityNotification from '@/components/UserIdentityNotification'
+import GoogleAdSense from '@/components/GoogleAdSense'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.flowithmusic.com'),
@@ -63,16 +64,12 @@ export default function RootLayout({
           }}
         />
 
-        {/* Google AdSense */}
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8076620471820789"
-          crossOrigin="anonymous"
-        />
+        {/* Google AdSense will be loaded conditionally in UserProvider */}
       </head>
       <body>
         <UserProvider>
           {children}
+          <GoogleAdSense />
           <UserIdentityNotification />
         </UserProvider>
       </body>
