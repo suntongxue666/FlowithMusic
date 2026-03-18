@@ -116,6 +116,39 @@ export async function POST(
     if (updateError) {
       console.error('❌ 更新浏览计数失败:', updateError)
     }
+
+    // --- 新增：记录被访问用户的通知 ---
+    try {
+      // 如果访问者是登录用户，且不是作者本人
+      if (currentUser?.id) {
+        // 获取信件拥有者
+        const { data: letterData } = await supabase
+          .from('letters')
+          .select('user_id, song_title, song_artist')
+          .eq('link_id', linkId)
+          .single()
+          
+        if (letterData?.user_id && letterData.user_id !== currentUser.id) {
+          // 创建通知
+          await supabase.from('notifications').insert({
+            user_id: letterData.user_id,
+            actor_id: currentUser.id,
+            actor_name: currentUser.display_name || 'A user',
+            actor_avatar: currentUser.avatar_url || null,
+            type: 'letter_visit',
+            letter_id: linkId,
+            metadata: { 
+              song_title: letterData.song_title,
+              song_artist: letterData.song_artist 
+            }
+          })
+          console.log('✅ 已为信件拥有者生成访问通知')
+        }
+      }
+    } catch (notifErr) {
+      console.error('⚠️ 生成访问通知失败:', notifErr)
+    }
+    // ------------------------------------
     
     return NextResponse.json({ 
       success: true,

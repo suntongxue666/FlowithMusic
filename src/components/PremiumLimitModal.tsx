@@ -1,6 +1,5 @@
-'use client'
-
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 interface PremiumLimitModalProps {
   onClose: () => void
@@ -9,6 +8,24 @@ interface PremiumLimitModalProps {
 
 export default function PremiumLimitModal({ onClose, type }: PremiumLimitModalProps) {
   const router = useRouter()
+  const [countdown, setCountdown] = useState(3)
+
+  useEffect(() => {
+    if (type === 'daily_limit') {
+      const timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            onClose()
+            router.push('/premium')
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [type, onClose, router])
 
   const handleUpgrade = () => {
     onClose()
@@ -25,6 +42,10 @@ export default function PremiumLimitModal({ onClose, type }: PremiumLimitModalPr
             <h3>Daily Limit Reached</h3>
             <p className="modal-text">
               You've sent 2 letters today! Upgrade to Premium for <strong>unlimited</strong> daily letters.
+              <br/>
+              <span style={{ fontSize: '12px', color: '#888', marginTop: '8px', display: 'block' }}>
+                Redirecting to Premium in {countdown}s...
+              </span>
             </p>
           </>
         ) : (

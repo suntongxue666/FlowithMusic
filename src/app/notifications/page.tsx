@@ -126,7 +126,7 @@ export default function NotificationsPage() {
             <div className="space-y-4">
               {notifications.map((notif) => {
                 const isUnread = !notif.is_read
-                const isVisit = notif.type === 'profile_visit'
+                const isVisit = notif.type === 'profile_visit' || notif.type === 'letter_visit'
                 const isLoginUser = notif.actor_name !== 'Anonymous'
                 
                 const isPremium = user?.is_premium || false
@@ -185,8 +185,10 @@ export default function NotificationsPage() {
                         >
                           {notif.actor_name}
                         </span>{' '}
-                        {isVisit ? (
+                        {notif.type === 'profile_visit' ? (
                           <span className="text-gray-600">visited your profile.</span>
+                        ) : notif.type === 'letter_visit' ? (
+                          <span className="text-gray-600">visited your letter with "{notif.metadata?.song_title}".</span>
                         ) : (
                           <span className="text-gray-600">
                             reacted with <span className="text-lg">{notif.metadata?.emoji}</span> to your letter.
@@ -209,7 +211,7 @@ export default function NotificationsPage() {
 
                     {isLocked && (
                       <button 
-                        onClick={() => setShowPremiumModal(true)}
+                        onClick={() => router.push('/premium')}
                         className="ml-auto bg-black text-white text-[12px] font-bold rounded-full flex items-center gap-1.5 hover:scale-105 transition-all shadow-lg active:scale-95 flex-shrink-0"
                         style={{ border: '1px solid rgba(255,255,255,0.1)', padding: '6px 12px' }}
                       >
