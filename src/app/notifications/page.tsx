@@ -130,7 +130,7 @@ export default function NotificationsPage() {
                 const isLoginUser = notif.actor_name !== 'Anonymous'
                 
                 const isPremium = user?.is_premium || false
-                const isLocked = !isPremium && (notif.type === 'profile_visit' || notif.type === 'interaction')
+                const isLocked = !isPremium && (notif.type === 'profile_visit' || notif.type === 'interaction' || notif.type === 'letter_visit')
 
                 return (
                   <div 
