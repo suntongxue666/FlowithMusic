@@ -602,53 +602,53 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
 
           <LetterInteractions letterId={letter.link_id} />
 
-          {/* Who also like the Artist */}
-          {artistFans.length > 0 && (
-            <div style={{ margin: '24px 0 8px' }}>
-              <p style={{ fontSize: '13px', color: '#888', fontWeight: 500, marginBottom: '12px' }}>
-                Who also like {letter.song_artist}
-              </p>
-              <div style={{
-                display: 'flex',
-                gap: '16px',
-                overflowX: 'auto',
-                paddingBottom: '4px',
-              }}>
-                {artistFans.map(fan => (
-                  <a
-                    key={fan.id}
-                    href={`/user/${fan.id}`}
-                    style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      gap: '6px', textDecoration: 'none', flexShrink: 0,
-                    }}
-                  >
-                    {fan.avatarUrl ? (
-                      <img
-                        src={fan.avatarUrl}
-                        alt={fan.firstName}
-                        style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #f0f0f0' }}
-                      />
-                    ) : (
-                      <div style={{
-                        width: '44px', height: '44px', borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: 'white', fontWeight: 700, fontSize: '18px',
-                      }}>
-                        {fan.firstName[0]?.toUpperCase()}
-                      </div>
-                    )}
-                    <span style={{ fontSize: '11px', color: '#555', maxWidth: '52px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {fan.firstName}
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
+          {/* Who also like the Artist — inside the footer divider */}
           <div className="letter-footer" style={{ marginTop: '4px' }}>
+            {artistFans.length > 0 && (
+              <div style={{ marginBottom: '20px' }}>
+                <p style={{ fontSize: '13px', color: '#999', fontWeight: 500, marginBottom: '12px' }}>
+                  Who also like {letter.song_artist}
+                </p>
+                <div style={{
+                  display: 'flex',
+                  gap: '16px',
+                  overflowX: 'auto',
+                  paddingBottom: '4px',
+                  justifyContent: 'center',
+                }}>
+                  {artistFans.map(fan => (
+                    <a
+                      key={fan.id}
+                      href={`/user/${fan.id}`}
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        gap: '6px', textDecoration: 'none', flexShrink: 0,
+                      }}
+                    >
+                      {fan.avatarUrl ? (
+                        <img
+                          src={fan.avatarUrl}
+                          alt={fan.firstName}
+                          style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #f0f0f0' }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: '44px', height: '44px', borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: 'white', fontWeight: 700, fontSize: '18px',
+                        }}>
+                          {fan.firstName[0]?.toUpperCase()}
+                        </div>
+                      )}
+                      <span style={{ fontSize: '11px', color: '#555', maxWidth: '52px', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {fan.firstName}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
             <p>Want to send a song to a friend?</p>
             <a href="/send" className="send-button black-button">
               💌 Send a song

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { letterService } from '@/lib/letterService'
 import { Letter } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,20 +34,40 @@ export async function GET(request: Request) {
     let fetchedLetters: Letter[] = []
 
     if (searchQuery) {
-      // 搜索范围：recipient_name、song_title、song_artist、message（由 letterService.searchLetters 实现）
       fetchedLetters = await letterService.searchLetters(searchQuery, limit, offset)
     } else {
-      // 公开流
       fetchedLetters = await letterService.getPublicLetters(limit, offset, sortBy, { category })
     }
 
     console.log(`🌐 API Explore: Fetched ${fetchedLetters.length} letters. Query: "${searchQuery}"`)
 
-    // Explore 不做额外字数过滤，确保分页完整
-    const filteredLetters = fetchedLetters
+    // 批量获取有 user_id 的用户信息，附加到 letter.user
+    const userIds = Array.from(new Set(
+      fetchedLetters.map(l => l.user_id).filter(Boolean)
+    ))
+
+    const userMap: Record<string, { id: string; display_name: string; avatar_url: string | null }> = {}
+
+    if (userIds.length > 0 && supabase) {
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, display_name, avatar_url')
+        .in('id', userIds)
+
+      if (users) {
+        users.forEach((u: any) => { userMap[u.id] = u })
+      }
+    }
+
+    // 将用户信息附加到 letter
+    const enrichedLetters = fetchedLetters.map(l => ({
+      ...l,
+      user: l.user_id ? (userMap[l.user_id] || null) : null,
+    }))
+
+    const filteredLetters = enrichedLetters
 
     if (format === 'camelCase') {
-      // App 友好返回结构（包裹 items）
       const items = filteredLetters.map(letter => ({
         id: letter.id,
         userId: letter.user_id,
@@ -65,10 +86,9 @@ export async function GET(request: Request) {
         viewCount: letter.view_count,
         isPublic: letter.is_public,
         shareableLink: letter.shareable_link,
-        user: letter.user,
+        user: (letter as any).user,
       }))
 
-      // total 目前不做成本高的统计查询，按是否还有下一页给出 hasMore
       const hasMore = items.length === limit
 
       return NextResponse.json({
@@ -98,7 +118,7 @@ export async function GET(request: Request) {
       view_count: letter.view_count,
       is_public: letter.is_public,
       shareable_link: letter.shareable_link,
-      user: letter.user,
+      user: (letter as any).user,
     }))
 
     return NextResponse.json(snakeCase)
