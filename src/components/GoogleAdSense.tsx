@@ -6,9 +6,10 @@ import { useUserState } from '@/hooks/useUserState'
 export default function GoogleAdSense() {
   const { user } = useUserState()
   
+  const isAdmin = user?.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981' || (user as any)?.is_admin
   // 只有真正购买了高级会员的用户才移除广告
   // 管理员仍然可以看到广告（如用户所要求）
-  const isPremium = user?.is_premium
+  const isPremium = user?.is_premium && !isAdmin
   
   useEffect(() => {
     if (isPremium) return
