@@ -327,8 +327,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                           <span style={{ 
                             marginLeft: '8px', 
                             padding: '2px', 
-                            backgroundColor: '#e5e7eb', 
-                            color: '#000', 
+                            backgroundColor: '#000', 
+                            color: '#fff', 
                             fontSize: '10px', 
                             borderRadius: '4px', 
                             lineHeight: 1,

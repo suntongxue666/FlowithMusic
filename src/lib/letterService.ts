@@ -361,16 +361,21 @@ export class LetterService {
    * 搜索 Letters
    * 用于 Explore 页面搜索
    */
-  async searchLetters(query: string, limit = 18, offset = 0): Promise<Letter[]> {
+  async searchLetters(query: string, limit = 18, offset = 0, includePrivate = false): Promise<Letter[]> {
     if (!supabase) return []
 
     const safeQuery = (query || '').trim()
     if (!safeQuery) return []
 
-    const { data, error } = await supabase
+    let dbQuery = supabase
       .from('letters')
       .select('*')
-      .eq('is_public', true)
+      
+    if (!includePrivate) {
+      dbQuery = dbQuery.eq('is_public', true)
+    }
+
+    const { data, error } = await dbQuery
       .or(`recipient_name.ilike.%${safeQuery}%,song_title.ilike.%${safeQuery}%,song_artist.ilike.%${safeQuery}%,message.ilike.%${safeQuery}%`)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -414,21 +419,23 @@ export class LetterService {
   }
 
   /**
-   * 获取热门歌手
-   * 用于首页 Tag 推荐
+   * 获取近期的 Letters (带各类过滤)
    */
   async getPublicLetters(
     limit = 18,
     offset = 0,
     sortBy: 'created_at' | 'view_count' = 'created_at',
-    filters?: { artist?: string; category?: string }
+    filters?: { artist?: string; category?: string; includePrivate?: boolean }
   ): Promise<Letter[]> {
     if (!supabase) return []
 
     let query = supabase
       .from('letters')
       .select('*')
-      .eq('is_public', true)
+
+    if (!filters?.includePrivate) {
+      query = query.eq('is_public', true)
+    }
 
     //如果有特定歌手筛选
     if (filters?.artist) {

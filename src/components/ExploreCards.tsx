@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import MusicCard from './MusicCard'
 import { letterService } from '@/lib/letterService'
 import { Letter } from '@/lib/supabase'
-import { useRef } from 'react'
+import { useUserState } from '@/hooks/useUserState'
 
 interface ExploreCardsProps {
   searchQuery?: string
@@ -17,6 +17,9 @@ export default function ExploreCards({ searchQuery = '', category = '' }: Explor
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(0)
+  
+  const { user, isAuthenticated } = useUserState()
+  const isAdmin = isAuthenticated && user && (user.is_admin || user.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981')
 
   const LETTERS_PER_PAGE = 15 // 3列 * 5排
 
@@ -40,6 +43,9 @@ export default function ExploreCards({ searchQuery = '', category = '' }: Explor
       }
       if (category) {
         url += `&category=${encodeURIComponent(category)}`;
+      }
+      if (isAdmin) {
+        url += `&includePrivate=true`;
       }
 
       const response = await fetch(url);
@@ -97,7 +103,7 @@ export default function ExploreCards({ searchQuery = '', category = '' }: Explor
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [searchQuery, page])
+  }, [searchQuery, category, page, isAdmin])
 
   const observerTarget = useRef<HTMLDivElement>(null);
 

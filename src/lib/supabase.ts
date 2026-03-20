@@ -73,6 +73,7 @@ export interface User {
   social_media_info?: Record<string, any>
   coins: number
   is_premium: boolean
+  is_admin?: boolean
   premium_until?: string | null
   metadata?: Record<string, any>
 }
