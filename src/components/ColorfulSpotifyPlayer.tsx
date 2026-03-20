@@ -36,7 +36,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   // 1. Color Extraction Logic
   useEffect(() => {
     const imageUrl = (isChinaDetails.isChina && appleTrack)
-      ? appleTrack.artworkUrl100?.replace('100x100', '300x300')
+      ? appleTrack.artworkUrl100?.replace('100x100', '120x120')
       : (track.album?.images?.[0]?.url)
 
     if (!imageUrl) return
@@ -113,20 +113,29 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
         setTimeout(() => reject(new Error('Apple Music search timeout')), 5000)
       )
 
-      const result = await Promise.race([
-        searchAppleMusic(track.name, track.artists[0].name, track.duration_ms, 'US'),
+      // 先尝试中国区 Apple Music，如果搜不到再尝试美国区
+      let result = await Promise.race([
+        searchAppleMusic(track.name, track.artists[0].name, track.duration_ms, 'CN'),
         timeoutPromise
       ])
 
+      if (!result) {
+        console.log('🎵 Apple Music [CN] not found, trying [US] region...')
+        result = await Promise.race([
+          searchAppleMusic(track.name, track.artists[0].name, track.duration_ms, 'US'),
+          timeoutPromise
+        ])
+      }
+
       if (result) {
-        console.log('🎵 Apple Music found:', result.trackName)
+        console.log('🎵 Apple Music tracked successfully:', result.trackName, '| Cover URL:', result.artworkUrl100)
         setAppleTrack(result)
       } else {
-        console.log('🎵 Apple Music not found, showing error fallback for China')
+        console.log('🎵 Apple Music API returned no matching results. Track is truly missing.')
         setFallbackError('Apple Music search failed for this track.')
       }
     } catch (e) {
-      console.error('🎵 Apple Music fetch error, showing error fallback for China:', e)
+      console.error('🎵 Apple Music fetch error:', e)
       setFallbackError('Apple Music connection failed.')
     }
   }
@@ -331,11 +340,11 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
     return (
       <>
         <CustomPlayerUI
-          imageUrl={appleTrack.artworkUrl100?.replace('100x100', '600x600')}
-          title={appleTrack.trackName}
-          artist={appleTrack.artistName}
+          imageUrl={appleTrack.artworkUrl100 ? appleTrack.artworkUrl100.replace('100x100', '120x120') : (track.album?.images?.[0]?.url || '')}
+          title={appleTrack.trackName || track.name}
+          artist={appleTrack.artistName || track.artists?.[0]?.name}
           durationMs={30000} // Preview length
-          externalUrl={appleTrack.trackViewUrl}
+          externalUrl={appleTrack.trackViewUrl || track.external_urls?.spotify || ''}
           provider="apple"
         />
         <audio
