@@ -20,16 +20,16 @@ export default function ExplorePage() {
   }
 
   return (
-    <main>
+    <main className="min-h-screen">
       <Header currentPage="explore" />
-      <div className="explore-container">
+      <div className="explore-container w-full px-4">
         <div className="explore-header" style={{ textAlign: 'center', marginBottom: '20px' }}>
           <h1 style={{ fontFamily: "'Caveat', cursive", fontSize: '2.5rem', marginBottom: '0.5rem' }}>Explore Music Letters</h1>
           <p style={{ color: '#666', fontSize: '0.9rem' }}>Discover heartfelt messages shared through music by our community</p>
         </div>
 
-        <div className="search-container">
-          <div className="search-box">
+        <div className="search-container flex justify-center w-full">
+          <div className="search-box w-full max-w-2xl">
             <input
               type="text"
               className="search-input"
@@ -41,7 +41,7 @@ export default function ExplorePage() {
               onBlur={(e) => e.target.placeholder = 'Input recipient,song,artist to find same tune'}
             />
             <button
-              className="search-btn"
+              className="search-btn h-[64px] sm:h-auto"
               onClick={handleSearch}
             >
               Search

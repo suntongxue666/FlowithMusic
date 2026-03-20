@@ -389,13 +389,14 @@ nav {
 
   .cards {
     grid-template-columns: 1fr;
-    padding: 1rem;
+    padding: 0 !important;
+    width: 100% !important;
   }
 
   .card {
-    width: 100%;
-    max-width: 360px;
-    margin: 0 auto;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
   }
 }
 
@@ -403,7 +404,9 @@ nav {
 .explore-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 2rem 2rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .explore-header {
@@ -517,7 +520,8 @@ nav {
 
 @media (max-width: 768px) {
   .explore-container {
-    padding: 1rem;
+    padding: 1rem 0;
+    /* Since we added px-4 to the container in JSX, we don't need padding-left/right here */
   }
 
   .explore-header h1 {
@@ -534,7 +538,7 @@ nav {
     border: 2px solid #ccc;
     border-radius: 8px;
     margin-bottom: 1rem;
-    width: 343px;
+    width: 100%;
     height: 64px;
     padding: 18px 12px;
     box-sizing: border-box;
@@ -542,7 +546,7 @@ nav {
 
   .search-btn {
     border-radius: 8px;
-    width: 343px;
+    width: 100%;
   }
 }
 
@@ -3141,11 +3145,12 @@ art Spotify Player Styles */
 
 .artist-cards {
   display: grid;
-  grid-template-columns: repeat(3, 360px);
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 1rem;
-  justify-content: flex-start;
+  justify-content: center;
   padding: 0;
   margin: 0;
+  width: 100%;
 }
 
 .loading-artist {
@@ -3304,7 +3309,8 @@ edia Inputs Styles */
 
 /* H5端艺术家轮播样式 */
 .mobile-artist-letters {
-  padding: 0 1rem;
+  padding: 0;
+  width: 100%;
 }
 
 .mobile-artist-section {

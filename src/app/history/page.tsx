@@ -329,24 +329,25 @@ function HistoryContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center py-8 sm:py-16" style={{ backgroundColor: '#fafafa' }}>
-      {/* 顶部标题栏 - 居中，带刷新按钮 */}
-      <div className="mb-10 flex items-center justify-center gap-4" style={{ marginTop: '24px', marginBottom: '24px' }}>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-          My Letters
-        </h1>
-        <button
-          onClick={() => checkAuthAndLoadLetters(true)}
-          className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-          title="刷新"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M23 4v6h-6"></path>
-            <path d="M1 20v-6h6"></path>
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-          </svg>
-        </button>
-      </div>
+    <div className="min-h-screen flex flex-col items-center py-8 sm:py-16 w-full px-4" style={{ backgroundColor: '#fafafa' }}>
+      <div className="w-full max-w-2xl mx-auto">
+        {/* 顶部标题栏 - 居中，带刷新按钮 */}
+        <div className="mb-10 flex items-center justify-center gap-4" style={{ marginTop: '24px', marginBottom: '24px' }}>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            My Letters
+          </h1>
+          <button
+            onClick={() => checkAuthAndLoadLetters(true)}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            title="刷新"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M23 4v6h-6"></path>
+              <path d="M1 20v-6h6"></path>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+          </button>
+        </div>
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-40">
@@ -553,14 +554,7 @@ function HistoryContent() {
                             </button>
                           </div>
                           
-                          {/* H5 Only: 3 buttons in one row */}
                           <div className="mobile-only-flex flex-row items-center gap-2 mt-2">
-                            <Link
-                              href={`/letter/${letter.link_id}`}
-                              style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#f0f0f0', color: '#666', textDecoration: 'none' }}
-                            >
-                              View
-                            </Link>
                             <button
                               onClick={() => setPreviewLetter(letter)}
                               style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#22c55e', color: '#fff', border: 'none' }}
@@ -623,10 +617,13 @@ function HistoryContent() {
         </div>
       )}
 
-      {/* 底部装饰 */}
-      <div className="mt-20 py-10 text-center opacity-10">
-        <p className="text-[9px] font-black text-gray-900 uppercase tracking-[0.6em]">Flowith Music</p>
+        {/* 底部装饰 */}
+        <div className="mt-20 py-10 text-center opacity-10">
+          <p className="text-[9px] font-black text-gray-900 uppercase tracking-[0.6em]">Flowith Music</p>
+        </div>
       </div>
+
+      {/* Preview Overlay 和 Payment Modal 保持在容器外以避免受max-width限制影响 */}
 
       {/* Preview Overlay - 5秒自动消失 */}
       {previewLetter && previewLetter.animation_config?.emojis && (
@@ -872,7 +869,7 @@ function HistoryContent() {
 
 export default function HistoryPage() {
   return (
-    <main className="min-h-screen px-4">
+    <main className="min-h-screen">
       <Header currentPage="history" />
       <Suspense fallback={
         <div className="flex flex-col items-center justify-center py-40">

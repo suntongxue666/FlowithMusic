@@ -214,10 +214,10 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   return (
     <main className="min-h-screen" style={{ backgroundColor: '#fafafa' }}>
       <Header />
-      <div className="flex flex-col items-center py-8 sm:py-16 px-4">
+      <div className="flex flex-col items-center py-8 sm:py-16 w-full px-4">
 
         {/* --- Profile Header --- */}
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-2xl mx-auto">
           <div
             className="mb-6 mt-6 flex flex-col items-center justify-center text-gray-900 relative w-full"
             style={{ minHeight: '200px' }}
@@ -429,14 +429,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                                   >
                                     🔐 Unlock
                                   </button>
-                                ) : (
-                                  <Link
-                                    href={`/letter/${letter.link_id}`}
-                                    style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#f0f0f0', color: '#666', textDecoration: 'none' }}
-                                  >
-                                    View
-                                  </Link>
-                                )}
+                                ) : null}
                                 {isSelf && (
                                   <button
                                     onClick={() => handleCopyLink(letter.link_id)}
@@ -512,12 +505,6 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                                 >
                                   👁 Prev
                                 </button>
-                                <Link
-                                  href={`/letter/${letter.link_id}`}
-                                  style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#f0f0f0', color: '#666', textDecoration: 'none' }}
-                                >
-                                  View
-                                </Link>
                                 {isSelf && (
                                   <button
                                     onClick={() => handleCopyFlowingLink(letter.link_id)}
@@ -571,22 +558,16 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                             </div>
 
                             {/* Mobile buttons */}
-                            <div className="mobile-only-flex flex-row items-center gap-2 mt-2">
-                              <Link
-                                href={`/letter/${letter.link_id}`}
-                                style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#f0f0f0', color: '#666', textDecoration: 'none' }}
-                              >
-                                View
-                              </Link>
-                              {isSelf && (
+                            {isSelf && (
+                              <div className="mobile-only-flex flex-row items-center gap-2 mt-2">
                                 <button
                                   onClick={() => handleCopyLink(letter.link_id)}
                                   style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: copyStatus === letter.link_id ? '#22c55e' : '#333', color: '#fff', border: 'none' }}
                                 >
                                   {copyStatus === letter.link_id ? 'Copied' : 'Copy 🔗'}
                                 </button>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
                         )
                       })()}
