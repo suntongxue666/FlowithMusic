@@ -122,14 +122,12 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
         console.log('🎵 Apple Music found:', result.trackName)
         setAppleTrack(result)
       } else {
-        // Apple Music 搜索无结果，fallback 到 Spotify
-        console.log('🎵 Apple Music not found, falling back to Spotify')
-        setIsChinaDetails({ isChina: false, checked: true })
+        console.log('🎵 Apple Music not found, showing error fallback for China')
+        setFallbackError('Apple Music search failed for this track.')
       }
     } catch (e) {
-      // Apple Music 搜索失败，fallback 到 Spotify
-      console.error('🎵 Apple Music fetch error, falling back to Spotify:', e)
-      setIsChinaDetails({ isChina: false, checked: true })
+      console.error('🎵 Apple Music fetch error, showing error fallback for China:', e)
+      setFallbackError('Apple Music connection failed.')
     }
   }
 
