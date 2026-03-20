@@ -16,6 +16,13 @@ export default function Hero() {
         </Link>
       </div>
 
+      {/* Ko-fi Button - H5 Only */}
+      <div className="mobile-only" style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+        <a href='https://ko-fi.com/U7U01GL6A8' target='_blank' rel='noopener noreferrer'>
+          <img height='36' style={{ border: '0px', height: '36px' }} src='https://storage.ko-fi.com/cdn/kofi3.png?v=6' alt='Buy Me a Coffee at ko-fi.com' />
+        </a>
+      </div>
+
       {/* H5端分类快速入口 */}
       <div className="h5-categories mobile-only" style={{ justifyContent: 'center', gap: '10px', marginTop: '20px', flexWrap: 'wrap' }}>
         {[

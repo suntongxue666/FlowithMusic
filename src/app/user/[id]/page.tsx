@@ -214,15 +214,15 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   return (
     <main className="min-h-screen" style={{ backgroundColor: '#fafafa' }}>
       <Header />
-      <div className="flex flex-col items-center py-8 sm:py-16 px-3">
-        
+      <div className="flex flex-col items-center py-8 sm:py-16 px-4">
+
         {/* --- Profile Header --- */}
         <div className="w-full max-w-2xl">
-          <div 
+          <div
             className="mb-6 mt-6 flex flex-col items-center justify-center text-gray-900 relative w-full"
             style={{ minHeight: '200px' }}
           >
-            
+
             {/* Avatar */}
             <div className="w-20 h-20 rounded-full overflow-hidden mb-[12px] border-2 border-gray-100 flex items-center justify-center bg-gray-50">
               {targetUser.avatar_url ? (
@@ -233,10 +233,10 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                 </span>
               )}
             </div>
-            
+
             {/* Info */}
             <h1 className="text-2xl font-bold mb-[12px]">{targetUser.display_name || 'User'}</h1>
-            
+
             {isSelf && (
                 <div className="flex flex-row items-center justify-center gap-3" style={{ marginTop: '24px' }}>
                   {(targetUser.is_premium || targetUser.is_admin || targetUser.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981') ? (
@@ -244,16 +244,16 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                       👑 Premium
                     </div>
                   ) : (
-                    <Link 
-                      href="/premium" 
+                    <Link
+                      href="/premium"
                       className="text-[12px] font-bold text-white bg-[#ff9800] rounded-full hover:scale-105 transition-transform flex items-center justify-center"
                       style={{ padding: '8px 20px', minWidth: '100px', height: '36px' }}
                     >
                       👑 Premium
                     </Link>
                   )}
-                  
-                  <button 
+
+                  <button
                     onClick={handleSignOut}
                     className="bg-black text-white hover:bg-gray-800 rounded-full text-[12px] font-bold transition-all hover:scale-105 active:scale-95 flex items-center justify-center"
                     style={{ padding: '8px 20px', minWidth: '100px', height: '36px' }}
@@ -270,7 +270,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
           <h2 className="text-xl font-bold text-gray-900 self-start w-full" style={{ marginTop: '12px', marginBottom: '12px' }}>
             {isSelf ? 'My Letters' : `${targetUser.display_name}'s Letters`}
           </h2>
-          
+
           {letters.length === 0 ? (
             <div className="text-center bg-white rounded-2xl border border-gray-100 shadow-sm py-16 w-full">
               <div className="text-5xl grayscale opacity-20 mb-4">📭</div>
@@ -294,13 +294,15 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                   style={{ padding: '16px' }}
                 >
                   <div className="flex flex-row items-center">
-                    {/* 封面图片 */}
-                    <div
+                    {/* 封面图片 - 可点击跳转 */}
+                    <Link
+                      href={`/letter/${letter.link_id}`}
                       className="flex-shrink-0 overflow-hidden"
                       style={{
                         width: '60px',
                         height: '60px',
-                        borderRadius: '8px'
+                        borderRadius: '8px',
+                        display: 'block'
                       }}
                     >
                       <img
@@ -308,10 +310,14 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                         alt={letter.song_title}
                         className="w-full h-full object-cover"
                       />
-                    </div>
+                    </Link>
 
-                    {/* 内容区域 */}
-                    <div className="flex-1 min-w-0" style={{ marginLeft: '16px' }}>
+                    {/* 内容区域 - 可点击跳转 */}
+                    <Link
+                      href={`/letter/${letter.link_id}`}
+                      className="flex-1 min-w-0"
+                      style={{ marginLeft: '16px', textDecoration: 'none' }}
+                    >
                       <div style={{ fontSize: '16px', fontWeight: 600, color: '#333' }}>
                         To: {letter.recipient_name}
                       </div>
@@ -327,10 +333,10 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                           minute: '2-digit'
                         })}
                       </div>
-                    </div>
+                    </Link>
 
-                    {/* 操作按钮 (History 逻辑) */}
-                    <div className="flex flex-col items-end gap-2 text-right">
+                    {/* 操作按钮 */}
+                    <div className="flex flex-col items-end gap-2 text-right" style={{ marginLeft: '8px' }}>
                       {(() => {
                         const hasEmojis = letter.animation_config &&
                           Array.isArray(letter.animation_config.emojis) &&
@@ -340,7 +346,8 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                         if (hasEmojis && !isUnlocked) {
                           return (
                             <div className="flex flex-col items-end gap-2">
-                              <div className="flex items-center gap-2">
+                              {/* Desktop buttons */}
+                              <div className="flex flex-col items-end gap-2 hidden-on-mobile">
                                 <Link
                                   href={`/letter/${letter.link_id}`}
                                   style={{
@@ -355,23 +362,23 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                                 >
                                   View
                                 </Link>
-                                <button
-                                  onClick={() => handleCopyLink(letter.link_id)}
-                                  style={{
-                                    padding: '6px 12px',
-                                    fontSize: '14px',
-                                    borderRadius: '6px',
-                                    background: copyStatus === letter.link_id ? '#22c55e' : '#333',
-                                    color: '#fff',
-                                    fontWeight: 500,
-                                    border: 'none',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
-                                </button>
-                              </div>
-                              <div className="flex flex-col items-end gap-2">
+                                {isSelf && (
+                                  <button
+                                    onClick={() => handleCopyLink(letter.link_id)}
+                                    style={{
+                                      padding: '6px 12px',
+                                      fontSize: '14px',
+                                      borderRadius: '6px',
+                                      background: copyStatus === letter.link_id ? '#22c55e' : '#333',
+                                      color: '#fff',
+                                      fontWeight: 500,
+                                      border: 'none',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => setPreviewLetter(letter)}
                                   style={{
@@ -387,22 +394,57 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                                 >
                                   👁 Flowing Emoji
                                 </button>
+                                {isSelf && (
+                                  <button
+                                    onClick={() => handleUnlock(letter)}
+                                    style={{
+                                      padding: '6px 12px',
+                                      fontSize: '14px',
+                                      borderRadius: '6px',
+                                      background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+                                      color: '#fff',
+                                      fontWeight: 500,
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
+                                    }}
+                                  >
+                                    🔐 Unlock Letter
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Mobile buttons */}
+                              <div className="mobile-only-flex flex-row items-center gap-2 mt-2">
                                 <button
-                                  onClick={() => handleUnlock(letter)}
-                                  style={{
-                                    padding: '6px 12px',
-                                    fontSize: '14px',
-                                    borderRadius: '6px',
-                                    background: 'linear-gradient(45deg, #FFD700, #FFA500)',
-                                    color: '#fff',
-                                    fontWeight: 500,
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
-                                  }}
+                                  onClick={() => setPreviewLetter(letter)}
+                                  style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#22c55e', color: '#fff', border: 'none' }}
                                 >
-                                  🔐 Unlock Letter
+                                  👁 Preview
                                 </button>
+                                {isSelf ? (
+                                  <button
+                                    onClick={() => handleUnlock(letter)}
+                                    style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: 'linear-gradient(45deg, #FFD700, #FFA500)', color: '#fff', border: 'none' }}
+                                  >
+                                    🔐 Unlock
+                                  </button>
+                                ) : (
+                                  <Link
+                                    href={`/letter/${letter.link_id}`}
+                                    style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#f0f0f0', color: '#666', textDecoration: 'none' }}
+                                  >
+                                    View
+                                  </Link>
+                                )}
+                                {isSelf && (
+                                  <button
+                                    onClick={() => handleCopyLink(letter.link_id)}
+                                    style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: copyStatus === letter.link_id ? '#22c55e' : '#333', color: '#fff', border: 'none' }}
+                                  >
+                                    {copyStatus === letter.link_id ? 'Copied' : 'Copy 🔗'}
+                                  </button>
+                                )}
                               </div>
                             </div>
                           )
@@ -411,73 +453,140 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                         if (hasEmojis && isUnlocked) {
                           return (
                             <div className="flex flex-col items-end gap-2">
-                              <button
-                                onClick={() => setPreviewLetter(letter)}
-                                style={{
-                                  padding: '6px 12px',
-                                  fontSize: '14px',
-                                  borderRadius: '6px',
-                                  background: '#22c55e',
-                                  color: '#fff',
-                                  fontWeight: 500,
-                                  border: 'none',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                👁 Flowing Emoji
-                              </button>
-                              <button
-                                onClick={() => handleCopyFlowingLink(letter.link_id)}
-                                style={{
-                                  padding: '6px 12px',
-                                  fontSize: '14px',
-                                  borderRadius: '6px',
-                                  background: copyStatus === letter.link_id + '-flowing' ? '#22c55e' : 'linear-gradient(45deg, #FFD700, #FFA500)',
-                                  color: '#fff',
-                                  fontWeight: 500,
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
-                                }}
-                              >
-                                {copyStatus === letter.link_id + '-flowing' ? 'Copied' : 'Copy Link ✨'}
-                              </button>
+                              {/* Desktop buttons */}
+                              <div className="flex flex-col items-end gap-2 hidden-on-mobile">
+                                <Link
+                                  href={`/letter/${letter.link_id}`}
+                                  style={{
+                                    padding: '6px 12px',
+                                    fontSize: '14px',
+                                    borderRadius: '6px',
+                                    background: '#f0f0f0',
+                                    color: '#666',
+                                    fontWeight: 500,
+                                    textDecoration: 'none'
+                                  }}
+                                >
+                                  View
+                                </Link>
+                                <button
+                                  onClick={() => setPreviewLetter(letter)}
+                                  style={{
+                                    padding: '6px 12px',
+                                    fontSize: '14px',
+                                    borderRadius: '6px',
+                                    background: '#22c55e',
+                                    color: '#fff',
+                                    fontWeight: 500,
+                                    border: 'none',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  👁 Flowing Emoji
+                                </button>
+                                {isSelf && (
+                                  <button
+                                    onClick={() => handleCopyFlowingLink(letter.link_id)}
+                                    style={{
+                                      padding: '6px 12px',
+                                      fontSize: '14px',
+                                      borderRadius: '6px',
+                                      background: copyStatus === letter.link_id + '-flowing' ? '#22c55e' : 'linear-gradient(45deg, #FFD700, #FFA500)',
+                                      color: '#fff',
+                                      fontWeight: 500,
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
+                                    }}
+                                  >
+                                    {copyStatus === letter.link_id + '-flowing' ? 'Copied' : 'Copy Link ✨'}
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Mobile buttons */}
+                              <div className="mobile-only-flex flex-row items-center gap-2 mt-2">
+                                <button
+                                  onClick={() => setPreviewLetter(letter)}
+                                  style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#22c55e', color: '#fff', border: 'none' }}
+                                >
+                                  👁 Prev
+                                </button>
+                                <Link
+                                  href={`/letter/${letter.link_id}`}
+                                  style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#f0f0f0', color: '#666', textDecoration: 'none' }}
+                                >
+                                  View
+                                </Link>
+                                {isSelf && (
+                                  <button
+                                    onClick={() => handleCopyFlowingLink(letter.link_id)}
+                                    style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: copyStatus === letter.link_id + '-flowing' ? '#22c55e' : 'linear-gradient(45deg, #FFD700, #FFA500)', color: '#fff', border: 'none' }}
+                                  >
+                                    {copyStatus === letter.link_id + '-flowing' ? 'Copied' : 'Copy 🔗'}
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           )
                         }
 
+                        // Standard mode (no emojis, or for visitors on letters without emojis)
                         return (
-                          <div className="flex items-center gap-2">
-                            <Link
-                              href={`/letter/${letter.link_id}`}
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '14px',
-                                borderRadius: '6px',
-                                background: '#f0f0f0',
-                                color: '#666',
-                                fontWeight: 500,
-                                textDecoration: 'none'
-                              }}
-                            >
-                              View
-                            </Link>
-                            <button
-                              onClick={() => handleCopyLink(letter.link_id)}
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '14px',
-                                borderRadius: '6px',
-                                background: copyStatus === letter.link_id ? '#22c55e' : (isUnlocked ? 'linear-gradient(45deg, #FFD700, #FFA500)' : '#333'),
-                                color: '#fff',
-                                fontWeight: 500,
-                                border: 'none',
-                                cursor: 'pointer',
-                                boxShadow: isUnlocked ? '0 2px 8px rgba(255, 165, 0, 0.3)' : 'none'
-                              }}
-                            >
-                              {copyStatus === letter.link_id ? 'Copied' : (isUnlocked ? 'Copy Link ✨' : 'Copy Link')}
-                            </button>
+                          <div className="flex flex-col items-end gap-2">
+                            {/* Desktop buttons */}
+                            <div className="flex items-center gap-2 hidden-on-mobile">
+                              <Link
+                                href={`/letter/${letter.link_id}`}
+                                className="hidden-on-mobile"
+                                style={{
+                                  padding: '6px 12px',
+                                  fontSize: '14px',
+                                  borderRadius: '6px',
+                                  background: '#f0f0f0',
+                                  color: '#666',
+                                  fontWeight: 500,
+                                  textDecoration: 'none'
+                                }}
+                              >
+                                View
+                              </Link>
+                              {isSelf && (
+                                <button
+                                  onClick={() => handleCopyLink(letter.link_id)}
+                                  style={{
+                                    padding: '6px 12px',
+                                    fontSize: '14px',
+                                    borderRadius: '6px',
+                                    background: copyStatus === letter.link_id ? '#22c55e' : '#333',
+                                    color: '#fff',
+                                    fontWeight: 500,
+                                    border: 'none',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Mobile buttons */}
+                            <div className="mobile-only-flex flex-row items-center gap-2 mt-2">
+                              <Link
+                                href={`/letter/${letter.link_id}`}
+                                style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#f0f0f0', color: '#666', textDecoration: 'none' }}
+                              >
+                                View
+                              </Link>
+                              {isSelf && (
+                                <button
+                                  onClick={() => handleCopyLink(letter.link_id)}
+                                  style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: copyStatus === letter.link_id ? '#22c55e' : '#333', color: '#fff', border: 'none' }}
+                                >
+                                  {copyStatus === letter.link_id ? 'Copied' : 'Copy 🔗'}
+                                </button>
+                              )}
+                            </div>
                           </div>
                         )
                       })()}
@@ -509,7 +618,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             <h3 className="text-2xl font-bold mb-4">✨ Unlock Flowing Emoji</h3>
             <p className="text-gray-500 mb-6">Get the full-screen animation permanently for this letter.</p>
             
-            <div className="bg-gradient-to-br from-[#FF6B6B] to-[#FF8E53] rounded-xl p-4 mb-6 text-white shadow-lg animate-pulse">
+            <div className="bg-gradient-to-br from-[#FF6B6B] to-[#FF8E53] rounded-xl p-4 mb-6 text-white shadow-lg">
               <div className="font-bold text-lg">Limited Offer: $0.99 <span className="text-xs opacity-90 ml-2">⏳ 24h</span></div>
               <div className="text-xs opacity-80 mt-1">SAVE 50% Compared to standard price</div>
             </div>
@@ -540,9 +649,9 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                     })
                   }}
                   onApprove={async (data, actions) => {
-                    if (!actions.order) return Promise.reject("Order not found");
-                    return actions.order.capture().then(async (details) => {
-                      handlePaymentSuccess(paymentLetter);
+                    if (!actions || !actions.order) return Promise.reject("Order not found");
+                    return actions.order.capture().then(async () => {
+                      if (paymentLetter) handlePaymentSuccess(paymentLetter);
                     });
                   }}
                 />
@@ -562,6 +671,15 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
       <style jsx global>{`
         body {
           background-color: #fafafa !important;
+        }
+        @media (max-width: 640px) {
+          .hidden-on-mobile { display: none !important; }
+          .mobile-only-inline { display: inline !important; }
+          .mobile-only-flex { display: flex !important; }
+        }
+        @media (min-width: 641px) {
+          .mobile-only-inline { display: none !important; }
+          .mobile-only-flex { display: none !important; }
         }
       `}</style>
     </main>

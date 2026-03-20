@@ -370,68 +370,63 @@ function HistoryContent() {
           {letters.map((letter) => (
             <div
               key={letter.link_id}
-              className="bg-white rounded-lg shadow-sm border border-gray-100"
-              style={{ padding: '16px', width: '100%', maxWidth: '600px' }}
+              className="bg-white rounded-lg shadow-sm border border-gray-100 w-full max-w-[600px]"
+              style={{ padding: '16px' }}
             >
               <div className="flex flex-row items-center">
-                {/* 按钮左侧的点击区域 */}
-                <div 
-                  className="flex-1 flex flex-row items-center cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => router.push(`/letter/${letter.link_id}`)}
+                {/* 封面图片 - 可点击跳转 */}
+                <Link
+                  href={`/letter/${letter.link_id}`}
+                  className="flex-shrink-0 overflow-hidden"
+                  style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '8px',
+                    display: 'block'
+                  }}
                 >
-                  {/* 封面图片 - 60x60 圆角方形（增大50%） */}
-                  <div
-                    className="flex-shrink-0 overflow-hidden"
-                    style={{
-                      width: '60px',
-                      height: '60px',
-                      borderRadius: '8px'
-                    }}
-                  >
-                    <img
-                      src={letter.song_album_cover}
-                      alt={letter.song_title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                  <img
+                    src={letter.song_album_cover}
+                    alt={letter.song_title}
+                    className="w-full h-full object-cover"
+                  />
+                </Link>
 
-                  {/* 内容区域 - 三行布局，左边距16px */}
-                  <div className="flex-1 min-w-0" style={{ marginLeft: '16px' }}>
-                    {/* 第一行：收件人 */}
-                    <div style={{ fontSize: '16px', fontWeight: 600, color: '#333' }}>
-                      To: {letter.recipient_name}
-                    </div>
-                    {/* 第二行：歌名 - 歌手 */}
-                    <div style={{ fontSize: '14px', color: '#555', marginTop: '4px' }} className="truncate">
-                      {letter.song_title} - {letter.song_artist}
-                    </div>
-                    {/* 第三行：时间 */}
-                    <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
-                      {new Date(letter.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </div>
+                {/* 内容区域 - 可点击跳转 */}
+                <Link
+                  href={`/letter/${letter.link_id}`}
+                  className="flex-1 min-w-0"
+                  style={{ marginLeft: '16px', textDecoration: 'none' }}
+                >
+                  <div style={{ fontSize: '16px', fontWeight: 600, color: '#333' }}>
+                    To: {letter.recipient_name}
                   </div>
-                </div>
+                  <div style={{ fontSize: '14px', color: '#555', marginTop: '4px' }} className="truncate">
+                    {letter.song_title} - {letter.song_artist}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                    {new Date(letter.created_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                </Link>
 
-                {/* 操作按钮 - 右侧对齐 */}
-                <div className="flex flex-col items-end gap-2" style={{ marginRight: '0' }}>
+                {/* 操作按钮 */}
+                <div className="flex flex-col items-end gap-2 text-right" style={{ marginLeft: '8px' }}>
                   {(() => {
                     const hasEmojis = letter.animation_config &&
                       Array.isArray(letter.animation_config.emojis) &&
                       letter.animation_config.emojis.length > 0;
                     const isUnlocked = letter.effect_type === 'flowing_emoji';
 
-                    // 如果有 Emoji 且未解锁：两行布局
                     if (hasEmojis && !isUnlocked) {
                       return (
-                        <div className="flex flex-col items-end gap-2 text-right">
-                          {/* 第一行：View + Copy Link (之前的按钮在一行) */}
-                          <div className="flex items-center gap-2">
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="flex items-center gap-2 hidden-on-mobile">
                             <Link
                               href={`/letter/${letter.link_id}`}
                               style={{
@@ -462,16 +457,14 @@ function HistoryContent() {
                               {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
                             </button>
                           </div>
-
-                          {/* 第二行：Preview + Unlock (新增的按钮在一行) */}
-                          <div className="flex flex-col items-end gap-2">
+                          <div className="flex flex-col items-end gap-2 hidden-on-mobile">
                             <button
                               onClick={() => setPreviewLetter(letter)}
                               style={{
                                 padding: '6px 12px',
                                 fontSize: '14px',
                                 borderRadius: '6px',
-                                background: '#22c55e', // 绿色
+                                background: '#22c55e',
                                 color: '#fff',
                                 fontWeight: 500,
                                 border: 'none',
@@ -486,7 +479,7 @@ function HistoryContent() {
                                 padding: '6px 12px',
                                 fontSize: '14px',
                                 borderRadius: '6px',
-                                background: 'linear-gradient(45deg, #FFD700, #FFA500)', // 金色渐变
+                                background: 'linear-gradient(45deg, #FFD700, #FFA500)',
                                 color: '#fff',
                                 fontWeight: 500,
                                 border: 'none',
@@ -497,54 +490,100 @@ function HistoryContent() {
                               🔐 Unlock Letter
                             </button>
                           </div>
+                          
+                          {/* H5 Only: 3 buttons in one row */}
+                          <div className="mobile-only-flex flex-row items-center gap-2 mt-2">
+                            <button
+                              onClick={() => setPreviewLetter(letter)}
+                              style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#22c55e', color: '#fff', border: 'none' }}
+                            >
+                              👁 Preview
+                            </button>
+                            <button
+                              onClick={() => handleUnlock(letter)}
+                              style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: 'linear-gradient(45deg, #FFD700, #FFA500)', color: '#fff', border: 'none' }}
+                            >
+                              🔐 Unlock
+                            </button>
+                            <button
+                              onClick={() => handleCopyLink(letter.link_id)}
+                              style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: copyStatus === letter.link_id ? '#22c55e' : '#333', color: '#fff', border: 'none' }}
+                            >
+                              {copyStatus === letter.link_id ? 'Copied' : 'Copy 🔗'}
+                            </button>
+                          </div>
                         </div>
                       )
                     }
 
-                    // 已解锁：只显示 Preview + 金色 Copy Link
                     if (hasEmojis && isUnlocked) {
                       return (
-                        <div className="flex flex-col items-end gap-2 text-right">
-                          <button
-                            onClick={() => setPreviewLetter(letter)}
-                            style={{
-                              padding: '6px 12px',
-                              fontSize: '14px',
-                              borderRadius: '6px',
-                              background: '#22c55e',
-                              color: '#fff',
-                              fontWeight: 500,
-                              border: 'none',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            👁 Flowing Emoji
-                          </button>
-                          <button
-                            onClick={() => handleCopyFlowingLink(letter.link_id)}
-                            style={{
-                              padding: '6px 12px',
-                              fontSize: '14px',
-                              borderRadius: '6px',
-                              background: copyStatus === letter.link_id + '-flowing' ? '#22c55e' : 'linear-gradient(45deg, #FFD700, #FFA500)',
-                              color: '#fff',
-                              fontWeight: 500,
-                              border: 'none',
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
-                            }}
-                          >
-                            {copyStatus === letter.link_id + '-flowing' ? 'Copied' : 'Copy Link ✨'}
-                          </button>
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="flex flex-col items-end gap-2 hidden-on-mobile">
+                            <button
+                              onClick={() => setPreviewLetter(letter)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '14px',
+                                borderRadius: '6px',
+                                background: '#22c55e',
+                                color: '#fff',
+                                fontWeight: 500,
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              👁 Flowing Emoji
+                            </button>
+                            <button
+                              onClick={() => handleCopyFlowingLink(letter.link_id)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '14px',
+                                borderRadius: '6px',
+                                background: copyStatus === letter.link_id + '-flowing' ? '#22c55e' : 'linear-gradient(45deg, #FFD700, #FFA500)',
+                                color: '#fff',
+                                fontWeight: 500,
+                                border: 'none',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
+                              }}
+                            >
+                              {copyStatus === letter.link_id + '-flowing' ? 'Copied' : 'Copy Link ✨'}
+                            </button>
+                          </div>
+                          
+                          {/* H5 Only: 3 buttons in one row */}
+                          <div className="mobile-only-flex flex-row items-center gap-2 mt-2">
+                            <Link
+                              href={`/letter/${letter.link_id}`}
+                              style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#f0f0f0', color: '#666', textDecoration: 'none' }}
+                            >
+                              View
+                            </Link>
+                            <button
+                              onClick={() => setPreviewLetter(letter)}
+                              style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#22c55e', color: '#fff', border: 'none' }}
+                            >
+                              👁 Prev
+                            </button>
+                            <button
+                              onClick={() => handleCopyFlowingLink(letter.link_id)}
+                              style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: copyStatus === letter.link_id + '-flowing' ? '#22c55e' : 'linear-gradient(45deg, #FFD700, #FFA500)', color: '#fff', border: 'none' }}
+                            >
+                              {copyStatus === letter.link_id + '-flowing' ? 'Copied' : 'Copy 🔗'}
+                            </button>
+                          </div>
                         </div>
                       )
                     }
 
-                    // 标准模式（无Emoji）
+                    // 标准模式
                     return (
                       <div className="flex items-center gap-2">
                         <Link
                           href={`/letter/${letter.link_id}`}
+                          className="hidden-on-mobile"
                           style={{
                             padding: '6px 12px',
                             fontSize: '14px',
@@ -563,7 +602,7 @@ function HistoryContent() {
                             padding: '6px 12px',
                             fontSize: '14px',
                             borderRadius: '6px',
-                            background: copyStatus === letter.link_id ? '#22c55e' : (isUnlocked ? 'linear-gradient(45deg, #FFD700, #FFA500)' : '#333'), // 金色 if unlocked
+                            background: copyStatus === letter.link_id ? '#22c55e' : (isUnlocked ? 'linear-gradient(45deg, #FFD700, #FFA500)' : '#333'),
                             color: '#fff',
                             fontWeight: 500,
                             border: 'none',
@@ -571,7 +610,7 @@ function HistoryContent() {
                             boxShadow: isUnlocked ? '0 2px 8px rgba(255, 165, 0, 0.3)' : 'none'
                           }}
                         >
-                          {copyStatus === letter.link_id ? 'Copied' : (isUnlocked ? 'Copy Link ✨' : 'Copy Link')}
+                          {copyStatus === letter.link_id ? 'Copied' : <><span className="hidden-on-mobile">{isUnlocked ? 'Copy Link ✨' : 'Copy Link'}</span><span className="mobile-only-inline">Copy 🔗</span></>}
                         </button>
                       </div>
                     )
@@ -580,6 +619,7 @@ function HistoryContent() {
               </div>
             </div>
           ))}
+
         </div>
       )}
 
@@ -815,6 +855,16 @@ function HistoryContent() {
         .close-payment-btn:hover {
           background: #e0e0e0;
         }
+
+        @media (max-width: 640px) {
+          .hidden-on-mobile { display: none !important; }
+          .mobile-only-inline { display: inline !important; }
+          .mobile-only-flex { display: flex !important; }
+        }
+        @media (min-width: 641px) {
+          .mobile-only-inline { display: none !important; }
+          .mobile-only-flex { display: none !important; }
+        }
       `}</style>
     </div>
   )
@@ -822,7 +872,7 @@ function HistoryContent() {
 
 export default function HistoryPage() {
   return (
-    <main className="min-h-screen px-3">
+    <main className="min-h-screen px-4">
       <Header currentPage="history" />
       <Suspense fallback={
         <div className="flex flex-col items-center justify-center py-40">

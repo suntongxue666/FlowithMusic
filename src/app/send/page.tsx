@@ -394,6 +394,7 @@ function SendContent() {
             className={`submit-btn ${isFormComplete ? 'complete' : ''}`}
             disabled={!isFormComplete || isSubmitting}
             onClick={handleSubmit}
+            style={{ marginBottom: '48px' }}
           >
             {isSubmitting ? 'Sending...' : 'Send'}
           </button>

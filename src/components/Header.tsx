@@ -136,6 +136,11 @@ export default function Header({ currentPage }: HeaderProps) {
               <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
             )}
           </Link>
+
+          {/* Ko-fi Button - Desktop */}
+          <a href='https://ko-fi.com/U7U01GL6A8' target='_blank' rel='noopener noreferrer' style={{ display: 'flex', alignItems: 'center', marginLeft: '4px' }}>
+            <img height='32' style={{ border: '0px', height: '32px' }} src='https://storage.ko-fi.com/cdn/kofi3.png?v=6' alt='Buy Me a Coffee at ko-fi.com' />
+          </a>
           
           {/* 登录状态显示 */}
           <div className="auth-section">

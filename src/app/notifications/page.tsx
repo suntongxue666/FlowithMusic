@@ -95,7 +95,7 @@ export default function NotificationsPage() {
   return (
     <main className="min-h-screen bg-[#fafafa]">
       <Header currentPage="notifications" />
-      <div className="flex flex-col items-center py-8 sm:py-16 px-3">
+      <div className="flex flex-col items-center py-8 sm:py-16 px-4">
         <div className="w-full max-w-2xl">
           
           {/* 顶部标题栏 - 参考History页面 */}
