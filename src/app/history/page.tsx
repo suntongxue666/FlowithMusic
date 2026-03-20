@@ -554,18 +554,24 @@ function HistoryContent() {
                             </button>
                           </div>
                           
-                          <div className="mobile-only-flex flex-row items-center gap-2 mt-2">
+                          <div className="mobile-only-flex flex-col items-end gap-2 mt-2">
                             <button
                               onClick={() => setPreviewLetter(letter)}
-                              style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#22c55e', color: '#fff', border: 'none' }}
+                              style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '6px', background: '#22c55e', color: '#fff', border: 'none' }}
                             >
-                              👁 Prev
+                              👁 Flowing
                             </button>
                             <button
                               onClick={() => handleCopyFlowingLink(letter.link_id)}
-                              style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: copyStatus === letter.link_id + '-flowing' ? '#22c55e' : 'linear-gradient(45deg, #FFD700, #FFA500)', color: '#fff', border: 'none' }}
+                              style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '6px', background: copyStatus === letter.link_id + '-flowing' ? '#22c55e' : 'linear-gradient(45deg, #FFD700, #FFA500)', color: '#fff', border: 'none' }}
                             >
-                              {copyStatus === letter.link_id + '-flowing' ? 'Copied' : 'Copy 🔗'}
+                              {copyStatus === letter.link_id + '-flowing' ? 'Copied' : '🔐 Unlock'}
+                            </button>
+                            <button
+                              onClick={() => handleCopyLink(letter.link_id)}
+                              style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '6px', background: copyStatus === letter.link_id ? '#22c55e' : '#333', color: '#fff', border: 'none' }}
+                            >
+                              {copyStatus === letter.link_id ? 'Copied' : 'Copy 🔗'}
                             </button>
                           </div>
                         </div>
