@@ -39,6 +39,9 @@ function SendContent() {
   const [isDuplicateError, setIsDuplicateError] = useState(false)
   const [showPremiumModal, setShowPremiumModal] = useState(false)
 
+  // 新增：公开/私密状态
+  const [isPublic, setIsPublic] = useState(true)
+
   // 新增：登录弹窗状态
   const [showLoginModal, setShowLoginModal] = useState(false)
 
@@ -105,6 +108,7 @@ function SendContent() {
             setMessage(data.message || '')
             setCategory(data.category || 'Love')
             setSelectedTrack(data.track || null)
+            if (data.isPublic !== undefined) setIsPublic(data.isPublic)
             
             if (isResume && userService.isAuthenticated()) {
               setTimeout(() => {
@@ -141,7 +145,8 @@ function SendContent() {
           recipient,
           message,
           category,
-          track: selectedTrack
+          track: selectedTrack,
+          isPublic
         }))
       }
       await userService.signInWithGoogle()
@@ -254,7 +259,8 @@ function SendContent() {
         },
         animation_config: flowingEmojiEnabled && selectedEmojis.length > 0 ? {
           emojis: selectedEmojis
-        } : undefined
+        } : undefined,
+        is_public: isPublic
       });
 
       if (!newLetter || !newLetter.link_id) {
@@ -332,6 +338,20 @@ function SendContent() {
                 onChange={(e) => setMessage(e.target.value)}
               />
               {showMessageHint && <div className="chinese-hint">抱歉暂不支持中文</div>}
+            </div>
+          </div>
+
+          <div className="form-section">
+            <div className="visibility-header">
+              <span className="visibility-label">This letter is</span>
+              <select 
+                className="visibility-select"
+                value={isPublic ? 'public' : 'private'}
+                onChange={(e) => setIsPublic(e.target.value === 'public')}
+              >
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+              </select>
             </div>
           </div>
 
@@ -625,6 +645,29 @@ function SendContent() {
         .toggle-thumb.enabled { transform: translateX(20px); }
         .selected-preview { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
         .preview-emoji { font-size: 24px; cursor: pointer; }
+        
+        .visibility-header {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 8px 0; margin-bottom: 8px;
+        }
+        .visibility-label {
+          font-size: 16px;
+          font-weight: 500;
+          color: #333;
+        }
+        .visibility-select {
+          padding: 6px 12px;
+          border-radius: 8px;
+          border: 1px solid #e0e0e0;
+          font-size: 14px;
+          background-color: white;
+          color: #333;
+          outline: none;
+          cursor: pointer;
+          -webkit-appearance: auto;
+          -moz-appearance: auto;
+          appearance: auto;
+        }
         
         @media (max-width: 768px) {
           select.form-input {

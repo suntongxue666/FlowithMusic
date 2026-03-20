@@ -17,6 +17,7 @@ export interface CreateLetterData {
     emojis: string[]
   }
   category?: string
+  is_public?: boolean
 }
 
 
@@ -89,7 +90,7 @@ export class LetterService {
       song_preview_url: data.song.previewUrl,
       song_spotify_url: data.song.spotifyUrl,
       song_duration_ms: data.song.duration_ms,
-      is_public: true,
+      is_public: data.is_public ?? true,
       category: data.category
     }
 
