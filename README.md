@@ -1,150 +1,113 @@
-# 🎵 FlowithMusic
+# FlowithMusic 🎵
 
-**Send the song, Connect with Hearts Through Music.**
+A soulful social platform where songs carry your unsaid words. Connect through music, send digital letters with embedded Spotify tracks, and discover the hidden tunes in people's hearts.
 
-FlowithMusic 是一个音乐信件分享平台——选一首歌、写一封信，发送给朋友或任何一个同频的人。
+## 🚀 Architecture & Core Stack
 
-🌐 **Live**: [www.flowithmusic.com](https://www.flowithmusic.com)
+- **Framework**: [Next.js 14+](https://nextjs.org/) (App Router)
+- **Language**: TypeScript
+- **Styling**: Vanilla CSS (globals.css) + Tailwind (Utility fragments)
+- **Backend & Auth**: [Supabase](https://supabase.com/) (PostgreSQL, Authentication)
+- **Music API**: [Spotify Web API](https://developer.spotify.com/documentation/web-api/)
+- **Payments**: [PayPal Checkout SDK](https://developer.paypal.com/docs/checkout/)
+- **Deployment**: Vercel
+
+## 📂 Project Structure
+
+### Core Directories
+- `/src/app`: Production routes and Page components. (Lean & Clean)
+- `/src/components`: Reusable UI elements (Hero, Navbar, Footer, etc.).
+- `/src/lib`: Core service logic (Supabase clients, Letter/User management).
+- `/src/hooks`: Custom React hooks (Auth, Window state).
+- `/src/contexts`: React Context providers (Auth, Theme).
+
+### Core Routes (src/app)
+- `/`: Homepage with Hero and Call-to-actions.
+- `/send`: Letter creation with Spotify search.
+- `/explore`: Public letter feed with category filters.
+- `/history`: Personal letter history and synced records.
+- `/letter/[linkId]`: Individual letter detail view.
+- `/user/[id]`: User profile page.
+- `/premium`: Subscription plans and PayPal integration.
+- `/notifications`: User notification center.
+- `/auth`: Authentication callback handler for Supabase.
+
+### Key Features
+- **Send Letter**: Select a Spotify track, add a message, and choice an optional "Flowing Emoji" animation.
+- **Explore**: Search and filter public letters by category (Love, Friendship, Family).
+- **History/My Letters**: Manage your sent letters and synced guest letters.
+- **Premium Access**: Subscription-based benefits (No ads, Flowing Emoji unlock, Unlimited Sends).
+- **User Identity**: Seamless transition from Guest (Anonymous ID) to Registered User (Supabase Auth).
+
+## 🛠 Features Status & User Identity
+The project currently manages user identity through a dual-layer system:
+1. **Anonymous Mode**: Tracks guest users via persistent local IDs.
+2. **Authenticated Mode**: Syncs local history to Supabase once logged in.
+3. **Premium Logic**: Managed via `is_premium` / `is_admin` flags in the `users` table.
 
 ---
 
-## ✨ 核心功能
+## 🧹 Maintenance & Technical Debt
+(Reference `ARCH_CLEANUP_PLAN.md` for detailed roadmap)
 
-| 功能 | 说明 |
-|------|------|
-| 📝 **发送 Letter** | 填写收件人、写信、通过 Spotify 搜索并选择一首歌，生成唯一链接 |
-| 👀 **查看 Letter** | 匿名访问链接即可查看信件内容 + 音乐播放器 + Emoji 互动 |
-| 🔍 **Explore** | 瀑布流浏览所有公开 Letters，支持关键词搜索 |
-| 🏠 **首页推荐** | 最近 Letters 轮播 + 按歌手分类的 Artist Tag 推荐 |
-| 📊 **发送历史** | 登录后查看个人发送的所有 Letters |
-| 📱 **H5 适配** | 移动端独立布局适配 |
-| 🔗 **分享** | 每封 Letter 生成可分享的独立链接 + QR Code |
+Many `debug-*` and `test-*` routes in `/src/app` are legacy diagnostic tools and can be safely removed to clean up the navigation tree once the core features are validated.
 
-## 🛠 技术栈
+## 📜 License
+© 2026 FlowithMusic. All rights reserved.
 
-| 技术 | 用途 |
-|------|------|
-| **Next.js 15** | React 全栈框架（App Router） |
-| **TypeScript** | 类型安全 |
-| **Supabase** | PostgreSQL 数据库 + Auth（Google OAuth） |
-| **Spotify Web API** | 歌曲搜索 + 播放预览 |
-| **Tailwind CSS 4** | 样式（部分页面使用原生 CSS） |
-| **Vercel** | 部署平台 |
-| **Google Analytics** | 流量分析 |
+---
+
+# FlowithMusic (中文版) 🎵
+
+一个富有灵魂的社交平台，让音乐承载你未曾说出口的话。通过音乐建立连接，发送嵌入 Spotify 轨道的数字信件，发现他人心中隐藏的旋律。
+
+## 🚀 架构与核心技术栈
+
+- **框架**: [Next.js 14+](https://nextjs.org/) (App Router)
+- **语言**: TypeScript
+- **样式**: 原生 CSS (globals.css) + Tailwind (部分功能组件)
+- **后端与鉴权**: [Supabase](https://supabase.com/) (PostgreSQL, Authentication)
+- **音乐 API**: [Spotify Web API](https://developer.spotify.com/documentation/web-api/)
+- **支付**: [PayPal Checkout SDK](https://developer.paypal.com/docs/checkout/)
+- **部署**: Vercel
 
 ## 📂 项目结构
 
-```
-FlowtihMusic/
-├── src/
-│   ├── app/                    # Next.js App Router 页面
-│   │   ├── page.tsx            # 首页
-│   │   ├── layout.tsx          # 全局布局 + SEO Meta
-│   │   ├── globals.css         # 全局样式
-│   │   ├── send/               # 发送 Letter 页面
-│   │   ├── letter/[linkId]/    # 查看单封 Letter
-│   │   ├── explore/            # 探索所有 Letters
-│   │   ├── history/            # 个人发送历史
-│   │   ├── auth/               # OAuth 回调
-│   │   ├── privacy/            # 隐私政策
-│   │   ├── terms/              # 用户协议
-│   │   └── api/                # API Routes
-│   │       ├── letters/        # Letters CRUD + 详情
-│   │       ├── spotify/        # Spotify 搜索 + 推荐
-│   │       ├── home/           # 首页 Feed 数据
-│   │       └── explore/        # Explore 搜索
-│   ├── components/             # React 组件
-│   │   ├── Header.tsx          # 导航栏（含移动端菜单）
-│   │   ├── Hero.tsx            # 首页 Hero 区域
-│   │   ├── MusicCards.tsx      # 音乐卡片列表
-│   │   ├── SongSelector.tsx    # 歌曲搜索选择器
-│   │   ├── ColorfulSpotifyPlayer.tsx  # Letter 详情播放器
-│   │   ├── SpotifyEmbedPlayer.tsx     # Send 页面播放器
-│   │   ├── ArtistLetters.tsx   # 首页歌手分类推荐
-│   │   ├── RecentPostsCarousel.tsx    # 最近 Letters 轮播
-│   │   ├── ExploreCards.tsx    # Explore 卡片列表
-│   │   ├── LetterInteractions.tsx     # Letter 互动组件
-│   │   ├── ShareModal.tsx      # 分享弹窗 + QR Code
-│   │   ├── UserProfileModal.tsx       # 用户资料弹窗
-│   │   └── Footer.tsx          # 页脚
-│   ├── lib/                    # 核心服务
-│   │   ├── supabase.ts         # Supabase 客户端 + 类型定义
-│   │   ├── spotify.ts          # Spotify API 服务
-│   │   ├── letterService.ts    # Letter CRUD 业务逻辑
-│   │   ├── userService.ts      # 用户管理 + Auth 逻辑
-│   │   └── ...                 # 其他辅助服务
-│   ├── contexts/
-│   │   └── UserContext.tsx      # 用户状态 Context
-│   └── hooks/
-│       └── useUserState.ts      # 用户状态 Hook
-├── supabase/
-│   └── schema.sql              # 数据库 Schema
-├── next.config.js
-├── tailwind.config.js
-├── tsconfig.json
-└── package.json
-```
+### 核心目录
+- `/src/app`: 生产路由与页面组件（已精简）。
+- `/src/components`: 可复用的 UI 元素（Hero, Navbar, Footer 等）。
+- `/src/lib`: 核心逻辑服务（Supabase 客户端、信件/用户管理）。
+- `/src/hooks`: 自定义 React Hooks (鉴权、窗口状态等)。
+- `/src/contexts`: React Context 提供者 (鉴权、主题等)。
 
-## 🚀 快速开始
+### 核心路由 (src/app)
+- `/`: 带有 Hero 区域和功能入口的首页。
+- `/send`: 带有 Spotify 搜索功能的信件创建页。
+- `/explore`: 公开信件流，支持分类过滤。
+- `/history`: 个人信件历史与同步记录页。
+- `/letter/[linkId]`: 单封信件的详情展示页。
+- `/user/[id]`: 用户个人资料页。
+- `/premium`: 会员订阅方案与 PayPal 支付集成页。
+- `/notifications`: 用户通知中心。
+- `/auth`: Supabase 登录与鉴权回调处理。
 
-### 前置要求
+### 关键功能
+- **发送信件 (Send)**: 选择 Spotify 轨道，添加消息，并可选添加 “Flowing Emoji” 动画。
+- **搜索探索 (Explore)**: 按分类（Love, Friendship, Family）搜索并过滤公开信件。
+- **历史记录 (History)**: 管理已发送的信件及已同步的游客信件。
+- **高级特权 (Premium)**: 订阅制权益（免广告、解锁 Flowing Emoji、无限发送）。
+- **用户识别**: 实现从游客（匿名 ID）到注册用户（Supabase Auth）的平滑过渡。
 
-- Node.js 18+
-- npm 或 yarn
-- Supabase 项目（已配置）
-- Spotify Developer Account
+## 🛠 功能状态与用户识别
+本项目目前通过双层系统管理用户身份：
+1. **匿名模式**: 通过持久化局部 ID 跟踪游客。
+2. **鉴权模式**: 登录后将本地历史记录同步至 Supabase。
+3. **会员逻辑**: 通过 `users` 表中的 `is_premium` / `is_admin` 字段进行权限控制。
 
-### 安装
+## 🧹 维护与清理
+(详情请参考 `ARCH_CLEANUP_PLAN.md` 了解优化路线图)
 
-```bash
-git clone <repo-url>
-cd FlowtihMusic
-npm install
-```
+`/src/app` 中存在的大量 `debug-*` 和 `test-*` 路由是开发阶段留下的诊断工具。在核心功能验证完成后，建议清理这些目录以保持项目整洁。
 
-### 环境变量
-
-创建 `.env.local` 文件：
-
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-
-# Spotify
-SPOTIFY_CLIENT_ID=ab969f52c02e4bb4b1e23d68437fe4cd
-SPOTIFY_CLIENT_SECRET=35efa8d5e10d46de83c4b29faf5006b9
-
-# Google OAuth (配置在 Supabase Dashboard)
-```
-
-### 开发
-
-```bash
-npm run dev
-```
-
-访问 [http://localhost:3000](http://localhost:3000)
-
-### 构建
-
-```bash
-npm run build
-npm run start
-```
-
-## 📊 数据库结构
-
-核心表：
-
-| 表名 | 说明 |
-|------|------|
-| `users` | 用户信息（Google OAuth + 匿名用户） |
-| `letters` | 音乐信件 |
-| `letter_views` | 浏览记录 |
-| `letter_interactions` | Emoji 互动记录 |
-| `anonymous_sessions` | 匿名会话 |
-
-## 📄 License
-
-ISC
+## 📜 许可证
+© 2026 FlowithMusic. 版权所有。
