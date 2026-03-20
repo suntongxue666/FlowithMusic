@@ -399,8 +399,22 @@ function HistoryContent() {
                   className="flex-1 min-w-0"
                   style={{ marginLeft: '16px', textDecoration: 'none' }}
                 >
-                  <div style={{ fontSize: '16px', fontWeight: 600, color: '#333' }}>
-                    To: {letter.recipient_name}
+                  <div style={{ fontSize: '16px', fontWeight: 600, color: '#333', display: 'flex', alignItems: 'center' }}>
+                    <span className="truncate">To: {letter.recipient_name}</span>
+                    {letter.is_public === false && (
+                      <span style={{ 
+                        marginLeft: '8px', 
+                        padding: '2px', 
+                        backgroundColor: '#e5e7eb', 
+                        color: '#000', 
+                        fontSize: '10px', 
+                        borderRadius: '4px', 
+                        lineHeight: 1,
+                        whiteSpace: 'nowrap'
+                      }}>
+                        Private
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '14px', color: '#555', marginTop: '4px' }} className="truncate">
                     {letter.song_title} - {letter.song_artist}
