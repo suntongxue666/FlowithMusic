@@ -30,13 +30,14 @@ export async function GET(request: Request) {
     const sortBy = (searchParams.get('sortBy') || 'created_at') as 'created_at' | 'view_count'
     const category = searchParams.get('category') || undefined
     const format = searchParams.get('format') // camelCase 或默认
+    const includePrivate = searchParams.get('includePrivate') === 'true'
 
     let fetchedLetters: Letter[] = []
 
     if (searchQuery) {
-      fetchedLetters = await letterService.searchLetters(searchQuery, limit, offset)
+      fetchedLetters = await letterService.searchLetters(searchQuery, limit, offset, includePrivate)
     } else {
-      fetchedLetters = await letterService.getPublicLetters(limit, offset, sortBy, { category })
+      fetchedLetters = await letterService.getPublicLetters(limit, offset, sortBy, { category, includePrivate })
     }
 
     console.log(`🌐 API Explore: Fetched ${fetchedLetters.length} letters. Query: "${searchQuery}"`)
