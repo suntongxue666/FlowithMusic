@@ -78,10 +78,8 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
           setIsChinaDetails({ isChina: false, checked: true })
         }
       } catch (e) {
-        // 超时或失败时，检查缓存和时区作为 fallback
-        console.log('⏱️ Detection timeout or failed, checking fallback...')
-
-        // 检查缓存
+        // 超时或失败时，优先检查缓存
+        console.log('⏱️ Detection failed, checking cache...')
         try {
           const cached = localStorage.getItem('flowithmusic_china_detection')
           if (cached) {
@@ -94,30 +92,11 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
               return
             }
           }
-        } catch (e) {
+        } catch (err) {
           // ignore
         }
 
-        // 检查时区
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-        const chinaTimezones = ['Asia/Shanghai', 'Asia/Chongqing', 'Asia/Harbin', 'Asia/Urumqi', 'Asia/Beijing']
-        if (chinaTimezones.includes(timezone)) {
-          console.log('📍 Fallback: China timezone detected')
-          setIsChinaDetails({ isChina: true, checked: true })
-          fetchAppleMusicFallback(true)
-          return
-        }
-
-        // 检查浏览器语言
-        const lang = navigator.language || ''
-        if (lang.toLowerCase().startsWith('zh') && !lang.toLowerCase().includes('hk') && !lang.toLowerCase().includes('tw')) {
-          console.log('📍 Fallback: Chinese browser language detected')
-          setIsChinaDetails({ isChina: true, checked: true })
-          fetchAppleMusicFallback(true)
-          return
-        }
-
-        console.log('🌐 Fallback: Defaulting to global (Spotify)')
+        console.log('🌐 Defaulting to global (Spotify)')
         setIsChinaDetails({ isChina: false, checked: true })
       }
     }
@@ -172,6 +151,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   }, [isPlaying])
 
   const formatTime = (ms: number) => {
+    if (!ms || isNaN(ms)) return '0:00'
     const totalSeconds = Math.floor(ms / 1000)
     const minutes = Math.floor(totalSeconds / 60)
     const seconds = totalSeconds % 60
