@@ -17,7 +17,7 @@ export default function Hero() {
       </div>
 
       {/* H5 Buttons: Premium & Ko-fi */}
-      <div className="mobile-only" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
+      <div className="mobile-only-flex" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
         <Link 
           href="/premium" 
           className="text-[12px] font-bold text-white bg-[#ff9800] rounded-full hover:scale-105 transition-transform flex items-center justify-center"

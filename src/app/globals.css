@@ -36,11 +36,11 @@ body {
   }
   
   .mobile-only {
-    display: block !important;
+    display: block;
   }
 
   .mobile-only-flex {
-    display: flex !important;
+    display: flex;
   }
 }
 
