@@ -28,10 +28,28 @@ body {
 
   header {
     padding: 0.75rem 1rem;
-    /* H5端减少header内边距 */
     position: relative;
-    /* H5端header不固定 */
   }
+
+  .hidden-on-mobile {
+    display: none !important;
+  }
+  
+  .mobile-only {
+    display: block !important;
+  }
+
+  .mobile-only-flex {
+    display: flex !important;
+  }
+}
+
+.hidden-on-mobile {
+  display: block;
+}
+
+.mobile-only, .mobile-only-flex {
+  display: none !important;
 }
 
 /* Header Styles */

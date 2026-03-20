@@ -103,9 +103,9 @@ export default function PremiumPage() {
         
         <div className="premium-hero">
           <div className="container mx-auto px-4 py-20 flex flex-col items-center">
-            <div className="badge mt-12 mb-6">👑 PREMIUM ACCESS</div>
+            <div className="badge mt-18 mb-12">👑 PREMIUM ACCESS</div>
             <h1 className="hero-title mb-6">Unlock Your Full Experience</h1>
-            <p className="hero-subtitle mb-12 max-w-2xl">
+            <p className="hero-subtitle mb-12 max-w-2xl px-4">
               Support FlowithMusic and enjoy unlimited networking, deep interactions, and an ad-free creative space.
             </p>
 
@@ -359,6 +359,14 @@ export default function PremiumPage() {
             .hero-title {
               font-size: 36px;
               margin-bottom: 1rem;
+            }
+            .hero-subtitle {
+              font-size: 18px !important;
+              padding: 0 1rem;
+            }
+            .badge {
+              margin-top: 1.5rem !important;
+              margin-bottom: 1.5rem !important;
             }
           }
         `}</style>

@@ -240,7 +240,10 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             {isSelf && (
                 <div className="flex flex-row items-center justify-center gap-3" style={{ marginTop: '24px' }}>
                   {(targetUser.is_premium || targetUser.is_admin || targetUser.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981') ? (
-                    <div className="text-[11px] font-bold text-yellow-500 bg-yellow-50 rounded-full border border-yellow-100" style={{ padding: '6px 12px' }}>
+                    <div 
+                      className="text-[12px] font-bold text-white bg-[#ff9800] rounded-full flex items-center justify-center shadow-sm"
+                      style={{ padding: '8px 20px', minWidth: '100px', height: '36px' }}
+                    >
                       👑 Premium
                     </div>
                   ) : (
