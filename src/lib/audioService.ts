@@ -106,15 +106,9 @@ export async function checkIsChinaIP(): Promise<boolean> {
             return cached.isChina
         }
 
-        // 1.5 快速本地检查 (时区和语言) - 解决中国大陆访问外部API超时的问题
-        if (checkTimezone() || checkBrowserLanguage()) {
-            console.log('🌍 [Detection] ✅ Fast local check confirmed China IP')
-            saveCache(true)
-            return true
-        }
-
         // 2. IP API 检测 - 只依赖 IP API
         const reliableApis = [
+            'https://api.country.is/',
             'https://api.ipgeolocation.io/ipgeo?apiKey=free',
             'https://ipapi.co/json/'
         ]
