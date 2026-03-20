@@ -29,7 +29,7 @@ export default function ExplorePage() {
         </div>
 
         <div className="search-container flex justify-center w-full px-4">
-          <div className="search-box w-full max-w-[336px] mx-auto">
+          <div className="search-box w-full max-w-[336px] mx-auto flex flex-col sm:flex-row gap-4 sm:gap-0">
             <input
               type="text"
               className="search-input"

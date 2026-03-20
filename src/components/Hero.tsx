@@ -23,7 +23,7 @@ export default function Hero() {
           className="text-[12px] font-bold text-white bg-[#ff9800] rounded-full hover:scale-105 transition-transform flex items-center justify-center"
           style={{ padding: '8px 16px', minWidth: '100px', height: '36px', textDecoration: 'none' }}
         >
-          👑 Premium
+          👑 Premium-No ads
         </Link>
         <a href='https://ko-fi.com/U7U01GL6A8' target='_blank' rel='noopener noreferrer' style={{ height: '36px', display: 'flex', alignItems: 'center' }}>
           <img height='36' style={{ border: '0px', height: '36px', verticalAlign: 'middle' }} src='https://storage.ko-fi.com/cdn/kofi3.png?v=6' alt='Buy Me a Coffee at ko-fi.com' />

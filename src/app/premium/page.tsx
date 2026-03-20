@@ -188,12 +188,14 @@ export default function PremiumPage() {
           }
 
           .hero-title {
+            font-family: 'Caveat', cursive;
             font-size: 52px;
-            font-weight: 850;
+            font-weight: 500;
             color: #000;
             letter-spacing: -2px;
             text-align: center;
             line-height: 1.1;
+            margin-bottom: 0.5rem;
           }
 
           .hero-subtitle {
@@ -201,6 +203,10 @@ export default function PremiumPage() {
             color: #666;
             text-align: center;
             line-height: 1.5;
+            margin-bottom: 2rem;
+            max-width: 32rem;
+            margin-left: auto;
+            margin-right: auto;
           }
 
           .pricing-grid {
@@ -212,13 +218,17 @@ export default function PremiumPage() {
             gap: 32px;
             width: 100%;
             margin-top: 20px;
-            padding-bottom: 48px; /* 底部 48 像素空白 */
+            padding-bottom: 48px;
+            padding-left: 1rem;
+            padding-right: 1rem;
           }
 
           @media (max-width: 880px) {
             .pricing-grid {
               flex-direction: column;
               align-items: center;
+              padding-left: 0;
+              padding-right: 0;
             }
           }
 
@@ -230,7 +240,7 @@ export default function PremiumPage() {
             display: flex;
             flex-direction: column;
             width: 100%;
-            max-width: 420px; /* 宽度约为之前 900px 总宽的一半 */
+            max-width: 420px;
             position: relative;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
@@ -341,12 +351,14 @@ export default function PremiumPage() {
             max-width: 500px;
           }
 
-          @media (max-width: 640px) {
+          @media (max-width: 768px) {
+            .pricing-card {
+              max-width: 360px;
+              padding: 24px;
+            }
             .hero-title {
               font-size: 36px;
-            }
-            .pricing-card {
-              padding: 24px;
+              margin-bottom: 1rem;
             }
           }
         `}</style>
