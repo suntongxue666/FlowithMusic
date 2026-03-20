@@ -22,7 +22,7 @@ export default function PremiumPage() {
     { icon: '✉️', text: 'Unlimited daily letters' },
     { icon: '👥', text: 'View who visited your profile' },
     { icon: '❤️', text: 'View who reacted to your letters' },
-    { icon: '🚫', text: 'No ads experience' }
+    { icon: '🚫', text: <strong>Recipients can view without ads ⭐</strong> }
   ]
 
   const handleSubscriptionSuccess = async (plan: 'monthly' | 'yearly', subscriptionData: any) => {

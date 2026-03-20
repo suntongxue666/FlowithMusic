@@ -682,16 +682,20 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
         <LetterQRCode />
 
         {/* 相关信件区块 */}
-          <div className="related-letters-container" style={{ marginTop: '60px', padding: '0 20px 40px' }}>
+          <div className="related-letters-container" style={{ marginTop: '60px', padding: '0 0.5rem 40px' }}>
             {relatedBySong.length > 0 && (
               <div className="related-section" style={{ marginBottom: '40px' }}>
-                <h3 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>More Letters with "{letter.song_title}"</h3>
+                <h3 className="related-section-title" style={{ marginBottom: '20px', fontSize: '1.5rem' }}>More Letters with "{letter.song_title}"</h3>
                 <div className="cards-grid" style={{
                   display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '12px'
                 }}>
                   {relatedBySong.map((l, i) => {
                     const card = convertLetterToCard(l)
-                    return <MusicCard key={l.link_id || i} {...card} />
+                    return (
+                      <div key={l.link_id || i} className="card-wrapper">
+                        <MusicCard {...card} />
+                      </div>
+                    )
                   })}
                 </div>
               </div>
@@ -699,13 +703,17 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
 
             {relatedByCategory.length > 0 && (
               <div className="related-section">
-                <h3 style={{ marginBottom: '20px', fontSize: '1.5rem' }}>More Letters about "{letter.category}"</h3>
+                <h3 className="related-section-title" style={{ marginBottom: '20px', fontSize: '1.5rem' }}>More Letters about "{letter.category}"</h3>
                 <div className="cards-grid" style={{
                   display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '12px'
                 }}>
                   {relatedByCategory.map((l, i) => {
                     const card = convertLetterToCard(l)
-                    return <MusicCard key={l.link_id || i} {...card} />
+                    return (
+                      <div key={l.link_id || i} className="card-wrapper">
+                        <MusicCard {...card} />
+                      </div>
+                    )
                   })}
                 </div>
               </div>

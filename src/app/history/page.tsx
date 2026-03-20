@@ -419,8 +419,9 @@ function HistoryContent() {
                 {/* 操作按钮 */}
                 <div className="flex flex-col items-end gap-2 text-right" style={{ marginLeft: '8px' }}>
                   {(() => {
-                    const hasEmojis = letter.animation_config &&
-                      Array.isArray(letter.animation_config.emojis) &&
+                    const hasEmojis = letter.animation_config && 
+                      typeof letter.animation_config === 'object' &&
+                      Array.isArray(letter.animation_config.emojis) && 
                       letter.animation_config.emojis.length > 0;
                     const isUnlocked = letter.effect_type === 'flowing_emoji';
 
@@ -443,23 +444,6 @@ function HistoryContent() {
                               View
                             </Link>
                             <button
-                              onClick={() => handleCopyLink(letter.link_id)}
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '14px',
-                                borderRadius: '6px',
-                                background: copyStatus === letter.link_id ? '#22c55e' : '#333',
-                                color: '#fff',
-                                fontWeight: 500,
-                                border: 'none',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
-                            </button>
-                          </div>
-                          <div className="flex flex-col items-end gap-2 hidden-on-mobile">
-                            <button
                               onClick={() => setPreviewLetter(letter)}
                               style={{
                                 padding: '6px 12px',
@@ -472,7 +456,7 @@ function HistoryContent() {
                                 cursor: 'pointer'
                               }}
                             >
-                              👁 Flowing Emoji
+                              👁 Flowing
                             </button>
                             <button
                               onClick={() => handleUnlock(letter)}
@@ -488,27 +472,42 @@ function HistoryContent() {
                                 boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
                               }}
                             >
-                              🔐 Unlock Letter
+                              🔐 Unlock
+                            </button>
+                            <button
+                              onClick={() => handleCopyLink(letter.link_id)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '14px',
+                                borderRadius: '6px',
+                                background: copyStatus === letter.link_id ? '#22c55e' : '#333',
+                                color: '#fff',
+                                fontWeight: 500,
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {copyStatus === letter.link_id ? 'Copied' : 'Copy Link'}
                             </button>
                           </div>
+                           {/* Mobile Only: Use the consolidated vertical stack logic already present below */}
                           
-                          {/* H5 Only: 3 buttons in one row */}
-                          <div className="mobile-only-flex flex-row items-center gap-2 mt-2">
+                          <div className="mobile-only-flex flex-col items-end gap-2 mt-2">
                             <button
                               onClick={() => setPreviewLetter(letter)}
-                              style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: '#22c55e', color: '#fff', border: 'none' }}
+                              style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '6px', background: '#22c55e', color: '#fff', border: 'none' }}
                             >
-                              👁 Preview
+                              👁 Flowing
                             </button>
                             <button
                               onClick={() => handleUnlock(letter)}
-                              style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: 'linear-gradient(45deg, #FFD700, #FFA500)', color: '#fff', border: 'none' }}
+                              style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '6px', background: 'linear-gradient(45deg, #FFD700, #FFA500)', color: '#fff', border: 'none' }}
                             >
                               🔐 Unlock
                             </button>
                             <button
                               onClick={() => handleCopyLink(letter.link_id)}
-                              style={{ padding: '6px 8px', fontSize: '12px', borderRadius: '6px', background: copyStatus === letter.link_id ? '#22c55e' : '#333', color: '#fff', border: 'none' }}
+                              style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '6px', background: copyStatus === letter.link_id ? '#22c55e' : '#333', color: '#fff', border: 'none' }}
                             >
                               {copyStatus === letter.link_id ? 'Copied' : 'Copy 🔗'}
                             </button>

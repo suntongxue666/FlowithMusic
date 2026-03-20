@@ -3385,6 +3385,18 @@ edia Inputs Styles */
     height: auto;
     min-height: 270px;
   }
+
+  .related-section-title {
+    max-width: 360px;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    text-align: left;
+    padding: 0 1rem;
+    font-family: 'Caveat', cursive;
+    font-weight: 500;
+    font-size: 1.8rem !important;
+    margin-bottom: 1rem;
+  }
 }
 
 /*
