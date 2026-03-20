@@ -19,11 +19,19 @@ body {
   padding-top: 80px; /* 改为80px */
 }
 
+/* Responsive Utilities */
+.hidden-on-mobile {
+  display: block;
+}
+
+.mobile-only, .mobile-only-flex {
+  display: none !important;
+}
+
 /* H5端优化 */
 @media (max-width: 768px) {
   body {
     padding-top: 0;
-    /* H5端完全移除顶部padding */
   }
 
   header {
@@ -36,20 +44,12 @@ body {
   }
   
   .mobile-only {
-    display: block;
+    display: block !important;
   }
 
   .mobile-only-flex {
-    display: flex;
+    display: flex !important;
   }
-}
-
-.hidden-on-mobile {
-  display: block;
-}
-
-.mobile-only, .mobile-only-flex {
-  display: none !important;
 }
 
 /* Header Styles */

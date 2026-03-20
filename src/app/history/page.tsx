@@ -419,10 +419,20 @@ function HistoryContent() {
                 {/* 操作按钮 */}
                 <div className="flex flex-col items-end gap-2 text-right" style={{ marginLeft: '8px' }}>
                   {(() => {
-                    const hasEmojis = letter.animation_config && 
-                      typeof letter.animation_config === 'object' &&
-                      Array.isArray(letter.animation_config.emojis) && 
-                      letter.animation_config.emojis.length > 0;
+                    // 增强的 Emoji 检测逻辑（处理可能的字符串或对象格式）
+                    const getEmojis = (config: any) => {
+                      if (!config) return [];
+                      if (typeof config === 'string') {
+                        try {
+                          const parsed = JSON.parse(config);
+                          return Array.isArray(parsed?.emojis) ? parsed.emojis : [];
+                        } catch { return []; }
+                      }
+                      return Array.isArray(config?.emojis) ? config.emojis : [];
+                    };
+                    
+                    const emojis = getEmojis(letter.animation_config);
+                    const hasEmojis = emojis.length > 0;
                     const isUnlocked = letter.effect_type === 'flowing_emoji';
 
                     if (hasEmojis && !isUnlocked) {
