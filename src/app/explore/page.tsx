@@ -23,9 +23,9 @@ export default function ExplorePage() {
     <main className="min-h-screen">
       <Header currentPage="explore" />
       <div className="explore-container w-full px-4">
-        <div className="explore-header" style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <h1 style={{ fontFamily: "'Caveat', cursive", fontSize: '2.5rem', marginBottom: '0.5rem' }}>Explore Music Letters</h1>
-          <p style={{ color: '#666', fontSize: '0.9rem' }}>Discover heartfelt messages shared through music by our community</p>
+        <div className="explore-header">
+          <h1 className="page-title">Explore Music Letters</h1>
+          <p className="page-description">Discover heartfelt messages shared through music by our community</p>
         </div>
 
         <div className="search-container flex justify-center w-full">
@@ -62,7 +62,7 @@ export default function ExplorePage() {
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px',
                 borderRadius: '25px', background: 'white', border: '1px solid #eee',
-                textDecoration: 'none', color: '#333', fontSize: '13px', fontWeight: '500', transition: 'all 0.2s'
+                textDecoration: 'none', color: '#333', fontWeight: '500', transition: 'all 0.2s'
               }}
             >
               <span>{cat.icon}</span>

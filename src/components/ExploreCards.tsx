@@ -165,15 +165,16 @@ export default function ExploreCards({ searchQuery = '', category = '' }: Explor
         {letters.map((letter, index) => {
           const card = convertLetterToCard(letter)
           return (
-            <MusicCard
-              key={letter.link_id || `${letter.id}-${index}`}
-              to={card.to}
-              message={card.message}
-              song={card.song}
-              linkId={card.linkId}
-              user={card.user}
-              createdAt={card.createdAt}
-            />
+            <div key={letter.link_id || `${letter.id}-${index}`} className="card-wrapper">
+              <MusicCard
+                to={card.to}
+                message={card.message}
+                song={card.song}
+                linkId={card.linkId}
+                user={card.user}
+                createdAt={card.createdAt}
+              />
+            </div>
           )
         })}
       </div>

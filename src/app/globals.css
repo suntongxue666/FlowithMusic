@@ -167,19 +167,21 @@ nav {
   padding: 3rem 1rem;
 }
 
-.hero h1 {
+.hero h1, .page-title {
   font-family: 'Caveat', cursive;
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
   line-height: 1.4;
+  text-align: center;
 }
 
-.hero p {
+.hero p, .page-description {
   color: #666;
   margin-bottom: 1.5rem;
   max-width: 32rem;
   margin-left: auto;
   margin-right: auto;
+  text-align: center;
 }
 
 .hero-buttons {
@@ -383,7 +385,7 @@ nav {
     align-items: center;
   }
 
-  .hero h1 {
+  .hero h1, .page-title {
     font-size: 28px;
   }
 
@@ -391,6 +393,13 @@ nav {
     grid-template-columns: 1fr;
     padding: 0 !important;
     width: 100% !important;
+    gap: 1.5rem;
+  }
+
+  .card-wrapper {
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
   }
 
   .card {
@@ -411,7 +420,8 @@ nav {
 
 .explore-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  padding: 2rem 1rem 0;
 }
 
 .explore-header h1 {

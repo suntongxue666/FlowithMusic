@@ -34,10 +34,10 @@ export default function CategoryPage() {
     return (
         <main>
             <Header currentPage="explore" />
-            <div className="explore-container">
-                <div className="explore-header" style={{ textAlign: 'center', padding: '40px 20px' }}>
-                    <h1 style={{ fontSize: '2.5rem', marginBottom: '16px' }}>{info.title}</h1>
-                    <p style={{ maxWidth: '600px', margin: '0 auto', color: '#666', lineHeight: '1.6' }}>
+            <div className="explore-container px-4">
+                <div className="explore-header" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
+                    <h1 className="page-title">{info.title}</h1>
+                    <p className="page-description">
                         {info.description}
                     </p>
                 </div>
