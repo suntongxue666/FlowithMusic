@@ -51,7 +51,7 @@ export default function Footer() {
           </div>
 
           <div className="footer-bottom">
-            <p>&copy; 2025 <span>FlowithMusic</span>. All rights reserved.</p>
+            <p>&copy; 2026 <span>FlowithMusic</span>. All rights reserved.</p>
           </div>
         </div>
       </footer>
@@ -107,7 +107,7 @@ export default function Footer() {
         </div>
 
         <div className="footer-bottom">
-          <p>&copy; 2025 <span>FlowithMusic</span>. All rights reserved.</p>
+          <p>&copy; 2026 <span>FlowithMusic</span>. All rights reserved.</p>
         </div>
       </div>
     </footer>

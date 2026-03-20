@@ -28,8 +28,8 @@ export default function ExplorePage() {
           <p className="page-description">Discover heartfelt messages shared through music by our community</p>
         </div>
 
-        <div className="search-container flex justify-center w-full">
-          <div className="search-box w-full max-w-2xl">
+        <div className="search-container flex justify-center w-full px-4">
+          <div className="search-box w-full max-w-[360px] mx-auto">
             <input
               type="text"
               className="search-input"
@@ -62,7 +62,7 @@ export default function ExplorePage() {
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px',
                 borderRadius: '25px', background: 'white', border: '1px solid #eee',
-                textDecoration: 'none', color: '#333', fontWeight: '500', transition: 'all 0.2s'
+                textDecoration: 'none', color: '#333', fontSize: '13px', fontWeight: '500', transition: 'all 0.2s'
               }}
             >
               <span>{cat.icon}</span>

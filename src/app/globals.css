@@ -170,6 +170,7 @@ nav {
 .hero h1, .page-title {
   font-family: 'Caveat', cursive;
   font-size: 2.5rem;
+  font-weight: 500 !important;
   margin-bottom: 0.5rem;
   line-height: 1.4;
   text-align: center;
@@ -386,7 +387,8 @@ nav {
   }
 
   .hero h1, .page-title {
-    font-size: 28px;
+    font-size: 28px !important;
+    font-weight: 500 !important;
   }
 
   .cards {
@@ -3218,7 +3220,7 @@ art Spotify Player Styles */
 @media (max-width: 768px) {
   .recent-posts-carousel {
     margin: 1rem auto;
-    /* H5端从2rem改为1rem */
+    padding: 0 1rem !important;
   }
 }
 
@@ -3227,10 +3229,12 @@ art Spotify Player Styles */
 }
 
 .carousel-header h2 {
+  font-family: 'Caveat', cursive;
   font-size: 1.8rem;
   color: #333;
   margin: 0;
   text-align: left;
+  font-weight: 500;
 }
 
 .carousel-container {
@@ -3319,8 +3323,9 @@ edia Inputs Styles */
 
 /* H5端艺术家轮播样式 */
 .mobile-artist-letters {
-  padding: 0;
+  padding: 0 1rem !important;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .mobile-artist-section {
@@ -3336,11 +3341,15 @@ edia Inputs Styles */
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  max-width: 360px;
+  margin: 0 auto;
 }
 
 .mobile-artist-section .artist-header h2 {
-  font-size: 1.5rem;
+  font-family: 'Caveat', cursive;
+  font-size: 1.8rem;
   margin: 0;
+  font-weight: 500;
 }
 
 /* 优化H5端的卡片显示 */
@@ -3350,11 +3359,15 @@ edia Inputs Styles */
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
+    max-width: 360px;
+    margin: 0 auto;
   }
 
   .recent-posts-carousel.mobile-carousel .carousel-header h2 {
-    font-size: 1.5rem;
+    font-family: 'Caveat', cursive;
+    font-size: 1.8rem;
     margin: 0;
+    font-weight: 500;
   }
 
   /* 隐藏PC端的动画效果 */
