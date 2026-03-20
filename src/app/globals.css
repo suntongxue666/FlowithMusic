@@ -52,7 +52,11 @@ body {
   }
 }
 
-/* Header Styles */
+.h5-cat-link:hover {
+  transform: translateY(-2px);
+  background: #f8f8f8 !important;
+  border-color: #ddd !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 header {
   display: flex;
   justify-content: space-between;

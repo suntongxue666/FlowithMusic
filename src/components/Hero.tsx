@@ -31,7 +31,7 @@ export default function Hero() {
       </div>
 
       {/* H5端分类快速入口 */}
-      <div className="h5-categories mobile-only" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px', flexWrap: 'wrap' }}>
+      <div className="h5-categories mobile-only-flex" style={{ justifyContent: 'center', gap: '10px', marginTop: '20px', flexWrap: 'wrap' }}>
         {[
           { id: 'Love', label: 'Love', link: '/love', icon: '❤️' },
           { id: 'Friendship', label: 'Friendship', link: '/friendship', icon: '🤝' },
@@ -45,7 +45,7 @@ export default function Hero() {
               display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px',
               borderRadius: '25px', background: 'white', border: '1px solid #eee',
               textDecoration: 'none', color: '#333', fontSize: '13px', fontWeight: '500',
-              width: 'auto'
+              transition: 'all 0.2s'
             }}
           >
             <span>{cat.icon}</span>
