@@ -16,8 +16,8 @@ export default function Hero() {
         </Link>
       </div>
 
-      {/* H5 Buttons: Premium & Ko-fi */}
-      <div className="mobile-only-flex" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
+      {/* Buttons: Premium & Ko-fi (Visible on both PC & H5) */}
+      <div className="hero-interaction-row" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '16px' }}>
         <Link 
           href="/premium" 
           className="text-[12px] font-bold text-white bg-[#ff9800] rounded-full hover:scale-105 transition-transform flex items-center justify-center"
@@ -31,7 +31,7 @@ export default function Hero() {
       </div>
 
       {/* H5端分类快速入口 */}
-      <div className="h5-categories mobile-only" style={{ justifyContent: 'center', gap: '10px', marginTop: '20px', flexWrap: 'wrap' }}>
+      <div className="h5-categories mobile-only" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '20px', flexWrap: 'wrap' }}>
         {[
           { id: 'Love', label: 'Love', link: '/love', icon: '❤️' },
           { id: 'Friendship', label: 'Friendship', link: '/friendship', icon: '🤝' },
@@ -44,7 +44,8 @@ export default function Hero() {
             style={{
               display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px',
               borderRadius: '25px', background: 'white', border: '1px solid #eee',
-              textDecoration: 'none', color: '#333', fontSize: '13px', fontWeight: '500'
+              textDecoration: 'none', color: '#333', fontSize: '13px', fontWeight: '500',
+              width: 'auto'
             }}
           >
             <span>{cat.icon}</span>
