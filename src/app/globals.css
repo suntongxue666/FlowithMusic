@@ -283,10 +283,10 @@ nav {
 /* Cards Styles */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, 360px);
+  grid-template-columns: repeat(3, 360px);
   justify-content: center;
   gap: 1.5rem;
-  padding: 2rem;
+  padding: 2rem 0;
   max-width: 1200px;
   margin: auto;
 }

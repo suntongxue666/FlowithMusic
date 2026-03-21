@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import Header from '@/components/Header'
 import SongSelector from '@/components/SongSelector'
 import SpotifyEmbedPlayer from '@/components/SpotifyEmbedPlayer'
@@ -312,7 +313,12 @@ function SendContent() {
       <div className="send-container">
         <div className="send-form">
           <div className="form-section">
-            <label htmlFor="recipient">To</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
+              <label htmlFor="recipient" style={{ marginBottom: 0 }}>To</label>
+              <span style={{ fontSize: '14px', color: '#666' }}>
+                Who view No ads with <Link href="/premium" style={{ textDecoration: 'underline', color: '#000', fontWeight: 500 }}>👑 Premium</Link>
+              </span>
+            </div>
             <div className="input-with-hint">
               <input
                 type="text"
@@ -384,7 +390,7 @@ function SendContent() {
                   <EmojiPicker 
                     onEmojiClick={handleEmojiSelect} 
                     width="100%" 
-                    height={350} 
+                    height={245} 
                     searchDisabled={true}
                     skinTonesDisabled={true}
                     previewConfig={{ showPreview: false }}
@@ -645,6 +651,8 @@ function SendContent() {
         .toggle-thumb.enabled { transform: translateX(20px); }
         .selected-preview { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
         .preview-emoji { font-size: 24px; cursor: pointer; }
+        .preview-hint { color: #888; margin-left: auto; font-size: 14px; }
+        .emoji-hint { color: #888; margin-bottom: 8px; font-size: 14px; }
         
         .visibility-header {
           display: flex; justify-content: space-between; align-items: center;
