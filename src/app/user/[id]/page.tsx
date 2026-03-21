@@ -606,7 +606,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
                     return actions.order.create({
                       intent: "CAPTURE",
                       purchase_units: [{
-                        description: `Flowing Emoji for Letter: ${paymentLetter.song_id}`,
+                        description: `Flowing Emoji for Letter to ${paymentLetter.recipient_name}`,
                         amount: {
                           currency_code: "USD",
                           value: "0.99"

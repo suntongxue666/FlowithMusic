@@ -638,7 +638,7 @@ function HistoryContent() {
                     return actions.order.create({
                       intent: "CAPTURE",
                       purchase_units: [{
-                        description: `Flowing Emoji for Letter: ${paymentLetter.song_title}`,
+                        description: `Flowing Emoji for Letter to ${paymentLetter.recipient_name}`,
                         amount: {
                           currency_code: "USD",
                           value: "0.99"

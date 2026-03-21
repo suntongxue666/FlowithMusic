@@ -742,6 +742,7 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
                       return actions.order.create({
                         intent: "CAPTURE",
                         purchase_units: [{
+                          description: `Flowing Emoji for Letter to ${letter?.recipient_name || 'friend'}`,
                           amount: {
                             currency_code: "USD",
                             value: "0.99" // TODO: Set real price
