@@ -21,7 +21,7 @@ export default function ExploreCards({ searchQuery = '', category = '' }: Explor
   const { user, isAuthenticated } = useUserState()
   const isAdmin = isAuthenticated && user && (user.is_admin || user.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981')
 
-  const LETTERS_PER_PAGE = 15 // 3列 * 5排
+  const LETTERS_PER_PAGE = 9 // 3列 * 3排
 
   const loadLetters = useCallback(async (pageNum: number, isNewSearch = false) => {
     try {
