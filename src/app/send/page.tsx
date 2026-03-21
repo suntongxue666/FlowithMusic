@@ -268,6 +268,15 @@ function SendContent() {
         throw new Error('Letter creation failed')
       }
 
+      // Add user info if logged in so local storage and UI show it properly
+      if (userAuth && user) {
+        newLetter.user = {
+          id: user.id,
+          display_name: user.display_name,
+          avatar_url: user.avatar_url
+        } as any
+      }
+
       setCreatedLetter(newLetter)
 
       const rawLetters = localStorage.getItem('letters')

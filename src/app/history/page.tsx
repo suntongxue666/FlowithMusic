@@ -331,22 +331,27 @@ function HistoryContent() {
   return (
     <div className="min-h-screen flex flex-col items-center py-8 sm:py-16 w-full px-4" style={{ backgroundColor: '#fafafa' }}>
       <div className="w-full max-w-2xl mx-auto">
-        {/* 顶部标题栏 - 居中，带刷新按钮 */}
-        <div className="mb-10 flex items-center justify-center gap-4" style={{ marginTop: '24px', marginBottom: '24px' }}>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-            My Letters
-          </h1>
-          <button
-            onClick={() => checkAuthAndLoadLetters(true)}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-            title="刷新"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M23 4v6h-6"></path>
-              <path d="M1 20v-6h6"></path>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-            </svg>
-          </button>
+        {/* 顶部标题栏和高级引导 */}
+        <div className="flex flex-col items-center justify-center mb-10" style={{ marginTop: '24px', marginBottom: '24px' }}>
+          <div className="flex items-center gap-4 mb-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              My Letters
+            </h1>
+            <button
+              onClick={() => checkAuthAndLoadLetters(true)}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              title="刷新"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M23 4v6h-6"></path>
+                <path d="M1 20v-6h6"></path>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+            </button>
+          </div>
+          <span style={{ fontSize: '14px', color: '#666' }}>
+            Who view No ads with <Link href="/premium" style={{ textDecoration: 'underline', color: '#000', fontWeight: 500 }}>👑 Premium</Link>
+          </span>
         </div>
 
       {loading ? (

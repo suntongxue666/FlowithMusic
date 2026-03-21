@@ -222,7 +222,7 @@ export class LetterService {
     // 1. 尝试从数据库获取
     const { data, error } = await supabase
       .from('letters')
-      .select('*')
+      .select('*, user:users(id, display_name, avatar_url)')
       .eq('link_id', linkId)
       .single()
 
