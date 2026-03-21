@@ -145,6 +145,7 @@ export default function ExploreCards({ searchQuery = '', category = '' }: Explor
     linkId: letter.link_id,
     user: (letter as any).user || undefined,
     createdAt: letter.created_at || undefined,
+    isPublic: letter.is_public,
   })
 
   if (loading && letters.length === 0) {
@@ -179,6 +180,7 @@ export default function ExploreCards({ searchQuery = '', category = '' }: Explor
                 linkId={card.linkId}
                 user={card.user}
                 createdAt={card.createdAt}
+                isPublic={card.isPublic}
               />
             </div>
           )

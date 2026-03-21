@@ -15,6 +15,7 @@ interface MusicCardProps {
         avatar_url?: string
     }
     createdAt?: string
+    isPublic?: boolean
 }
 
 // 格式化为北京时间 yyyy/mm/dd hh:mm
@@ -40,7 +41,7 @@ function getFirstName(name?: string): string {
     return name.trim().split(/\s+/)[0]
 }
 
-export default function MusicCard({ to, message, song, linkId, user, createdAt }: MusicCardProps) {
+export default function MusicCard({ to, message, song, linkId, user, createdAt, isPublic }: MusicCardProps) {
     const router = useRouter()
 
     const handleCardClick = () => {
@@ -57,7 +58,23 @@ export default function MusicCard({ to, message, song, linkId, user, createdAt }
     return (
         <div onClick={handleCardClick} className="card-link" style={{ cursor: 'pointer', textDecoration: 'none' }}>
             <div className="card">
-                <div className="to">To: {to}</div>
+                <div className="to" style={{ display: 'flex', alignItems: 'center' }}>
+                    <span className="truncate">To: {to}</span>
+                    {isPublic === false && (
+                        <span style={{ 
+                            marginLeft: '8px', 
+                            padding: '2px', 
+                            backgroundColor: '#000', 
+                            color: '#fff', 
+                            fontSize: '10px', 
+                            borderRadius: '4px', 
+                            lineHeight: 1,
+                            whiteSpace: 'nowrap'
+                        }}>
+                            Private
+                        </span>
+                    )}
+                </div>
 
                 {/* 作者 + 时间行 */}
                 {(user || createdAt) && (
