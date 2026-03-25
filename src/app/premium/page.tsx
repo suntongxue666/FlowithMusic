@@ -103,10 +103,10 @@ export default function PremiumPage() {
         
         <div className="premium-hero">
           <div className="container mx-auto px-4 py-20 flex flex-col items-center">
-            <div className="badge mt-18 mb-12">👑 PREMIUM ACCESS</div>
+            <div className="badge">👑 PREMIUM</div>
             <h1 className="hero-title mb-6">Unlock Your Full Experience</h1>
             <p className="hero-subtitle mb-12 max-w-2xl px-4">
-              Support FlowithMusic and enjoy unlimited networking, deep interactions, and an ad-free creative space.
+              Enjoy unlimited features and ad-free experience.
             </p>
 
             {status === 'success' ? (
@@ -140,10 +140,10 @@ export default function PremiumPage() {
                 {/* Yearly Plan */}
                 <div className="pricing-card yearly-featured">
                   <div className="popular-badge">MOST POPULAR</div>
+                  <div className="save-tag">SAVE 40%</div>
                   <div className="card-header">
                     <h3 className="plan-name">Annual</h3>
                     <div className="plan-price">$19.99 <span className="price-period">/ year</span></div>
-                    <div className="save-tag">SAVE OVER 40%</div>
                   </div>
                   <ul className="plan-features">
                     {benefits.map((b, i) => (
@@ -185,6 +185,8 @@ export default function PremiumPage() {
             letter-spacing: 1px;
             color: #666;
             border: 1px solid #e5e5e5;
+            margin-top: 12px;
+            margin-bottom: 12px;
           }
 
           .hero-title {
@@ -195,15 +197,15 @@ export default function PremiumPage() {
             letter-spacing: -2px;
             text-align: center;
             line-height: 1.1;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1.0rem; /* 改为 2 倍 */
           }
 
           .hero-subtitle {
-            font-size: 20px;
+            font-size: 18px;
             color: #666;
             text-align: center;
             line-height: 1.5;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
             max-width: 32rem;
             margin-left: auto;
             margin-right: auto;
@@ -236,11 +238,11 @@ export default function PremiumPage() {
             background: #fff;
             border: 1px solid #eef0f3;
             border-radius: 32px;
-            padding: 40px;
+            padding: 30px;
             display: flex;
             flex-direction: column;
             width: 100%;
-            max-width: 420px;
+            max-width: 400px;
             position: relative;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
@@ -272,7 +274,7 @@ export default function PremiumPage() {
           }
 
           .card-header {
-            margin-bottom: 32px;
+            margin-bottom: 24px;
             text-align: center;
           }
 
@@ -298,25 +300,26 @@ export default function PremiumPage() {
           }
 
           .save-tag {
-            display: inline-block;
+            position: absolute;
+            top: 16px;
+            right: 16px;
             background: #f0fdf4;
             color: #166534;
-            padding: 4px 12px;
-            border-radius: 100px;
-            font-size: 12px;
-            font-weight: 700;
-            margin-top: 12px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
           }
 
           .plan-features {
             list-style: none;
             padding: 0;
-            margin: 0 0 40px 0;
+            margin: 0 0 32px 0;
             flex-grow: 1;
           }
 
           .plan-features li {
-            margin-bottom: 16px;
+            margin-bottom: 11px;
             font-size: 15px;
             color: #444;
             display: flex;

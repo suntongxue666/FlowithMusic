@@ -35,9 +35,26 @@ export default function CategoryPage() {
         <main>
             <Header currentPage="explore" />
             <div className="explore-container px-4">
-                <div className="explore-header" style={{ paddingTop: '20px', paddingBottom: '20px' }}>
-                    <h1 className="page-title">{info.title}</h1>
-                    <p className="page-description">
+                <div className="explore-header" style={{ paddingTop: '40px', paddingBottom: '20px', textAlign: 'center' }}>
+                    <h1 
+                        className="text-xl sm:text-2xl font-bold text-gray-900" 
+                        style={{ 
+                            fontFamily: "'Caveat', cursive", 
+                            fontSize: '32px', // Caveat looks smaller so using 32px to match visual weight of My Letters
+                            marginBottom: '4px'
+                        }}
+                    >
+                        {info.title}
+                    </h1>
+                    <p 
+                        className="page-description" 
+                        style={{ 
+                            fontSize: '20px', // 标题 24px (sm:text-2xl) - 4px = 20px
+                            color: '#666',
+                            maxWidth: '600px',
+                            margin: '0 auto'
+                        }}
+                    >
                         {info.description}
                     </p>
                 </div>

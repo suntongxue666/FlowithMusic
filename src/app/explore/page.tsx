@@ -9,13 +9,13 @@ export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchInput, setSearchInput] = useState('')
 
-  const handleSearch = () => {
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     setSearchQuery(searchInput.trim())
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch()
+    // 收起键盘
+    if (typeof document !== 'undefined') {
+      const input = document.querySelector('.search-input') as HTMLInputElement
+      if (input) input.blur()
     }
   }
 
@@ -28,7 +28,7 @@ export default function ExplorePage() {
           <p className="page-description">Discover heartfelt messages shared through music by our community</p>
         </div>
 
-        <div className="search-container flex justify-center w-full px-4">
+        <form className="search-container flex justify-center w-full px-4" onSubmit={handleSearch}>
           <div className="search-box w-full max-w-[336px] mx-auto flex flex-col sm:flex-row gap-4 sm:gap-0">
             <input
               type="text"
@@ -36,18 +36,18 @@ export default function ExplorePage() {
               placeholder="Input recipient,song,artist to find same tune"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              enterKeyHint="search"
               onFocus={(e) => e.target.placeholder = ''}
               onBlur={(e) => e.target.placeholder = 'Input recipient,song,artist to find same tune'}
             />
             <button
+              type="submit"
               className="search-btn h-[64px] sm:h-auto"
-              onClick={handleSearch}
             >
               Search
             </button>
           </div>
-        </div>
+        </form>
 
         <div className="category-quick-links" style={{ display: 'flex', justifyContent: 'center', gap: '10px', margin: '20px 0', flexWrap: 'wrap' }}>
           {[
