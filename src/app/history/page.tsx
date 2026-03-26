@@ -10,6 +10,7 @@ import { ImprovedUserIdentity } from '@/lib/improvedUserIdentity'
 import Link from 'next/link'
 import FlowingEffects from '@/components/FlowingEffects'
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js"
+import PremiumLimitModal from '@/components/PremiumLimitModal'
 
 // 预览弹窗组件 - 5秒自动关闭
 function PreviewOverlay({ 
@@ -97,6 +98,7 @@ function HistoryContent() {
   const [previewLetter, setPreviewLetter] = useState<Letter | null>(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [paymentLetter, setPaymentLetter] = useState<Letter | null>(null)
+  const [showPremiumPrompt, setShowPremiumPrompt] = useState(false)
 
   // 同步状态
   const [unsyncedCount, setUnsyncedCount] = useState(0)
@@ -118,6 +120,23 @@ function HistoryContent() {
       return () => window.removeEventListener('focus', handleFocus)
     }
   }, [searchParams])
+
+  // 新增：检查每日首次进入的 Premium 引导
+  useEffect(() => {
+    if (!loading && !user?.is_premium) {
+      const today = new Date().toISOString().split('T')[0]
+      const lastPromptDate = localStorage.getItem('last_premium_prompt_date')
+      
+      if (lastPromptDate !== today) {
+        // 延迟 1.5 秒弹出，避开页面刚加载时的突兀感
+        const timer = setTimeout(() => {
+          setShowPremiumPrompt(true)
+          localStorage.setItem('last_premium_prompt_date', today)
+        }, 1500)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [loading, user])
 
   const checkAuthAndLoadLetters = async (forceRefresh: boolean = false) => {
     // 初始化变量，确保在所有作用域中可用
@@ -665,6 +684,14 @@ function HistoryContent() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* 每日首次进入引导弹窗 */}
+      {showPremiumPrompt && (
+        <PremiumLimitModal 
+          onClose={() => setShowPremiumPrompt(false)} 
+          type="history_prompt" 
+        />
       )}
 
       <style jsx global>{`

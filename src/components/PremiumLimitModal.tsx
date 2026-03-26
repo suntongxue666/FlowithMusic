@@ -3,15 +3,16 @@ import { useEffect, useState } from 'react'
 
 interface PremiumLimitModalProps {
   onClose: () => void
-  type: 'daily_limit' | 'notif_lock'
+  type: 'daily_limit' | 'notif_lock' | 'history_prompt'
 }
 
 export default function PremiumLimitModal({ onClose, type }: PremiumLimitModalProps) {
   const router = useRouter()
-  const [countdown, setCountdown] = useState(3)
+  const initialCountdown = type === 'history_prompt' ? 5 : 3
+  const [countdown, setCountdown] = useState(initialCountdown)
 
   useEffect(() => {
-    if (type === 'daily_limit') {
+    if (type === 'daily_limit' || type === 'history_prompt') {
       const timer = setInterval(() => {
         setCountdown(prev => {
           if (prev <= 1) {
@@ -37,7 +38,18 @@ export default function PremiumLimitModal({ onClose, type }: PremiumLimitModalPr
       <div className="modal-content premium-modal" onClick={(e) => e.stopPropagation()}>
         <div className="crown-icon">👑</div>
         
-        {type === 'daily_limit' ? (
+        {type === 'history_prompt' ? (
+          <>
+            <h3>Unlimited Experience</h3>
+            <p className="modal-text">
+              Send unlimited letters and ensure your recipients enjoy a completely ad-free experience.
+              <br/>
+              <span style={{ fontSize: '12px', color: '#888', marginTop: '8px', display: 'block' }}>
+                Redirecting to Premium in {countdown}s...
+              </span>
+            </p>
+          </>
+        ) : type === 'daily_limit' ? (
           <>
             <h3>Daily Limit Reached</h3>
             <p className="modal-text">
@@ -58,9 +70,19 @@ export default function PremiumLimitModal({ onClose, type }: PremiumLimitModalPr
         )}
 
         <div className="benefits-mini">
-          <div>✨ Unlimited Letters</div>
-          <div>👁️ Profile Visitors</div>
-          <div>🫶 Emoji Reactions</div>
+          {type === 'history_prompt' ? (
+            <>
+              <div>✨ No Limits on Private Letters</div>
+              <div>🚫 No Ads for Your Recipients</div>
+              <div>🔓 Unlock All Interaction Info</div>
+            </>
+          ) : (
+            <>
+              <div>✨ Unlimited Letters</div>
+              <div>👁️ Profile Visitors</div>
+              <div>🫶 Emoji Reactions</div>
+            </>
+          )}
         </div>
 
         <button className="premium-btn" onClick={handleUpgrade}>
