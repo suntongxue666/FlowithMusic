@@ -7,8 +7,8 @@ const CHINA_TIMEZONES = [
     'Asia/Beijing'
 ]
 
-// 缓存相关常量
-const CACHE_KEY = 'flowithmusic_china_detection'
+// 缓存相关常量 (升级 Key 以清除旧版错误缓存)
+const CACHE_KEY = 'flowithmusic_china_detection_v2'
 const CACHE_DURATION = 24 * 60 * 60 * 1000 // 24小时
 
 interface CacheData {
