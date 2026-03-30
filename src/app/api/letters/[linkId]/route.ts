@@ -37,10 +37,35 @@ function generateAnonymousUser(letter: any) {
   }
 }
 
+// 获取统一的作者资料给 App 端和 Web 端使用
+function getAuthorProfile(letter: any) {
+  if (letter.user) {
+    return {
+      type: 'registered',
+      id: letter.user.id,
+      name: letter.user.display_name || 'Anonymous',
+      avatarUrl: letter.user.avatar_url || null,
+      avatarInitials: (letter.user.display_name?.charAt(0) || letter.user.email?.charAt(0) || 'U').toUpperCase(),
+    }
+  } else {
+    const anonymousUser = generateAnonymousUser(letter)
+    return {
+      type: 'anonymous',
+      id: letter.anonymous_id || letter.link_id || 'fallback',
+      name: anonymousUser.username,
+      avatarUrl: null,
+      avatarEmoji: anonymousUser.emoji,
+      avatarBackgroundColor: anonymousUser.backgroundColor,
+    }
+  }
+}
+
+
 // 输出 camelCase（App 友好）
 function toCamel(letter: any) {
   if (!letter || typeof letter !== 'object') return letter
-  const anonymousUserInfo = letter.anonymous_id ? generateAnonymousUser(letter) : null
+  const anonymousUserInfo = generateAnonymousUser(letter) // 保证总是有返回值
+  const authorProfile = getAuthorProfile(letter)
   return {
     id: letter.id,
     userId: letter.user_id,
@@ -60,6 +85,7 @@ function toCamel(letter: any) {
     isPublic: letter.is_public,
     shareableLink: letter.shareable_link,
     anonymousUserInfo: anonymousUserInfo,
+    authorProfile: authorProfile,
     user: letter.user
       ? {
         id: letter.user.id,
@@ -71,7 +97,15 @@ function toCamel(letter: any) {
 }
 
 function maybeFormatCamel(data: any, format: string | null) {
-  return format === 'camelCase' ? toCamel(data) : data
+  if (format === 'camelCase') {
+    return toCamel(data)
+  }
+  
+  // 对于默认的 snake_case 响应，我们也注入 author_profile 以供非 camelCase 客户端使用
+  if (data && typeof data === 'object') {
+    data.author_profile = getAuthorProfile(data)
+  }
+  return data
 }
 
 // 全局存储 - 在生产环境中应该使用 Redis 或数据库

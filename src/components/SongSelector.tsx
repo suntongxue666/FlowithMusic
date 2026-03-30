@@ -16,6 +16,7 @@ export default function SongSelector({ onSelect, selectedTrack }: SongSelectorPr
   const [loading, setLoading] = useState(false)
   const [playingTrack, setPlayingTrack] = useState<string | null>(null)
   const [apiError, setApiError] = useState<string | null>(null)
+  const [searchCache, setSearchCache] = useState<Record<string, SpotifyTrack[]>>({})
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -137,39 +138,53 @@ export default function SongSelector({ onSelect, selectedTrack }: SongSelectorPr
   }
 
   const searchTracks = async (query: string) => {
-    if (!query.trim()) {
+    const trimmedQuery = query.trim()
+    if (!trimmedQuery) {
       setSearchResults([])
+      return
+    }
+
+    // Use cache if available
+    if (searchCache[trimmedQuery]) {
+      setSearchResults(searchCache[trimmedQuery])
+      setApiError(null)
       return
     }
 
     setLoading(true)
     try {
-      console.log('Searching for:', query)
+      console.log('Searching for:', trimmedQuery)
 
       // 添加超时保护
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 8000) // 8秒超时
 
-      const response = await fetch(`/api/spotify/search?q=${encodeURIComponent(query)}`, {
+      const response = await fetch(`/api/spotify/search?q=${encodeURIComponent(trimmedQuery)}`, {
         signal: controller.signal
       })
       clearTimeout(timeoutId)
 
+      const data = await response.json()
+      
       if (!response.ok) {
-        throw new Error(`Search API failed: ${response.status}`)
+        throw new Error(data.details || data.error || `Search API failed: ${response.status}`)
       }
 
-      const data = await response.json()
-      setSearchResults(data.tracks || [])
-      console.log(`✅ Search found ${data.tracks?.length || 0} tracks`)
+      const tracks = data.tracks || []
+      setSearchResults(tracks)
+      setSearchCache(prev => ({ ...prev, [trimmedQuery]: tracks }))
+      setApiError(null)
+      console.log(`✅ Search found ${tracks.length} tracks`)
     } catch (error: any) {
-      console.error('Search failed:', error)
+      console.error('Search failed detailed:', error)
       setSearchResults([])
       // 如果报错是403，记录下错误
       if (error.message?.includes('403') || error.toString()?.includes('403')) {
         setApiError('Spotify Access Restricted. Please try again later.')
+      } else if (error.message?.includes('429')) {
+        setApiError('Search too frequent. Please wait a moment.')
       } else {
-        setApiError('Search failed. Please try again.')
+        setApiError(error.message || 'Search failed. Please try again.')
       }
     } finally {
       setLoading(false)
@@ -188,7 +203,7 @@ export default function SongSelector({ onSelect, selectedTrack }: SongSelectorPr
     // Debounce search
     searchTimeoutRef.current = setTimeout(() => {
       searchTracks(value)
-    }, 400) // Increased slightly for better mobile typing experience
+    }, 500) // Increased for better rate-limit protection
   }
 
   const handleInputClick = () => {

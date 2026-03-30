@@ -40,6 +40,49 @@ function generateLinkId(): string {
   return timeStr + randomStr
 }
 
+const ANIMAL_EMOJIS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧', '🐘', '🦛', '🦏', '🐪', '🐫', '🦒', '🦘', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐕‍🦺', '🐈', '🐈‍⬛', '🐓', '🦃', '🦚', '🦜', '🦢', '🦩', '🕊️', '🐇', '🦝', '🦨', '🦡', '🦦', '🦥', '🐁', '🐀', '🐿️', '🦔']
+const LIGHT_COLORS = ['#FFE5E5', '#E5F3FF', '#E5FFE5', '#FFF5E5', '#F0E5FF', '#E5FFFF', '#FFE5F5', '#F5FFE5', '#E5E5FF', '#FFFFE5', '#FFE5CC', '#E5FFCC', '#CCE5FF', '#FFCCE5', '#E5CCFF', '#CCFFE5', '#FFCCCC', '#CCFFCC', '#CCCCFF', '#FFFFCC', '#FFE0E0', '#E0FFE0', '#E0E0FF', '#FFFFE0']
+
+function generateAnonymousUser(letter: any) {
+  const seedId = letter.anonymous_id || letter.link_id || 'fallback'
+  let hash = 0
+  for (let i = 0; i < seedId.length; i++) {
+    const char = seedId.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash
+  }
+  const emojiIndex = Math.abs(hash) % ANIMAL_EMOJIS.length
+  const colorIndex = Math.abs(hash >> 8) % LIGHT_COLORS.length
+  const userNumber = Math.abs(hash >> 16) % 100000000
+  return {
+    emoji: ANIMAL_EMOJIS[emojiIndex],
+    backgroundColor: LIGHT_COLORS[colorIndex],
+    username: `Guest${userNumber.toString().padStart(8, '0')}`
+  }
+}
+
+function getAuthorProfile(letter: any) {
+  if (letter.user) {
+    return {
+      type: 'registered',
+      id: letter.user.id,
+      name: letter.user.display_name || 'Anonymous',
+      avatarUrl: letter.user.avatar_url || null,
+      avatarInitials: (letter.user.display_name?.charAt(0) || letter.user.email?.charAt(0) || 'U').toUpperCase(),
+    }
+  } else {
+    const anonymousUser = generateAnonymousUser(letter)
+    return {
+      type: 'anonymous',
+      id: letter.anonymous_id || letter.link_id || 'fallback',
+      name: anonymousUser.username,
+      avatarUrl: null,
+      avatarEmoji: anonymousUser.emoji,
+      avatarBackgroundColor: anonymousUser.backgroundColor,
+    }
+  }
+}
+
 // 构建可分享链接
 function buildShareableLink(origin: string, linkId: string): string {
   const base = origin || 'https://www.flowithmusic.com'
@@ -48,6 +91,7 @@ function buildShareableLink(origin: string, linkId: string): string {
 
 // 输出格式转换
 function toCamel(letter: DbLetter) {
+  const authorProfile = getAuthorProfile(letter)
   return {
     id: letter.id,
     userId: letter.user_id ?? undefined,
@@ -66,11 +110,17 @@ function toCamel(letter: DbLetter) {
     viewCount: letter.view_count,
     isPublic: letter.is_public,
     shareableLink: letter.shareable_link ?? undefined,
-    user: letter.user ?? undefined,
+    user: letter.user ? {
+      id: letter.user.id,
+      displayName: letter.user.display_name,
+      avatarUrl: letter.user.avatar_url,
+    } : undefined,
+    authorProfile,
   }
 }
 
 function toSnake(letter: DbLetter) {
+  const authorProfile = getAuthorProfile(letter)
   return {
     id: letter.id,
     user_id: letter.user_id ?? null,
@@ -90,6 +140,7 @@ function toSnake(letter: DbLetter) {
     is_public: letter.is_public,
     shareable_link: letter.shareable_link ?? null,
     user: letter.user ?? null,
+    author_profile: authorProfile,
   }
 }
 

@@ -62,6 +62,24 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
 
   // 2. Regional Check
   useEffect(() => {
+    // If the track is already an Apple Music track, skip detection
+    if (track.id.startsWith('apple-')) {
+      console.log('📍 Track is already Apple Music - Skipping detection');
+      setIsChinaDetails({ isChina: true, checked: true });
+      
+      // Extract original ID and set as appleTrack if possible
+      // Or just rely on the track object itself being populated
+      setAppleTrack({
+        trackName: track.name,
+        artistName: track.artists[0]?.name,
+        previewUrl: track.preview_url || '',
+        artworkUrl100: track.album.images[0]?.url || '',
+        trackViewUrl: track.external_urls.spotify, // it was mapped to this in the fallback
+        trackTimeMillis: track.duration_ms || 30000
+      });
+      return;
+    }
+
     async function checkIn() {
       try {
         // 延长超时到3秒，给移动网络更多时间
@@ -198,16 +216,16 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   }) => (
     <PlayerCard color={dominantColor}>
       <div className="flex h-full p-5 relative text-white">
-        {/* Left: Artwork (160x160) - FORCED PHYSICAL SIZE with 20px left and top margin */}
+        {/* Left: Artwork (120x120 - 3/4 of 160px) */}
         <div
-          className="flex-shrink-0 overflow-hidden rounded-[12px] shadow-lg border border-white/10"
+          className="flex-shrink-0 overflow-hidden rounded-[8px] shadow-lg border border-white/10"
           style={{
-            width: '160px',
-            height: '160px',
-            minWidth: '160px',
-            minHeight: '160px',
+            width: '120px',
+            height: '120px',
+            minWidth: '120px',
+            minHeight: '120px',
             marginLeft: '20px',
-            marginTop: '20px',
+            marginTop: '16px',
             willChange: 'transform',
             backfaceVisibility: 'hidden'
           }}
@@ -217,8 +235,8 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
             alt={title}
             className="object-cover"
             style={{
-              width: '160px',
-              height: '160px',
+              width: '120px',
+              height: '120px',
               willChange: 'transform',
               backfaceVisibility: 'hidden'
             }}
@@ -226,10 +244,10 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
         </div>
 
         {/* Right Content Container: Title/Artist + Progress/Controls */}
-        <div className="flex-1 flex flex-col min-w-0" style={{ marginTop: '20px', marginLeft: '20px' }}>
+        <div className="flex-1 flex flex-col min-w-0" style={{ marginTop: '16px', marginLeft: '16px' }}>
           {/* Top: Title/Artist/Open Button */}
-          <div className="flex flex-col mb-4">
-            <h3 className="text-2xl md:text-[32px] font-bold truncate tracking-tight mb-0.5 leading-tight">
+          <div className="flex flex-col mb-2">
+            <h3 className="text-xl md:text-[24px] font-bold truncate tracking-tight mb-0.5 leading-tight">
               {title}
             </h3>
             <p className="text-white/70 text-lg font-medium truncate mb-4">

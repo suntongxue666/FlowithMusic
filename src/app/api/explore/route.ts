@@ -5,6 +5,50 @@ import { supabase } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
+const ANIMAL_EMOJIS = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧', '🐘', '🦛', '🦏', '🐪', '🐫', '🦒', '🦘', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐕‍🦺', '🐈', '🐈‍⬛', '🐓', '🦃', '🦚', '🦜', '🦢', '🦩', '🕊️', '🐇', '🦝', '🦨', '🦡', '🦦', '🦥', '🐁', '🐀', '🐿️', '🦔']
+const LIGHT_COLORS = ['#FFE5E5', '#E5F3FF', '#E5FFE5', '#FFF5E5', '#F0E5FF', '#E5FFFF', '#FFE5F5', '#F5FFE5', '#E5E5FF', '#FFFFE5', '#FFE5CC', '#E5FFCC', '#CCE5FF', '#FFCCE5', '#E5CCFF', '#CCFFE5', '#FFCCCC', '#CCFFCC', '#CCCCFF', '#FFFFCC', '#FFE0E0', '#E0FFE0', '#E0E0FF', '#FFFFE0']
+
+function generateAnonymousUser(letter: any) {
+  const seedId = letter.anonymous_id || letter.link_id || 'fallback'
+  let hash = 0
+  for (let i = 0; i < seedId.length; i++) {
+    const char = seedId.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash
+  }
+  const emojiIndex = Math.abs(hash) % ANIMAL_EMOJIS.length
+  const colorIndex = Math.abs(hash >> 8) % LIGHT_COLORS.length
+  const userNumber = Math.abs(hash >> 16) % 100000000
+  return {
+    emoji: ANIMAL_EMOJIS[emojiIndex],
+    backgroundColor: LIGHT_COLORS[colorIndex],
+    username: `Guest${userNumber.toString().padStart(8, '0')}`
+  }
+}
+
+function getAuthorProfile(letter: any) {
+  if (letter.user) {
+    return {
+      type: 'registered',
+      id: letter.user.id,
+      name: letter.user.display_name || 'Anonymous',
+      avatarUrl: letter.user.avatar_url || null,
+      avatarInitials: (letter.user.display_name?.charAt(0) || letter.user.email?.charAt(0) || 'U').toUpperCase(),
+    }
+  } else {
+    const anonymousUser = generateAnonymousUser(letter)
+    return {
+      type: 'anonymous',
+      id: letter.anonymous_id || letter.link_id || 'fallback',
+      name: anonymousUser.username,
+      avatarUrl: null,
+      avatarEmoji: anonymousUser.emoji,
+      avatarBackgroundColor: anonymousUser.backgroundColor,
+    }
+  }
+}
+
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -88,6 +132,7 @@ export async function GET(request: Request) {
         isPublic: letter.is_public,
         shareableLink: letter.shareable_link,
         user: (letter as any).user,
+        authorProfile: getAuthorProfile(letter),
       }))
 
       const hasMore = items.length === limit
@@ -120,6 +165,7 @@ export async function GET(request: Request) {
       is_public: letter.is_public,
       shareable_link: letter.shareable_link,
       user: (letter as any).user,
+      author_profile: getAuthorProfile(letter),
     }))
 
     return NextResponse.json(snakeCase)
