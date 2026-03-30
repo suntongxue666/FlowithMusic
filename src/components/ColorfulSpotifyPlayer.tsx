@@ -96,22 +96,20 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
           setIsChinaDetails({ isChina: false, checked: true })
         }
       } catch (e) {
-        // 超时或失败时，优先检查缓存
-        console.log('⏱️ Detection failed, checking cache...')
-        try {
-          const cached = localStorage.getItem('flowithmusic_china_detection')
-          if (cached) {
-            const data = JSON.parse(cached)
-            const now = Date.now()
-            if (now - data.timestamp < 24 * 60 * 60 * 1000 && data.isChina) {
-              console.log('📍 Using cached China detection')
-              setIsChinaDetails({ isChina: true, checked: true })
-              fetchAppleMusicFallback(true)
-              return
-            }
-          }
-        } catch (err) {
-          // ignore
+        // 超时或失败时，优先检查缓存和系统特征
+        console.log('⏱️ Detection stalled, checking local signals...')
+        
+        // 1. 检查时区
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+        const isLikelyChina = timezone?.includes('Shanghai') || 
+                             timezone?.includes('Chongqing') || 
+                             navigator.language.startsWith('zh-CN')
+
+        if (isLikelyChina) {
+          console.log('📍 Detection stalled but system signals suggest China')
+          setIsChinaDetails({ isChina: true, checked: true })
+          fetchAppleMusicFallback(true)
+          return
         }
 
         console.log('🌐 Defaulting to global (Spotify)')
@@ -195,20 +193,26 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   // Common UI Wrapper
   const PlayerCard = ({ children, color }: { children: React.ReactNode, color: string }) => (
     <div
-      className="w-full md:w-[600px] mx-auto rounded-[16px] overflow-hidden shadow-2xl relative transition-all duration-700"
+      className="w-full max-w-[600px] mx-auto rounded-[16px] overflow-hidden shadow-2xl relative transition-all duration-700"
       style={{
-        width: '100%',
-        maxWidth: '600px',
         height: `${PLAYER_HEIGHT}px`,
-        backgroundColor: color,
-        background: `linear-gradient(135deg, ${color} 0%, ${color}EE 100%)`
+        backgroundColor: color || '#282828'
       }}
     >
-      {children}
+      {/* Background with Gaussian Blur for premium aesthetic */}
+      <div 
+        className="absolute inset-0 opacity-40 blur-[40px] pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at 20%, ${color} 0%, transparent 70%), 
+                       radial-gradient(circle at 80%, ${color} 0%, transparent 70%)`
+        }}
+      />
+      <div className="relative h-full">
+        {children}
+      </div>
     </div>
   )
 
-  // Apple Music or Spotify Preview UI (Matching the Niall Horan image)
   const CustomPlayerUI = ({
     imageUrl, title, artist, durationMs, externalUrl, provider
   }: {
@@ -216,91 +220,80 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   }) => (
     <PlayerCard color={dominantColor}>
       <div className="flex h-full p-5 relative text-white">
-        {/* Left: Artwork (120x120 - 3/4 of 160px) */}
+        {/* Artwork Image Container (120x120, Shifted Left+Up 12px) */}
         <div
-          className="flex-shrink-0 overflow-hidden rounded-[8px] shadow-lg border border-white/10"
+          className="flex-shrink-0 overflow-hidden rounded-[8px] md:rounded-[12px] shadow-lg border border-white/10"
           style={{
             width: '120px',
             height: '120px',
             minWidth: '120px',
             minHeight: '120px',
-            marginLeft: '4px',
-            marginTop: '10px',
-            willChange: 'transform',
-            backfaceVisibility: 'hidden'
+            marginLeft: '16px',
+            marginTop: '20px'
           }}
         >
           <img
             src={imageUrl}
             alt={title}
-            className="object-cover"
-            style={{
-              width: '120px',
-              height: '120px',
-              willChange: 'transform',
-              backfaceVisibility: 'hidden'
-            }}
+            className="object-cover w-full h-full"
           />
         </div>
 
-        {/* Right Content Container: Title/Artist + Progress/Controls */}
-        <div className="flex-1 flex flex-col min-w-0" style={{ marginTop: '-4px', marginLeft: '-4px' }}>
-          {/* Top: Title/Artist/Open Button */}
+        {/* Right Content Container: Unified alignment (12px gap from cover) */}
+        <div className="flex-1 flex flex-col min-w-0" style={{ marginTop: '20px', marginLeft: '12px' }}>
+          {/* Top section: Title, Artist and Open Button */}
           <div className="flex flex-col mb-1 items-start">
-            <h3 className="text-xl md:text-[24px] font-bold truncate tracking-tight mb-0.5 leading-tight">
+            <h3 className="text-base md:text-[24px] font-bold truncate tracking-tight mb-0.5 leading-tight w-full">
               {title}
             </h3>
-            <p className="text-white/70 text-lg font-medium truncate mb-2">
+            <p className="text-white/70 text-sm md:text-base font-medium truncate mb-2 md:mb-4 w-full">
               {artist}
             </p>
 
             <button
               onClick={() => window.open(externalUrl, '_blank')}
-              className="flex items-center gap-2.5 group/save w-fit"
-              style={{ marginLeft: '-12px' }}
+              className="flex items-center gap-2.5 group/save w-fit ml-[-12px]"
             >
               <div className="w-5 h-5 rounded-full border-2 border-white/60 flex items-center justify-center group-hover/save:border-white transition-colors">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               </div>
-              <span className="text-base font-semibold text-white/90 group-hover/save:text-white transition-colors" style={{ whiteSpace: 'nowrap' }}>
+              <span className="text-base font-semibold text-white/90 group-hover/save:text-white transition-colors whitespace-nowrap">
                 在 {provider === 'spotify' ? 'Spotify' : 'Apple Music'} 上打开
               </span>
             </button>
-            
-            {/* Mobile Controls Layout - Centering just the bar with the button */}
-            <div className="md:hidden flex flex-col mt-auto mb-1" style={{ marginRight: '8px', transform: 'translateY(8px)' }}>
-              <div className="flex items-center justify-between">
-                {/* Progress Bar Line only for centering */}
-                <div className="bg-white/20 rounded-full h-[3px] relative" style={{ width: '150px' }}>
+          </div>
+
+          {/* H5 Progress & Control Row: Fixed wrapping for time and progress bar */}
+          <div className="md:hidden flex flex-col mt-auto mb-1 transform translate-y-[8px]">
+            <div className="flex items-center gap-3 mr-2">
+              <div className="flex flex-col">
+                <div className="bg-white/20 rounded-full h-[3px] relative w-[120px]">
                   <div
                     className="bg-white/80 h-full rounded-full"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-
-                {/* Large Play Button - Reduced to 0.75 size (48x48) */}
-                <button
-                  onClick={togglePlay}
-                  className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-black shadow-2xl z-10"
-                >
-                  {isPlaying ? (
-                    <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="6" height="16"></rect><rect x="12" y="4" width="6" height="16"></rect></svg>
-                  ) : (
-                    <svg className="w-7 h-7 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l14-8z"></path></svg>
-                  )}
-                </button>
+                <span className="text-[10px] font-bold tabular-nums text-white/50 mt-1">
+                  {formatTime((durationMs || 30000) * (progress / 100))}
+                </span>
               </div>
-              
-              {/* Time display sits below the row, independent of the centering */}
-              <span className="text-[10px] font-bold tabular-nums text-white/50 self-start" style={{ marginTop: '-10px' }}>
-                {formatTime((durationMs || 30000) * (progress / 100))}
-              </span>
+
+              {/* H5 Play Button (48x48) shifted right of progress+time */}
+              <button
+                onClick={togglePlay}
+                className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-black shadow-2xl z-10 ml-auto"
+              >
+                {isPlaying ? (
+                  <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="6" height="16"></rect><rect x="12" y="4" width="6" height="16"></rect></svg>
+                ) : (
+                  <svg className="w-7 h-7 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l14-8z"></path></svg>
+                )}
+              </button>
             </div>
           </div>
 
-          {/* Bottom: Progress & Controls (Desktop Only) */}
-          <div className="hidden md:flex items-center gap-4 mt-auto" style={{ marginBottom: '-3px' }}>
-            {/* Progress Bar Container */}
+          {/* Desktop Controls (Aligned with Title) */}
+          <div className="hidden md:flex items-center gap-4 mt-auto mb-[-3px]">
             <div className="flex flex-1 items-center gap-3" style={{ maxWidth: 'calc(100% - 140px)' }}>
               <div className="flex-1 bg-white/20 rounded-full h-[4px] relative group/progress cursor-pointer">
                 <div
@@ -308,13 +301,8 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
                   style={{ width: `${progress}%`, transition: isPlaying ? 'width 0.1s linear' : 'none' }}
                 />
                 <div
-                  className="w-4 h-4 bg-white rounded-full shadow-lg"
-                  style={{
-                    left: `${progress}%`,
-                    transform: 'translate(-50%, calc(-50% + 6px))',
-                    position: 'absolute',
-                    top: '50%'
-                  }}
+                  className="w-4 h-4 bg-white rounded-full shadow-lg absolute top-1/2 -translate-y-1/2"
+                  style={{ left: `${progress}%`, transform: 'translate(-50%, -50%) translateY(6px)' }}
                 />
               </div>
               <span className="text-sm font-bold tabular-nums text-white/90 min-w-[40px] text-right">
@@ -322,8 +310,7 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
               </span>
             </div>
 
-            {/* Desktop Controls */}
-            <div className="flex items-center gap-6" style={{ marginRight: '20px', marginLeft: 'auto' }}>
+            <div className="flex items-center gap-6 mr-5 ml-auto">
               <button className="text-white/60 hover:text-white transition-all">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg>
               </button>
@@ -341,10 +328,9 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
           </div>
         </div>
 
-        {/* Top Right: Brand Logo */}
         {provider === 'spotify' && (
           <div className="absolute top-5 right-5 opacity-90">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.485 17.306c-.215.352-.676.463-1.028.248-2.857-1.745-6.45-2.14-10.686-1.171-.403.092-.806-.16-.898-.563-.092-.403.16-.806.563-.898 4.675-1.07 8.647-.611 11.796 1.313.352.215.463.676.248 1.028zm1.467-3.264c-.269.439-.844.582-1.283.313-3.27-2.01-8.254-2.595-12.122-1.417-.492.15-1.018-.128-1.168-.621-.15-.493.128-1.018.621-1.168 4.417-1.34 9.93-.679 13.639 1.6 0 .001.44.27.313 1.306zm.127-3.374c-.322.525-1.01.693-1.535.37-3.826-2.272-10.134-2.483-13.844-1.357-.6.183-1.237-.16-1.42-.761-.183-.601.16-1.238.761-1.42 4.316-1.311 11.278-1.066 15.679 1.547.525.323.693 1.01.37 1.535z" /></svg>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.4 12-12S18.627 0 12 0zm5.485 17.306c-.215.352-.676.463-1.028.248-2.857-1.745-6.45-2.14-10.686-1.171-.403.092-.806-.16-.898-.563-.092-.403.16-.806.563-.898 4.675-1.07 8.647-.611 11.796 1.313.352.215.463.676.248 1.028zm1.467-3.264c-.269.439-.844.582-1.283.313-3.27-2.01-8.254-2.595-12.122-1.417-.492.15-1.018-.128-1.168-.621-.15-.493.128-1.018.621-1.168 4.417-1.34 9.93-.679 13.639 1.6 0 .001.44.27.313 1.306zm.127-3.374c-.322.525-1.01.693-1.535.37-3.826-2.272-10.134-2.483-13.844-1.357-.6.183-1.237-.16-1.42-.761-.183-.601.16-1.238.761-1.42 4.316-1.311 11.278-1.066 15.679 1.547.525.323.693 1.01.37 1.535z" /></svg>
           </div>
         )}
       </div>
@@ -405,23 +391,30 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
   }
 
   // Fallback / Loading
+  // Optimized Fallback UI (Clearly visible status)
   return (
     <div
-      className="w-full h-[180px] bg-gray-50 rounded-2xl flex flex-col items-center justify-center border border-black/5 p-4 text-center"
+      className="w-full bg-[#1e1e1e] rounded-2xl flex flex-col items-center justify-center border border-white/5 p-6 text-center"
       style={{ height: PLAYER_HEIGHT }}
     >
       {fallbackError ? (
-        <>
-          <p className="text-sm text-gray-400">🚫 {fallbackError}</p>
+        <div className="flex flex-col items-center gap-2">
+          <p className="text-sm text-gray-400 font-medium">🚫 {fallbackError}</p>
           <button
             onClick={() => setIsChinaDetails({ isChina: false, checked: true })}
-            className="text-[10px] mt-2 underline opacity-60"
+            className="text-[10px] text-blue-400 hover:text-blue-300 underline mt-2"
           >
-            Force Spotify
+            Force Spotify Iframe
           </button>
-        </>
+        </div>
       ) : (
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-400 opacity-30" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
+          <div className="flex flex-col gap-1">
+            <p className="text-sm text-white/80 font-bold">正在切换音乐源...</p>
+            <p className="text-[10px] text-white/40 uppercase tracking-widest">Searching Apple Music for your region</p>
+          </div>
+        </div>
       )}
     </div>
   )

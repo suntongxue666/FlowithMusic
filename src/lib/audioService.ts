@@ -98,73 +98,79 @@ function checkBrowserLanguage(): boolean {
 
 export async function checkIsChinaIP(): Promise<boolean> {
     try {
-        console.log('🌍 [Detection] Starting IP detection...')
+        console.log('🌍 [Detection] Starting robust detection...')
 
-        // 1. 首先检查缓存
+        // 1. 快速检查：缓存、时区、语言（零延迟）
         const cached = getCachedResult()
-        if (cached.valid) {
-            return cached.isChina
+        if (cached.valid) return cached.isChina
+
+        if (checkTimezone()) {
+            console.log('🌍 [Detection] ✅ Fast Track: China Timezone detected')
+            saveCache(true)
+            return true
         }
 
-        // 2. IP API 检测 - 只依赖 IP API
+        if (checkBrowserLanguage()) {
+            console.log('🌍 [Detection] 💡 Fast Track: Browser language suggests China')
+            // 不直接返回 true，配合 IP 校验结果更准，但如果没有 IP 结果，这可以作为依据
+        }
+
+        // 2. 并行 IP API 检测 (使用 HTTPS 优先且不通则跳过)
         const reliableApis = [
-            'https://api.country.is/',
-            'https://api.ipgeolocation.io/ipgeo?apiKey=free',
-            'https://ipapi.co/json/'
+            'https://api.country.is/', // 支持 HTTPS
+            'https://ipapi.co/json/',    // 支持 HTTPS
+            'https://api.ipify.org?format=json' // 备用
         ]
 
-        for (const apiUrl of reliableApis) {
+        // 创建带超时的 Fetch
+        const fetchWithTimeout = async (url: string) => {
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 2000)
             try {
-                console.log('🌍 [Detection] Trying:', apiUrl)
-                const response = await fetch(apiUrl, {
-                    method: 'GET',
-                    cache: 'no-cache',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                })
-                
-                if (!response.ok) {
-                    console.warn('🌍 [Detection] API response not OK:', response.status)
-                    continue
-                }
-
+                const response = await fetch(url, { signal: controller.signal })
+                clearTimeout(timeoutId)
+                if (!response.ok) throw new Error('API Error')
                 const data = await response.json()
-                console.log('🌍 [Detection] API response:', data)
-
-                // 检查多种可能的字段名
-                const possibleFields = ['country_code', 'countryCode', 'country', 'country_name', 'countryName']
-                
-                for (const field of possibleFields) {
-                    if (data[field]) {
-                        const countryCode = String(data[field]).toUpperCase()
-                        console.log('🌍 [Detection] Found country code:', countryCode, 'from field:', field)
-                        
-                        if (countryCode === 'CN' || countryCode === 'CHN' || countryCode === 'CHINA') {
-                            console.log('🌍 [Detection] ✅ Confirmed China IP')
-                            saveCache(true)
-                            return true
-                        } else {
-                            console.log('🌍 [Detection] ❌ Non-China IP:', countryCode)
-                            saveCache(false)
-                            return false
-                        }
-                    }
-                }
+                const country = (data.countryCode || data.country_code || data.country || '').toUpperCase()
+                return country
             } catch (e) {
-                console.warn('🌍 [Detection] API failed:', apiUrl, e)
-                continue
+                clearTimeout(timeoutId)
+                throw e
             }
         }
 
-        // 所有 IP API 都失败，默认返回 false（使用 Spotify）
-        console.log('🌍 [Detection] ❌ All IP APIs failed, defaulting to Spotify')
-        saveCache(false)
-        return false
-        saveCache(false)
+        try {
+            // 实现简单的 Promise.any 兼容逻辑：获取第一个成功的响应
+            const countryCode = await new Promise<string>((resolve, reject) => {
+                let errors = 0
+                reliableApis.forEach(url => {
+                    fetchWithTimeout(url)
+                        .then(resolve)
+                        .catch(() => {
+                            errors++
+                            if (errors === reliableApis.length) reject(new Error('All failed'))
+                        })
+                })
+            })
+            console.log('🌍 [Detection] Fastest API result:', countryCode)
+            
+            const isChina = countryCode === 'CN' || countryCode === 'CHN'
+            saveCache(isChina)
+            return isChina
+        } catch (perError) {
+            console.warn('🌍 [Detection] All IP APIs failed or timed out')
+        }
+
+        // 3. 终极兜底：如果 API 均不可达，通过时区与语言双重判定
+        if (checkTimezone() || checkBrowserLanguage()) {
+            console.log('🌍 [Detection] Final fallback: System signals indicate China region')
+            saveCache(true)
+            return true
+        }
+
         return false
     } catch (error) {
-        console.warn('🌍 [Detection] Failed, defaulting to false:', error)
+        console.warn('🌍 [Detection] Total failure, defaulting to Global:', error)
         return false
     }
 }
@@ -247,7 +253,7 @@ async function executeAppleSearch(
         if (targetDurationMs) {
             const bestMatch = results.find(track => {
                 const diff = Math.abs(track.trackTimeMillis - targetDurationMs)
-                return diff < 5000 // Allow 5 seconds difference
+                return diff < 12000 // Loosened from 5s to 12s for better remastered matching
             })
             if (bestMatch) {
                 console.log('🎵 [Apple Music] Found duration match:', bestMatch.trackName)
