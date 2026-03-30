@@ -124,23 +124,28 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
       if (!track || !track.artists?.[0]) return
       console.log('🎵 Fetching Apple Music for:', track.name, track.artists[0].name)
 
-      // 添加 5 秒超时
+      // 延长超时到10秒，特别针对移动端/H5复杂网络环境
       const timeoutPromise = new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error('Apple Music search timeout')), 5000)
+        setTimeout(() => reject(new Error('Apple Music search timeout')), 10000)
       )
 
       // 先尝试中国区 Apple Music，如果搜不到再尝试美国区
       let result = await Promise.race([
-        searchAppleMusic(track.name, track.artists[0].name, track.duration_ms, 'CN'),
+        searchAppleMusic(track.name, track.artists[0]?.name || '', track.duration_ms, 'CN'),
         timeoutPromise
       ])
 
       if (!result) {
-        console.log('🎵 Apple Music [CN] not found, trying [US] region...')
-        result = await Promise.race([
-          searchAppleMusic(track.name, track.artists[0].name, track.duration_ms, 'US'),
-          timeoutPromise
-        ])
+        console.log('🎵 Apple Music [CN] not found, trying multi-region search...')
+        // 依次尝试不同地区
+        const regions = ['US', 'HK', 'TW']
+        for (const region of regions) {
+          result = await Promise.race([
+            searchAppleMusic(track.name, track.artists[0]?.name || '', track.duration_ms, region),
+            timeoutPromise
+          ])
+          if (result) break
+        }
       }
 
       if (result) {
