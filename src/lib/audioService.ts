@@ -98,40 +98,33 @@ function checkBrowserLanguage(): boolean {
 
 export async function checkIsChinaIP(): Promise<boolean> {
     try {
-        console.log('🌍 [Detection] Starting robust detection...')
+        console.log('🌍 [Detection] Starting IP-ONLY detection...')
 
-        // 1. 快速检查：缓存、时区、语言（零延迟）
+        // 1. 检查缓存
         const cached = getCachedResult()
-        if (cached.valid) return cached.isChina
-
-        if (checkTimezone()) {
-            console.log('🌍 [Detection] ✅ Fast Track: China Timezone detected')
-            saveCache(true)
-            return true
+        if (cached.valid) {
+            console.log('🌍 [Detection] Using cached result:', cached.isChina ? 'China' : 'Global')
+            return cached.isChina
         }
 
-        if (checkBrowserLanguage()) {
-            console.log('🌍 [Detection] 💡 Fast Track: Browser language suggests China')
-            // 不直接返回 true，配合 IP 校验结果更准，但如果没有 IP 结果，这可以作为依据
-        }
-
-        // 2. 并行 IP API 检测 (使用 HTTPS 优先且不通则跳过)
+        // 2. 并行 IP API 检测 (增加了对中国网络更友好的备现线路)
         const reliableApis = [
-            'https://api.country.is/', // 支持 HTTPS
-            'https://ipapi.co/json/',    // 支持 HTTPS
-            'https://api.ipify.org?format=json' // 备用
+            'https://api.myip.la/json?lang=en', // 对中国用户非常稳定
+            'https://api.country.is/',
+            'https://ipapi.co/json/',
+            'https://api.ipify.org?format=json'
         ]
 
-        // 创建带超时的 Fetch
         const fetchWithTimeout = async (url: string) => {
             const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 2000)
+            const timeoutId = setTimeout(() => controller.abort(), 4000) // 延长到4s，适应移动网络
             try {
                 const response = await fetch(url, { signal: controller.signal })
                 clearTimeout(timeoutId)
                 if (!response.ok) throw new Error('API Error')
                 const data = await response.json()
-                const country = (data.countryCode || data.country_code || data.country || '').toUpperCase()
+                // 兼容不同 API 的返回格式
+                const country = (data.countryCode || data.country_code || data.country || data.location?.country_code || '').toUpperCase()
                 return country
             } catch (e) {
                 clearTimeout(timeoutId)
@@ -140,37 +133,29 @@ export async function checkIsChinaIP(): Promise<boolean> {
         }
 
         try {
-            // 实现简单的 Promise.any 兼容逻辑：获取第一个成功的响应
             const countryCode = await new Promise<string>((resolve, reject) => {
                 let errors = 0
                 reliableApis.forEach(url => {
                     fetchWithTimeout(url)
-                        .then(resolve)
+                        .then(code => { if (code) resolve(code) })
                         .catch(() => {
                             errors++
                             if (errors === reliableApis.length) reject(new Error('All failed'))
                         })
                 })
             })
-            console.log('🌍 [Detection] Fastest API result:', countryCode)
             
+            console.log('🌍 [Detection] IP Result:', countryCode)
             const isChina = countryCode === 'CN' || countryCode === 'CHN'
             saveCache(isChina)
             return isChina
         } catch (perError) {
-            console.warn('🌍 [Detection] All IP APIs failed or timed out')
-        }
-
-        // 3. 终极兜底：如果 API 均不可达，通过时区与语言双重判定
-        if (checkTimezone() || checkBrowserLanguage()) {
-            console.log('🌍 [Detection] Final fallback: System signals indicate China region')
-            saveCache(true)
-            return true
+            console.warn('🌍 [Detection] IP APIs unreachable. Defaulting to Global.')
         }
 
         return false
     } catch (error) {
-        console.warn('🌍 [Detection] Total failure, defaulting to Global:', error)
+        console.warn('🌍 [Detection] Critical failure, defaulting to Global:', error)
         return false
     }
 }

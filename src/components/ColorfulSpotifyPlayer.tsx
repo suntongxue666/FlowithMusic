@@ -82,9 +82,9 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
 
     async function checkIn() {
       try {
-        // 延长超时到3秒，给移动网络更多时间
+        // 为 IP 检测留出足够时间，特别是在中国慢速网络环境下
         const timeoutPromise = new Promise<boolean>((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout')), 3000)
+          setTimeout(() => reject(new Error('Timeout')), 6000)
         )
         const isCN = await Promise.race([checkIsChinaIP(), timeoutPromise])
         if (isCN) {
@@ -96,23 +96,8 @@ export default function ColorfulSpotifyPlayer({ track, countryCode: initialCount
           setIsChinaDetails({ isChina: false, checked: true })
         }
       } catch (e) {
-        // 超时或失败时，优先检查缓存和系统特征
-        console.log('⏱️ Detection stalled, checking local signals...')
-        
-        // 1. 检查时区
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-        const isLikelyChina = timezone?.includes('Shanghai') || 
-                             timezone?.includes('Chongqing') || 
-                             navigator.language.startsWith('zh-CN')
-
-        if (isLikelyChina) {
-          console.log('📍 Detection stalled but system signals suggest China')
-          setIsChinaDetails({ isChina: true, checked: true })
-          fetchAppleMusicFallback(true)
-          return
-        }
-
-        console.log('🌐 Defaulting to global (Spotify)')
+        // 超时或失败时，直接回退到 Global (Spotify)
+        console.log('⏱️ Detection failure or timeout. Using Global.', e)
         setIsChinaDetails({ isChina: false, checked: true })
       }
     }
