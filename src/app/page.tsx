@@ -2,11 +2,11 @@ import Header from '@/components/Header'
 import Hero from '@/components/Hero'
 import Features from '@/components/Features'
 import MusicCards from '@/components/MusicCards'
+import AdBanner from '@/components/AdBanner'
 import RecentPostsCarousel from '@/components/RecentPostsCarousel'
 import ArtistLetters from '@/components/ArtistLetters'
 import QA from '@/components/QA'
 import Footer from '@/components/Footer'
-
 
 export default function Home() {
   return (
@@ -16,6 +16,12 @@ export default function Home() {
       <div className="desktop-only">
         <Features />
       </div>
+
+      {/* Ad Banner (Centered) */}
+      <div className="w-full flex justify-center py-4 md:py-8 px-4">
+        <AdBanner />
+      </div>
+
       {/* Recent Posts 轮播 - 每页6个卡片，每小时更新数据 */}
       <RecentPostsCarousel
         cardsPerPage={6}
