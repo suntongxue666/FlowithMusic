@@ -235,26 +235,26 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             </div>
 
             {/* Info */}
-            <h1 className="text-2xl font-bold mb-[12px]">{targetUser.display_name || 'User'}</h1>
+            <div className="text-center">
+              <h1 className="text-2xl font-bold">{targetUser.display_name || 'User'}</h1>
+              {isSelf && targetUser.is_premium && targetUser.premium_until && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Monthly Premium: {new Date(targetUser.premium_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} expires and auto-renews
+                </p>
+              )}
+            </div>
 
             {isSelf && (
                 <div className="flex flex-row items-center justify-center gap-3" style={{ marginTop: '24px' }}>
-                  {(targetUser.is_premium || targetUser.is_admin || targetUser.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981') ? (
-                    <div 
-                      className="text-[12px] font-bold text-white bg-[#ff9800] rounded-full flex items-center justify-center shadow-sm"
-                      style={{ padding: '8px 20px', minWidth: '100px', height: '36px' }}
-                    >
-                      👑 Premium
-                    </div>
-                  ) : (
-                    <Link
-                      href="/premium"
-                      className="text-[12px] font-bold text-white bg-[#ff9800] rounded-full hover:scale-105 transition-transform flex items-center justify-center"
-                      style={{ padding: '8px 20px', minWidth: '100px', height: '36px' }}
-                    >
-                      👑 Premium
-                    </Link>
-                  )}
+                  <Link
+                    href="/premium"
+                    className={`text-[12px] font-bold text-white bg-[#ff9800] rounded-full flex items-center justify-center shadow-sm transition-transform hover:scale-105 active:scale-95 ${
+                      (targetUser.is_premium || targetUser.is_admin || targetUser.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981') ? '' : ''
+                    }`}
+                    style={{ padding: '8px 20px', minWidth: '100px', height: '36px', cursor: 'pointer' }}
+                  >
+                    👑 Premium
+                  </Link>
 
                   <button
                     onClick={handleSignOut}
