@@ -91,6 +91,7 @@ function toCamel(letter: any) {
         id: letter.user.id,
         display_name: letter.user.display_name,
         avatar_url: letter.user.avatar_url,
+        is_premium: letter.user.is_premium,
       }
       : letter.user,
   }
@@ -132,7 +133,8 @@ export async function GET(
             user:users(
               id,
               display_name,
-              avatar_url
+              avatar_url,
+              is_premium
             )
           `)
           .eq('link_id', linkId)
@@ -237,7 +239,8 @@ export async function POST(
             user:users(
               id,
               display_name,
-              avatar_url
+              avatar_url,
+              is_premium
             )
           `)
           .single()

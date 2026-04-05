@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-// PayPal Webhook ID for verification (optional but recommended)
-const WEBHOOK_ID = '1GD69000FM652152F'
+// PayPal Webhook ID for verification (from Vercel env)
+const WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID || '1GD69000FM652152F'
 
 export async function POST(req: Request) {
   try {
@@ -10,7 +10,12 @@ export async function POST(req: Request) {
     const eventType = body.event_type
     const resource = body.resource
 
-    console.log(`✉️ PayPal Webhook Received: ${eventType}`, body.id)
+    console.log(`✉️ PayPal Webhook Received: ${eventType}`, {
+      id: body.id,
+      resource_id: resource.id,
+      status: resource.status,
+      custom_id: resource.custom_id || resource.custom
+    })
 
     // Handle different event types
     switch (eventType) {
@@ -18,15 +23,14 @@ export async function POST(req: Request) {
       case 'BILLING.SUBSCRIPTION.CREATED':
       case 'BILLING.SUBSCRIPTION.RE-ACTIVATED':
       case 'BILLING.SUBSCRIPTION.UPDATED':
-        await handleSubscriptionChange(resource, true)
+        await handleSubscriptionChange(resource, eventType)
         break
 
       case 'BILLING.SUBSCRIPTION.CANCELLED':
       case 'BILLING.SUBSCRIPTION.EXPIRED':
       case 'BILLING.SUBSCRIPTION.SUSPENDED':
-        // Note: We usually don't remove premium immediately on cancel, 
-        // we let it run until premium_until. But we can log it.
         console.log(`ℹ️ Subscription ${resource.id} status changed to ${resource.status}`)
+        await handleSubscriptionChange(resource, eventType)
         break
 
       case 'PAYMENT.SALE.COMPLETED':
@@ -51,87 +55,121 @@ export async function POST(req: Request) {
 }
 
 /**
- * Handle subscription renewal or activation
+ * Helper to find user by custom_id or subscription_id
  */
-async function handleSubscriptionChange(resource: any, isActive: boolean) {
-  const subscriptionId = resource.id
-  const status = resource.status
-  const planId = resource.plan_id
+async function findUser(resource: any) {
+  if (!supabase) return null
   
-  // Try to find user by metadata.last_subscription_id
-  if (!supabase) return
-  const { data: users, error } = await supabase
-    .from('users')
-    .select('id, metadata')
-    .contains('metadata', { last_subscription_id: subscriptionId })
+  const subscriptionId = resource.id || resource.billing_agreement_id
+  const customId = resource.custom_id || resource.custom
+  
+  // 1. Try finding by custom_id (new direct method)
+  if (customId) {
+    console.log(`🔍 Searching user by custom_id: ${customId}`)
+    const { data: user } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', customId)
+      .maybeSingle()
+    
+    if (user) return user
+  }
 
-  if (error || !users || users.length === 0) {
-    console.error(`👤 User not found for subscription: ${subscriptionId}`)
+  // 2. Fallback to searching metadata for subscription ID (old method)
+  if (subscriptionId) {
+    console.log(`🔍 Searching user by last_subscription_id: ${subscriptionId}`)
+    const { data: users } = await supabase
+      .from('users')
+      .select('*')
+      .contains('metadata', { last_subscription_id: subscriptionId })
+    
+    if (users && users.length > 0) return users[0]
+  }
+
+  return null
+}
+
+/**
+ * Handle subscription status changes
+ */
+async function handleSubscriptionChange(resource: any, eventType: string) {
+  const user = await findUser(resource)
+  if (!user) {
+    console.error(`👤 User not found for ${eventType}: ${resource.id}`)
     return
   }
 
-  const user = users[0]
-  
+  const status = resource.status
+  const planId = resource.plan_id
+  const subscriptionId = resource.id
+
   // Calculate expiry (1 month or 1 year)
-  const isAnnual = planId === 'P-6BK56971245341456NG3N6KQ'
+  // Monthly: P-0E135132J93420229NG3WTWA
+  // Annual: P-0PU3781769776022HNG3WTWI, P-6BK56971245341456NG3N6KQ (old)
+  const isAnnual = planId === 'P-0PU3781769776022HNG3WTWI' || planId === 'P-6BK56971245341456NG3N6KQ'
   const nextExpiry = new Date()
   if (isAnnual) nextExpiry.setFullYear(nextExpiry.getFullYear() + 1)
   else nextExpiry.setMonth(nextExpiry.getMonth() + 1)
 
+  const isActive = status === 'ACTIVE'
+  
   await supabase!
     .from('users')
     .update({
-      is_premium: isActive && (status === 'ACTIVE'),
-      premium_until: nextExpiry.toISOString(),
-      updated_at: new Date().toISOString()
+      is_premium: isActive,
+      premium_until: isActive ? nextExpiry.toISOString() : user.premium_until,
+      updated_at: new Date().toISOString(),
+      metadata: {
+        ...(user.metadata || {}),
+        last_subscription_id: subscriptionId,
+        last_event: eventType,
+        last_status: status
+      }
     })
     .eq('id', user.id)
 
-  console.log(`✅ User ${user.id} premium status updated via subscription change`)
+  console.log(`✅ User ${user.id} premium status updated to ${isActive} (${status})`)
 }
 
 /**
  * Handle recurring payments
  */
 async function handlePaymentCompleted(resource: any) {
+  const user = await findUser(resource)
   const subscriptionId = resource.billing_agreement_id
-  if (!subscriptionId || !supabase) return
 
-  const { data: users } = await supabase
-    .from('users')
-    .select('id, premium_until, metadata')
-    .contains('metadata', { last_subscription_id: subscriptionId })
-
-  if (users && users.length > 0) {
-    const user = users[0]
-    const currentExpiry = user.premium_until ? new Date(user.premium_until) : new Date()
-    
-    // Extend from current expiry or now, whichever is later
-    const baseDate = currentExpiry > new Date() ? currentExpiry : new Date()
-    const isAnnual = user.metadata?.last_plan === 'yearly'
-    
-    if (isAnnual) baseDate.setFullYear(baseDate.getFullYear() + 1)
-    else baseDate.setMonth(baseDate.getMonth() + 1)
-
-    await supabase!
-      .from('users')
-      .update({
-        is_premium: true,
-        premium_until: baseDate.toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user.id)
-
-    console.log(`💰 Payment completed for subscription ${subscriptionId}. Expiry extended to ${baseDate.toISOString()}`)
+  if (!user) {
+    console.error(`💰 User not found for payment: ${subscriptionId}`)
+    return
   }
+
+  const currentExpiry = user.premium_until ? new Date(user.premium_until) : new Date()
+  
+  // Extend from current expiry or now, whichever is later
+  const baseDate = currentExpiry > new Date() ? currentExpiry : new Date()
+  const isAnnual = user.metadata?.last_plan === 'yearly'
+  
+  if (isAnnual) baseDate.setFullYear(baseDate.getFullYear() + 1)
+  else baseDate.setMonth(baseDate.getMonth() + 1)
+
+  await supabase!
+    .from('users')
+    .update({
+      is_premium: true,
+      premium_until: baseDate.toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', user.id)
+
+  console.log(`💰 Payment completed for subscription ${subscriptionId}. User ${user.id} extended to ${baseDate.toISOString()}`)
 }
 
 /**
  * Handle refunds/reversals
  */
 async function handlePaymentReversed(resource: any) {
-  const subscriptionId = resource.billing_agreement_id
-  if (!subscriptionId || !supabase) return
+  const user = await findUser(resource)
+  if (!user) return
 
   await supabase!
     .from('users')
@@ -139,7 +177,7 @@ async function handlePaymentReversed(resource: any) {
       is_premium: false,
       updated_at: new Date().toISOString()
     })
-    .filter('metadata->last_subscription_id', 'eq', subscriptionId)
+    .eq('id', user.id)
 
-  console.log(`⚠️ Payment reversed for subscription ${subscriptionId}. Premium revoked.`)
+  console.log(`⚠️ Payment reversed for user ${user.id}. Premium revoked.`)
 }

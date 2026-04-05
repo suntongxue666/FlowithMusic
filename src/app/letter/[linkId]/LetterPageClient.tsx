@@ -184,11 +184,15 @@ interface LetterPageClientProps {
   linkId: string
 }
 
+import GoogleAdSense from '@/components/GoogleAdSense'
+
 export default function LetterPageClient({ linkId }: LetterPageClientProps) {
   const searchParams = useSearchParams()
   const emojiParam = searchParams.get('emoji') // 检查URL参数 ?emoji=flowing
 
   const [letter, setLetter] = useState<Letter | null>(null)
+  
+  // 移除之前的全局 setAdForceHidden 逻辑，改为在渲染层直接控制组件
   const [forceRefresh, setForceRefresh] = useState(Date.now())
   const [loading, setLoading] = useState(true)
   const [showEffect, setShowEffect] = useState(false)
@@ -512,6 +516,8 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
   return (
     <main>
       <Header />
+      {/* ⚠️ 重要逻辑：仅在数据读完且发件人不是会员的情况下加载广告 */}
+      {!loading && letter && <GoogleAdSense forceHide={letter?.user?.is_premium} />}
       {/* 浏览追踪组件 */}
       <ViewTracker letterId={linkId} />
       <div className="letter-container">

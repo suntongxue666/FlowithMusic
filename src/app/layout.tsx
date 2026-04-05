@@ -38,6 +38,8 @@ export const metadata: Metadata = {
   },
 }
 
+import { AdProvider } from '@/contexts/AdContext'
+
 export default function RootLayout({
   children,
 }: {
@@ -68,9 +70,11 @@ export default function RootLayout({
       </head>
       <body>
         <UserProvider>
-          {children}
-          <GoogleAdSense />
-          <UserIdentityNotification />
+          <AdProvider>
+            {children}
+            <GoogleAdSense isGlobal />
+            <UserIdentityNotification />
+          </AdProvider>
         </UserProvider>
       </body>
     </html>

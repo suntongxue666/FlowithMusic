@@ -17,6 +17,9 @@ export default function PremiumPage() {
   const { user } = useUserState()
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  
+  // Calculate current user ID (for PayPal custom_id)
+  const currentUserId = user?.id || (typeof window !== 'undefined' ? userService.getAnonymousId() : null)
 
   const benefits = [
     { icon: '✉️', text: 'Unlimited daily letters' },
@@ -131,7 +134,10 @@ export default function PremiumPage() {
                   <div className="paypal-button-container">
                     <PayPalButtons 
                       style={{ layout: 'vertical', color: 'black', shape: 'pill', label: 'subscribe' }}
-                      createSubscription={(data, actions) => actions.subscription.create({ plan_id: MONTHLY_PLAN_ID })}
+                      createSubscription={(data, actions) => actions.subscription.create({ 
+                        plan_id: MONTHLY_PLAN_ID,
+                        custom_id: currentUserId || undefined
+                      })}
                       onApprove={async (data) => await handleSubscriptionSuccess('monthly', data)}
                     />
                   </div>
@@ -154,7 +160,10 @@ export default function PremiumPage() {
                   <div className="paypal-button-container">
                     <PayPalButtons 
                       style={{ layout: 'vertical', color: 'gold', shape: 'pill', label: 'subscribe' }}
-                      createSubscription={(data, actions) => actions.subscription.create({ plan_id: ANNUAL_PLAN_ID })}
+                      createSubscription={(data, actions) => actions.subscription.create({ 
+                        plan_id: ANNUAL_PLAN_ID,
+                        custom_id: currentUserId || undefined
+                      })}
                       onApprove={async (data) => await handleSubscriptionSuccess('yearly', data)}
                     />
                   </div>
