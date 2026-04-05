@@ -220,7 +220,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
         <div className="w-full max-w-2xl mx-auto">
           <div
             className="mb-6 mt-6 flex flex-col items-center justify-center text-gray-900 relative w-full"
-            style={{ minHeight: '200px' }}
+            style={{ minHeight: '160px' }}
           >
 
             {/* Avatar */}
