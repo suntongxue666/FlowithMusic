@@ -237,9 +237,9 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
             {/* Info */}
             <div className="text-center">
               <h1 className="text-2xl font-bold">{targetUser.display_name || 'User'}</h1>
-              {isSelf && targetUser.is_premium && targetUser.premium_until && (
+              {isSelf && targetUser.is_premium && (
                 <p className="text-sm text-gray-500 mt-1">
-                  Monthly Premium: {new Date(targetUser.premium_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} expires and auto-renews
+                  Monthly Premium: {targetUser.premium_until ? new Date(targetUser.premium_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Active'} expires and auto-renews
                 </p>
               )}
             </div>
