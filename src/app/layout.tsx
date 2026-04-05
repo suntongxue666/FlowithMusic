@@ -40,6 +40,8 @@ export const metadata: Metadata = {
 
 import { AdProvider } from '@/contexts/AdContext'
 
+import { Suspense } from 'react'
+
 export default function RootLayout({
   children,
 }: {
@@ -72,7 +74,9 @@ export default function RootLayout({
         <UserProvider>
           <AdProvider>
             {children}
-            <GoogleAdSense isGlobal />
+            <Suspense fallback={null}>
+              <GoogleAdSense isGlobal />
+            </Suspense>
             <UserIdentityNotification />
           </AdProvider>
         </UserProvider>

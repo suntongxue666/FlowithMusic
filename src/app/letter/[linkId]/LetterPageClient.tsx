@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
@@ -517,7 +517,9 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
     <main>
       <Header />
       {/* ⚠️ 重要逻辑：仅在数据读完且发件人不是会员的情况下加载广告 */}
-      {!loading && letter && <GoogleAdSense forceHide={letter?.user?.is_premium} />}
+      <Suspense fallback={null}>
+        {!loading && letter && <GoogleAdSense forceHide={letter?.user?.is_premium} />}
+      </Suspense>
       {/* 浏览追踪组件 */}
       <ViewTracker letterId={linkId} />
       <div className="letter-container">
