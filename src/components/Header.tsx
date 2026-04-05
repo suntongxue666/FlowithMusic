@@ -15,10 +15,10 @@ export default function Header({ currentPage }: HeaderProps) {
   const [isUserModalOpen, setIsUserModalOpen] = useState(false)
   const [localLoading, setLocalLoading] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
-  
+
   // 使用统一的用户状态管理
   const { user, isAuthenticated, isLoading: globalLoading, signOut: globalSignOut } = useUserState()
-  
+
   // 合并全局loading和本地loading状态
   const loading = globalLoading || localLoading
 
@@ -27,14 +27,14 @@ export default function Header({ currentPage }: HeaderProps) {
     async function fetchUnreadCount() {
       const queryId = user?.id || (typeof window !== 'undefined' ? userService.getAnonymousId() : null);
       if (!queryId || !supabase) return
-      
+
       try {
         const { count, error } = await supabase
           .from('notifications')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', queryId)
           .eq('is_read', false)
-          
+
         if (!error && count !== null) {
           setUnreadCount(count)
         }
@@ -42,9 +42,9 @@ export default function Header({ currentPage }: HeaderProps) {
         console.error('Failed to fetch unread notifications', err)
       }
     }
-    
+
     fetchUnreadCount()
-    
+
     const handleRead = () => setUnreadCount(0)
     window.addEventListener('notificationsRead', handleRead)
     return () => window.removeEventListener('notificationsRead', handleRead)
@@ -54,22 +54,22 @@ export default function Header({ currentPage }: HeaderProps) {
     try {
       console.log('🔗 Header: 开始Google OAuth登录...')
       setLocalLoading(true)
-      
+
       // 详细的错误检查
       console.log('🔧 检查Supabase配置...')
       console.log('🔧 Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
       console.log('🔧 当前域名:', window.location.origin)
       console.log('🔧 重定向URI:', `${window.location.origin}/auth/callback`)
-      
+
       await userService.signInWithGoogle()
-      
+
     } catch (error: any) {
       console.error('💥 Header: 登录失败:', error)
       console.error('💥 完整错误对象:', error)
-      
+
       // 更详细的错误信息
       let errorMessage = '登录失败，请检查控制台获取详细信息'
-      
+
       if (error.message?.includes('redirect_uri_mismatch')) {
         errorMessage = '重定向URI不匹配。请检查Google Cloud Console中的重定向URI配置是否包含: ' + window.location.origin + '/auth/callback'
       } else if (error.message?.includes('invalid_client')) {
@@ -79,7 +79,7 @@ export default function Header({ currentPage }: HeaderProps) {
       } else if (error.message) {
         errorMessage = `登录失败: ${error.message}`
       }
-      
+
       alert(errorMessage)
     } finally {
       setLocalLoading(false)
@@ -89,16 +89,16 @@ export default function Header({ currentPage }: HeaderProps) {
   const handleSignOut = async () => {
     try {
       console.log('🚪 Header: 开始用户登出流程')
-      
+
       // 使用统一的登出方法
       await globalSignOut()
       console.log('✅ Header: 统一登出完成')
-      
+
       // 刷新页面以确保状态清除
       setTimeout(() => {
         window.location.reload()
       }, 500)
-      
+
     } catch (error: any) {
       console.error('💥 Header: 登出失败:', error)
       alert(`登出失败: ${error.message || '未知错误'}`)
@@ -113,22 +113,22 @@ export default function Header({ currentPage }: HeaderProps) {
     <>
       <header>
         <Link href="/" className="logo">
-          <img 
-            src="https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon//FlowtithMusic-100.png" 
-            alt="FlowithMusic" 
-            width={36} 
+          <img
+            src="https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon//FlowtithMusic-100.png"
+            alt="FlowithMusic"
+            width={36}
             height={36}
           />
           <span style={{ fontSize: '28px' }}>FlowithMusic</span>
         </Link>
-        
+
         {/* Desktop Navigation */}
         <nav className="desktop-nav">
           <Link href="/" className={currentPage === 'home' ? 'active' : ''}>Home</Link>
           <Link href="/send" className={currentPage === 'send' ? 'active' : ''}>Send</Link>
           <Link href="/explore" className={currentPage === 'explore' ? 'active' : ''}>Explore</Link>
           <Link href="/history" className={currentPage === 'history' ? 'active' : ''}>History</Link>
-          
+
           {/* Notifications Tab */}
           <Link href="/notifications" className={currentPage === 'notifications' ? 'active' : ''} style={{ position: 'relative' }}>
             Notifications
@@ -141,24 +141,24 @@ export default function Header({ currentPage }: HeaderProps) {
           <a href='https://ko-fi.com/U7U01GL6A8' target='_blank' rel='noopener noreferrer' style={{ display: 'flex', alignItems: 'center', marginLeft: '4px' }}>
             <img height='32' style={{ border: '0px', height: '32px' }} src='https://storage.ko-fi.com/cdn/kofi3.png?v=6' alt='Buy Me a Coffee at ko-fi.com' />
           </a>
-          
+
           {/* 登录状态显示 */}
           <div className="auth-section">
             {loading ? (
               <div className="loading-indicator">Loading...</div>
             ) : isAuthenticated && user && user.email ? (
-                <Link href={`/user/${user.id}`} className="user-avatar-btn" style={{ position: 'relative', marginTop: '12px' }}>
-                  {user.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981' || (user as any).is_admin ? (
-                    <span className="admin-badge">🤹‍♂️</span>
-                  ) : user.is_premium || (user as any).is_admin ? (
-                    <span className="premium-crown-badge">👑</span>
-                  ) : null}
+              <Link href={`/user/${user.id}`} className="user-avatar-btn" style={{ position: 'relative', marginTop: '12px' }}>
+                {user.id === 'a2a0c0dc-0937-4f15-8796-6ba39fcfa981' || (user as any).is_admin ? (
+                  <span className="admin-badge">🤹‍♂️</span>
+                ) : user.is_premium || (user as any).is_admin ? (
+                  <span className="premium-crown-badge">👑</span>
+                ) : null}
                 {user.avatar_url ? (
-                  <img 
-                    src={user.avatar_url} 
-                    alt="User Avatar" 
-                    className="user-avatar" 
-                    style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '50%' }} 
+                  <img
+                    src={user.avatar_url}
+                    alt="User Avatar"
+                    className="user-avatar"
+                    style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '50%' }}
                   />
                 ) : (
                   <div className="avatar-placeholder-small" style={{ width: '36px', height: '36px' }}>
@@ -185,11 +185,11 @@ export default function Header({ currentPage }: HeaderProps) {
                 <span className="premium-crown-badge">👑</span>
               ) : null}
               {user.avatar_url ? (
-                <img 
-                  src={user.avatar_url} 
-                  alt="User Avatar" 
-                  className="mobile-user-avatar" 
-                  style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '50%' }} 
+                <img
+                  src={user.avatar_url}
+                  alt="User Avatar"
+                  className="mobile-user-avatar"
+                  style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '50%' }}
                 />
               ) : (
                 <div className="mobile-avatar-placeholder" style={{ width: '36px', height: '36px' }}>
@@ -198,8 +198,8 @@ export default function Header({ currentPage }: HeaderProps) {
               )}
             </Link>
           )}
-          
-          <button 
+
+          <button
             className="mobile-menu-btn"
             onClick={toggleMobileMenu}
             aria-label="Toggle menu"
@@ -220,15 +220,15 @@ export default function Header({ currentPage }: HeaderProps) {
           <Link href="/send" className={currentPage === 'send' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Send</Link>
           <Link href="/explore" className={currentPage === 'explore' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Explore</Link>
           <Link href="/history" className={currentPage === 'history' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>History</Link>
-          
+
           {/* Notifications Tab */}
           <Link href="/notifications" className={currentPage === 'notifications' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             Notifications
             {unreadCount > 0 && (
-               <span className="mobile-notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+              <span className="mobile-notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
             )}
           </Link>
-          
+
           {/* 移动端登录状态 - 直接作为菜单项避免多余间距 */}
           {!isAuthenticated && !loading && (
             <div className="mobile-sign-in-wrapper border-t border-gray-100 mt-2 pt-2">
@@ -473,7 +473,7 @@ export default function Header({ currentPage }: HeaderProps) {
 
           .premium-crown-badge {
             position: absolute;
-            top: -10px;
+            top: -36px;
             right: -8px;
             font-size: 14px;
             z-index: 5;
