@@ -473,7 +473,7 @@ export default function Header({ currentPage }: HeaderProps) {
 
           .premium-crown-badge {
             position: absolute;
-            top: -26px;
+            top: -30px;
             right: -8px;
             font-size: 14px;
             z-index: 5;
