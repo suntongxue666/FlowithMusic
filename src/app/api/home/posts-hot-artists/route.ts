@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { letterService } from '@/lib/letterService'
 import { Letter } from '@/lib/supabase'
@@ -6,16 +7,17 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const minLettersCount = parseInt(searchParams.get('minLettersCount') || '6', 10)
-    const artistLimit = parseInt(searchParams.get('artistLimit') || '2', 10) // 限制返回的热门艺术家数量
-    const letterLimitPerArtist = parseInt(searchParams.get('letterLimitPerArtist') || '12', 10) // 每个艺术家返回的Letters数量
-    const format = searchParams.get('format') // 控制返回字段命名
+    const artistLimit = parseInt(searchParams.get('artistLimit') || '2', 10) // 每页返回的热门艺术家数量
+    const offset = parseInt(searchParams.get('offset') || '0', 10) // 分页偏移量
+    const letterLimitPerArtist = parseInt(searchParams.get('letterLimitPerArtist') || '6', 10) // 每个艺术家返回的最新的Letters数量 (按网站规则设为6)
+    const format = searchParams.get('format') // 控制返回字段命名 (APP 通常传 camelCase)
 
-    // 1. 获取热门艺术家
-    const popularArtists = await letterService.getPopularArtists(20) // 获取足够多的艺术家进行筛选
+    // 1. 获取热门艺术家 (已升级为从 DB 统计)
+    const popularArtists = await letterService.getPopularArtists(50) // 获取更多以供分页和筛选
 
-    // 2. 筛选出Letter数量达到或超过 minLettersCount 的艺术家
+    // 2. 筛选出 Letter 数量达到或超过 minLettersCount 的艺术家，并进行分页处理
     const hotArtists = popularArtists.filter(artist => artist.count >= minLettersCount)
-                                     .slice(0, artistLimit) // 限制返回的热门艺术家数量
+                                     .slice(offset, offset + artistLimit) 
 
     const hotArtistSections: { artist: string; count: number; letters: any[] }[] = []
 

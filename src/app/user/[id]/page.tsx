@@ -224,7 +224,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
           >
 
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-full overflow-hidden mb-[12px] border-2 border-gray-100 flex items-center justify-center bg-gray-50">
+            <div className="w-16 h-16 rounded-full overflow-hidden mb-[12px] border-2 border-gray-100 flex items-center justify-center bg-gray-50">
               {targetUser.avatar_url ? (
                 <img src={targetUser.avatar_url} alt="Profile Avatar" className="w-full h-full object-cover" />
               ) : (
@@ -239,7 +239,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
               <h1 className="text-2xl font-bold">{targetUser.display_name || 'User'}</h1>
               {isSelf && targetUser.is_premium && (
                 <p className="text-sm text-gray-500 mt-1">
-                  Monthly Premium: {targetUser.premium_until ? new Date(targetUser.premium_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Active'} expires and auto-renews
+                  Monthly Premium: {targetUser.premium_until ? `Expires on ${new Date(targetUser.premium_until).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}` : 'Active'} and will auto-renew
                 </p>
               )}
             </div>

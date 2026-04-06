@@ -335,26 +335,40 @@ export class LetterService {
   }
 
   /**
-   * 获取热门歌手
-   * 用于首页 Tag 推荐
+   * 获取热门歌手 (从数据库真实统计)
+   * 用于首页 Tag 推荐和 \\\"Posts with Artist\\\" 入口
    */
-  async getPopularArtists(limit = 10): Promise<{ artist: string; count: number }[]> {
-    // 暂时返回硬编码列表，带模拟计数
-    const artists = [
-      { artist: 'Taylor Swift', count: 156 },
-      { artist: 'The Weeknd', count: 142 },
-      { artist: 'Bruno Mars', count: 128 },
-      { artist: 'Ariana Grande', count: 115 },
-      { artist: 'Justin Bieber', count: 98 },
-      { artist: 'Ed Sheeran', count: 87 },
-      { artist: 'Drake', count: 76 },
-      { artist: 'Billie Eilish', count: 65 },
-      { artist: 'Adele', count: 54 },
-      { artist: 'Coldplay', count: 43 },
-      { artist: 'Beyoncé', count: 32 },
-      { artist: 'Harry Styles', count: 28 }
-    ]
-    return artists.slice(0, limit)
+  async getPopularArtists(limit = 20): Promise<{ artist: string; count: number }[]> {
+    if (!supabase) return []
+
+    // 1. 获取所有公开信件的歌手名（这里只取必要的字段以提高性能）
+    const { data, error } = await supabase
+      .from('letters')
+      .select('song_artist')
+      .eq('is_public', true)
+
+    if (error || !data) {
+      console.error('❌ LetterService: Failed to fetch artists for aggregation:', error)
+      return []
+    }
+
+    // 2. 在 JS 中进行聚合统计
+    const artistCounts: { [key: string]: number } = {}
+    data.forEach(item => {
+      const artist = item.song_artist
+      if (artist) {
+        artistCounts[artist] = (artistCounts[artist] || 0) + 1
+      }
+    })
+
+    // 3. 转换为数组格式并进行排序和过滤
+    const result = Object.entries(artistCounts)
+      .map(([artist, count]) => ({ artist, count }))
+      .filter(item => item.count >= 1) // 基础过滤，后续业务逻辑会再根据 minLettersCount 过滤
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit)
+
+    return result
   }
 
   /**
