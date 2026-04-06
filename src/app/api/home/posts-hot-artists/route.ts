@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const minLettersCount = parseInt(searchParams.get('minLettersCount') || '6', 10)
-    const artistLimit = parseInt(searchParams.get('artistLimit') || '2', 10) // 每页返回的热门艺术家数量
+    const artistLimit = parseInt(searchParams.get('artistLimit') || '100', 10) // 默认一次性返回所有热门艺术家 (APP不传该参数时默认生效)
     const offset = parseInt(searchParams.get('offset') || '0', 10) // 分页偏移量
     const letterLimitPerArtist = parseInt(searchParams.get('letterLimitPerArtist') || '6', 10) // 每个艺术家返回的最新的Letters数量 (按网站规则设为6)
     const format = searchParams.get('format') // 控制返回字段命名 (APP 通常传 camelCase)
