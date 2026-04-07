@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 // PayPal Webhook ID for verification (from Vercel env)
 const WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID || '1GD69000FM652152F'
@@ -41,6 +44,12 @@ export async function POST(req: Request) {
       case 'PAYMENT.SALE.REFUNDED':
       case 'PAYMENT.SALE.REVERSED':
         await handlePaymentReversed(resource)
+        break
+
+      case 'BILLING.SUBSCRIPTION.PAYMENT.FAILED':
+      case 'PAYMENT.SALE.DENIED':
+        console.log(`⚠️ Payment Failed Event: ${eventType}`)
+        await handlePaymentFailed(resource, eventType)
         break
 
       default:
@@ -180,4 +189,39 @@ async function handlePaymentReversed(resource: any) {
     .eq('id', user.id)
 
   console.log(`⚠️ Payment reversed for user ${user.id}. Premium revoked.`)
+}
+
+/**
+ * Handle payment failures and notify developer via Resend
+ */
+async function handlePaymentFailed(resource: any, eventType: string) {
+  const user = await findUser(resource) || { id: 'Unknown (Not Found)', email: 'Unknown' }
+  const subscriptionId = resource.billing_agreement_id || resource.id || 'Unknown'
+  
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('⚠️ Missing RESEND_API_KEY. Cannot send failure alert email.')
+    return
+  }
+
+  try {
+    const developerEmail = process.env.DEVELOPER_EMAIL || 'tiktreeapp@gmail.com'
+    
+    await resend.emails.send({
+      from: 'Flowith Alerts <onboarding@resend.dev>', // If you have a verified domain, change this
+      to: developerEmail,
+      subject: `🚨 [PayPal Alert] Payment Failed: ${eventType}`,
+      html: `
+        <h2>PayPal Payment Failure Detected</h2>
+        <p><strong>Event:</strong> ${eventType}</p>
+        <p><strong>Subscription ID:</strong> ${subscriptionId}</p>
+        <p><strong>User ID:</strong> ${user.id}</p>
+        <p><strong>User Details:</strong> ${JSON.stringify(user)}</p>
+        <br/>
+        <p>Please check your PayPal merchant dashboard for more details.</p>
+      `,
+    })
+    console.log(`✉️ Alert email sent to ${developerEmail} for failed payment.`)
+  } catch (error) {
+    console.error('❌ Failed to send Resend email alert:', error)
+  }
 }
