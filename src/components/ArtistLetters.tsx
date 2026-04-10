@@ -38,9 +38,11 @@ export default function ArtistLetters() {
           try {
             const popularLetters = await letterService.getPublicLetters(6, 0, 'view_count')
             if (popularLetters.length >= 3) {
+              // 裁剪为3的倍数
+              const trimmedCount = Math.floor(popularLetters.length / 3) * 3
               setArtistSections([{
                 artist: 'Popular Songs',
-                letters: popularLetters.slice(0, 6),
+                letters: popularLetters.slice(0, trimmedCount),
                 count: popularLetters.length
               }])
             }

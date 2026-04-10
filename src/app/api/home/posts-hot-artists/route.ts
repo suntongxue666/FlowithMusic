@@ -37,11 +37,15 @@ export async function GET(request: Request) {
           return wordCount >= 6
         })
 
-        if (filteredLetters.length > 0) {
+        // 裁剪为3的倍数，确保网格每行3个不会出现残余
+        const trimmedCount = Math.floor(filteredLetters.length / 3) * 3
+        const trimmedLetters = filteredLetters.slice(0, trimmedCount)
+
+        if (trimmedLetters.length > 0) {
           hotArtistSections.push({
             artist: artistInfo.artist,
             count: artistInfo.count,
-            letters: filteredLetters.map(letter => {
+            letters: trimmedLetters.map(letter => {
               if (format === 'camelCase') {
                 return {
                   id: letter.id,

@@ -143,18 +143,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     let description = ""
     let robots = {}
 
-    if (wordCount <= 30) {
-      // 策略 1: <= 30 字，noindex
-      title = `Musical Letter | FlowithMusic`
-      description = `Discover a handwritten letter paired with music.`
-      robots = { index: false, follow: true }
-    } else if (wordCount < 120) {
-      // 策略 2: 30-120 单词，简化 SEO
-      title = `${songTitle} | FlowithMusic`
-      description = `Listen to "${songTitle}" by ${artistName} and read a personal message.`
+    if (wordCount < 120) {
+      // 策略 1: < 120 单词，简化 SEO，包含 linkId 便于 GA 追踪
+      title = `Musical Letter-${linkId}-${songTitle} | FlowithMusic`
+      description = `Discover a handwritten letter paired with "${songTitle}" by ${artistName}.`
+      if (wordCount <= 30) {
+        robots = { index: false, follow: true }
+      }
     } else {
-      // 策略 3: >= 120 单词，完整 SEO
-      title = `Send the Song: Handwritten Letter with "${songTitle}" by ${artistName} | FlowithMusic`
+      // 策略 2: >= 120 单词，完整 SEO
+      title = `Send the Song: Letter -${linkId}- "${songTitle}" by ${artistName} | FlowithMusic`
       description = `Receive a heartfelt handwritten letter paired with "${songTitle}" by ${artistName}. React with emojis and connect with music.`
     }
 
