@@ -11,6 +11,7 @@ import Link from 'next/link'
 import FlowingEffects from '@/components/FlowingEffects'
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js"
 import PremiumLimitModal from '@/components/PremiumLimitModal'
+import Toast from '@/components/Toast'
 
 // 预览弹窗组件 - 5秒自动关闭
 function PreviewOverlay({ 
@@ -99,6 +100,11 @@ function HistoryContent() {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [paymentLetter, setPaymentLetter] = useState<Letter | null>(null)
   const [showPremiumPrompt, setShowPremiumPrompt] = useState(false)
+  const [isManageMode, setIsManageMode] = useState(false)
+  const [toast, setToast] = useState<{ message: string; isVisible: boolean }>({
+    message: '',
+    isVisible: false
+  })
 
   // 同步状态
   const [unsyncedCount, setUnsyncedCount] = useState(0)
@@ -347,6 +353,26 @@ function HistoryContent() {
     }
   }
 
+  const handleDeleteLetter = async (linkId: string) => {
+    if (!confirm('Are you sure you want to delete this letter? This action cannot be undone.')) return
+
+    try {
+      const success = await letterService.deleteLetter(linkId)
+      if (success) {
+        setLetters(prev => prev.filter(l => l.link_id !== linkId))
+        setToast({
+          message: 'Successfully\nThe letter was Deleted.',
+          isVisible: true
+        })
+      } else {
+        alert('Failed to delete letter. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error deleting letter:', error)
+      alert('An error occurred while deleting the letter.')
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center py-8 sm:py-16 w-full px-4" style={{ backgroundColor: '#fafafa' }}>
       <div className="w-full max-w-2xl mx-auto">
@@ -371,6 +397,23 @@ function HistoryContent() {
           <span style={{ fontSize: '14px', color: '#666' }}>
             Who view No ads with <Link href="/premium" style={{ textDecoration: 'underline', color: '#000', fontWeight: 500 }}>👑 Premium</Link>
           </span>
+          <button
+            onClick={() => setIsManageMode(!isManageMode)}
+            style={{
+              marginTop: '12px',
+              padding: '6px 16px',
+              fontSize: '12px',
+              borderRadius: '20px',
+              background: '#efefef',
+              color: '#666',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 500,
+              transition: 'all 0.2s'
+            }}
+          >
+            {isManageMode ? 'Done' : 'Manage'}
+          </button>
         </div>
 
       {loading ? (
@@ -507,21 +550,40 @@ function HistoryContent() {
                           >
                             🔐 Unlock
                           </button>
-                          <button
-                            onClick={() => handleCopyLink(letter.link_id)}
-                            style={{
-                              padding: '6px 12px',
-                              fontSize: '12px',
-                              borderRadius: '6px',
-                              background: copyStatus === letter.link_id ? '#22c55e' : '#333',
-                              color: '#fff',
-                              fontWeight: 500,
-                              border: 'none',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            {copyStatus === letter.link_id ? 'Copied' : 'Copy 🔗'}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            {isManageMode && (
+                              <button
+                                onClick={() => handleDeleteLetter(letter.link_id)}
+                                style={{
+                                  padding: '6px',
+                                  color: '#ff4d4f',
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer'
+                                }}
+                                title="Delete Letter"
+                              >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleCopyLink(letter.link_id)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                borderRadius: '6px',
+                                background: copyStatus === letter.link_id ? '#22c55e' : '#333',
+                                color: '#fff',
+                                fontWeight: 500,
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {copyStatus === letter.link_id ? 'Copied' : 'Copy 🔗'}
+                            </button>
+                          </div>
                         </div>
                       )
                     }
@@ -544,37 +606,56 @@ function HistoryContent() {
                           >
                             👁 Flowing Emoji
                           </button>
-                          <button
-                            onClick={() => handleCopyFlowingLink(letter.link_id)}
-                            style={{
-                              padding: '6px 12px',
-                              fontSize: '12px',
-                              borderRadius: '6px',
-                              background: copyStatus === letter.link_id + '-flowing' ? '#22c55e' : 'linear-gradient(45deg, #FFD700, #FFA500)',
-                              color: '#fff',
-                              fontWeight: 500,
-                              border: 'none',
-                              cursor: 'pointer',
-                              boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
-                            }}
-                          >
-                            {copyStatus === letter.link_id + '-flowing' ? 'Copied' : 'Copy Link ✨'}
-                          </button>
-                          <button
-                            onClick={() => handleCopyLink(letter.link_id)}
-                            style={{
-                              padding: '6px 12px',
-                              fontSize: '12px',
-                              borderRadius: '6px',
-                              background: copyStatus === letter.link_id ? '#22c55e' : '#333',
-                              color: '#fff',
-                              fontWeight: 500,
-                              border: 'none',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            {copyStatus === letter.link_id ? 'Copied' : 'Copy 🔗'}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            {isManageMode && (
+                              <button
+                                onClick={() => handleDeleteLetter(letter.link_id)}
+                                style={{
+                                  padding: '6px',
+                                  color: '#ff4d4f',
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer'
+                                }}
+                                title="Delete Letter"
+                              >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleCopyFlowingLink(letter.link_id)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                borderRadius: '6px',
+                                background: copyStatus === letter.link_id + '-flowing' ? '#22c55e' : 'linear-gradient(45deg, #FFD700, #FFA500)',
+                                color: '#fff',
+                                fontWeight: 500,
+                                border: 'none',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
+                              }}
+                            >
+                              {copyStatus === letter.link_id + '-flowing' ? 'Copied' : 'Copy Link ✨'}
+                            </button>
+                            <button
+                              onClick={() => handleCopyLink(letter.link_id)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                borderRadius: '6px',
+                                background: copyStatus === letter.link_id ? '#22c55e' : '#333',
+                                color: '#fff',
+                                fontWeight: 500,
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {copyStatus === letter.link_id ? 'Copied' : 'Copy 🔗'}
+                            </button>
+                          </div>
                         </div>
                       )
                     }
@@ -582,22 +663,41 @@ function HistoryContent() {
                     // 标准模式
                     return (
                       <div className="flex flex-col items-end gap-2">
-                        <button
-                          onClick={() => handleCopyLink(letter.link_id)}
-                          style={{
-                            padding: '6px 12px',
-                            fontSize: '12px',
-                            borderRadius: '6px',
-                            background: copyStatus === letter.link_id ? '#22c55e' : (isUnlocked ? 'linear-gradient(45deg, #FFD700, #FFA500)' : '#333'),
-                            color: '#fff',
-                            fontWeight: 500,
-                            border: 'none',
-                            cursor: 'pointer',
-                            boxShadow: isUnlocked ? '0 2px 8px rgba(255, 165, 0, 0.3)' : 'none'
-                          }}
-                        >
-                          {copyStatus === letter.link_id ? 'Copied' : 'Copy 🔗'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {isManageMode && (
+                            <button
+                              onClick={() => handleDeleteLetter(letter.link_id)}
+                              style={{
+                                padding: '6px',
+                                color: '#ff4d4f',
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                              title="Delete Letter"
+                            >
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              </svg>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleCopyLink(letter.link_id)}
+                            style={{
+                              padding: '6px 12px',
+                              fontSize: '12px',
+                              borderRadius: '6px',
+                              background: copyStatus === letter.link_id ? '#22c55e' : (isUnlocked ? 'linear-gradient(45deg, #FFD700, #FFA500)' : '#333'),
+                              color: '#fff',
+                              fontWeight: 500,
+                              border: 'none',
+                              cursor: 'pointer',
+                              boxShadow: isUnlocked ? '0 2px 8px rgba(255, 165, 0, 0.3)' : 'none'
+                            }}
+                          >
+                            {copyStatus === letter.link_id ? 'Copied' : 'Copy 🔗'}
+                          </button>
+                        </div>
                       </div>
                     )
                   })()}
@@ -693,6 +793,13 @@ function HistoryContent() {
           type="history_prompt" 
         />
       )}
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        isVisible={toast.isVisible}
+        onClose={() => setToast({ ...toast, isVisible: false })}
+      />
 
       <style jsx global>{`
         body {

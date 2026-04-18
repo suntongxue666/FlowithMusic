@@ -660,6 +660,51 @@ export class LetterService {
     }
   }
 
+  /**
+   * 删除 Letter
+   */
+  async deleteLetter(linkId: string): Promise<boolean> {
+    if (!supabase) return false
+
+    console.log(`🗑️ LetterService: Deleting letter ${linkId}`)
+
+    // 1. 从数据库删除
+    const { error } = await supabase
+      .from('letters')
+      .delete()
+      .eq('link_id', linkId)
+
+    if (error) {
+      console.error('❌ LetterService: Delete from DB failed:', error)
+      // 继续尝试清理本地存储，因为可能存在同步失败但在本地有的情况
+    }
+
+    // 2. 同时处理本地存储 (Guest letters)
+    if (typeof window !== 'undefined') {
+      try {
+        const rawLetters = localStorage.getItem('letters')
+        if (rawLetters) {
+          const letters = JSON.parse(rawLetters)
+          if (Array.isArray(letters)) {
+            const filtered = letters.filter((l: any) => l && l.link_id !== linkId)
+            if (letters.length !== filtered.length) {
+              localStorage.setItem('letters', JSON.stringify(filtered))
+              console.log('✅ LetterService: Local storage cleared')
+            }
+          }
+        }
+        
+        // 3. 清理历史记录缓存，确保下次进入或刷新时由数据库重新获取
+        localStorage.removeItem('history_letters_cache')
+        localStorage.removeItem('history_letters_cache_time')
+      } catch (e) {
+        console.warn('⚠️ LetterService: Failed to clear local storage after delete:', e)
+      }
+    }
+
+    return !error
+  }
+
   private generateLinkId(): string {
     const now = new Date()
     const timestamp = now.getFullYear().toString() +
