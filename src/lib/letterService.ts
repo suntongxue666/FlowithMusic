@@ -661,6 +661,53 @@ export class LetterService {
   }
 
   /**
+   * 切换 Letter 公开/私密状态
+   */
+  async toggleLetterVisibility(linkId: string, isPublic: boolean): Promise<boolean> {
+    if (!supabase) return false
+
+    console.log(`👁️ LetterService: Toggling visibility for ${linkId} to ${isPublic}`)
+
+    // 1. 更新数据库
+    const { error } = await supabase
+      .from('letters')
+      .update({
+        is_public: isPublic,
+        updated_at: new Date().toISOString()
+      })
+      .eq('link_id', linkId)
+
+    if (error) {
+      console.error('❌ LetterService: Update visibility failed:', error)
+    }
+
+    // 2. 更新本地存储 (Guest letters)
+    if (typeof window !== 'undefined') {
+      try {
+        const rawLetters = localStorage.getItem('letters')
+        if (rawLetters) {
+          const letters = JSON.parse(rawLetters)
+          if (Array.isArray(letters)) {
+            const index = letters.findIndex((l: any) => l && l.link_id === linkId)
+            if (index !== -1) {
+              letters[index].is_public = isPublic
+              localStorage.setItem('letters', JSON.stringify(letters))
+              console.log('✅ LetterService: Local visibility updated')
+            }
+          }
+        }
+        
+        // 3. 清理缓存
+        localStorage.removeItem('history_letters_cache')
+      } catch (e) {
+        console.warn('⚠️ LetterService: Failed to update local visibility:', e)
+      }
+    }
+
+    return !error
+  }
+
+  /**
    * 删除 Letter
    */
   async deleteLetter(linkId: string): Promise<boolean> {
