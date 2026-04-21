@@ -14,6 +14,9 @@ export async function POST(req: Request) {
     const eventType = body.event_type
     const resource = body.resource
 
+    // 🚀 新增：记录所有 Webhook 事件到日志表供审计
+    await logWebhookEvent(body)
+
     console.log(`✉️ PayPal Webhook Received: ${eventType}`, {
       id: body.id,
       resource_id: resource.id,
@@ -61,6 +64,35 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('❌ Webhook Error:', error.message)
     return NextResponse.json({ error: error.message }, { status: 400 })
+  }
+}
+
+/**
+ * Log webhook events for auditing
+ */
+async function logWebhookEvent(body: any) {
+  const client = supabaseAdmin || supabase
+  if (!client) return
+
+  const eventType = body.event_type
+  const resource = body.resource
+  const subscriptionId = resource.id || resource.billing_agreement_id
+  const customId = resource.custom_id || resource.custom
+
+  try {
+    await client.from('payment_logs').insert({
+      user_id: customId || null,
+      subscription_id: subscriptionId || null,
+      event_type: `WEBHOOK_${eventType}`,
+      status: resource.status || null,
+      details: {
+        webhook_id: body.id,
+        create_time: body.create_time,
+        resource: resource
+      }
+    })
+  } catch (err) {
+    console.error('❌ Failed to log webhook event:', err)
   }
 }
 

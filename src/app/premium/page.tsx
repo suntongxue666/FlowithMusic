@@ -20,6 +20,26 @@ export default function PremiumPage() {
   
   // Calculate current user ID (for PayPal custom_id)
   const currentUserId = user?.id || (typeof window !== 'undefined' ? userService.getAnonymousId() : null)
+  const anonymousId = typeof window !== 'undefined' ? userService.getAnonymousId() : null
+
+  const logPaymentEvent = async (eventType: string, status?: string, details?: any) => {
+    try {
+      await fetch('/api/payment/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user?.id,
+          anonymous_id: anonymousId,
+          subscription_id: details?.subscriptionID || details?.id,
+          event_type: eventType,
+          status,
+          details
+        })
+      })
+    } catch (err) {
+      console.warn('Failed to log payment event:', err)
+    }
+  }
 
   const benefits = [
     { icon: '✉️', text: 'Unlimited daily letters' },
@@ -134,11 +154,22 @@ export default function PremiumPage() {
                   <div className="paypal-button-container">
                     <PayPalButtons 
                       style={{ layout: 'vertical', color: 'black', shape: 'pill', label: 'subscribe' }}
-                      createSubscription={(data, actions) => actions.subscription.create({ 
-                        plan_id: MONTHLY_PLAN_ID,
-                        custom_id: currentUserId || undefined
-                      })}
-                      onApprove={async (data) => await handleSubscriptionSuccess('monthly', data)}
+                      onClick={() => logPaymentEvent('PAYPAL_BUTTON_CLICKED', 'SAVINGS_MONTHLY')}
+                      createSubscription={(data, actions) => {
+                        return actions.subscription.create({ 
+                          plan_id: MONTHLY_PLAN_ID,
+                          custom_id: currentUserId || undefined
+                        }).then(id => {
+                          logPaymentEvent('SUBSCRIPTION_CREATED_CLIENT', 'APPROVAL_PENDING', { subscriptionID: id, plan: 'monthly' });
+                          return id;
+                        });
+                      }}
+                      onApprove={async (data) => {
+                        await logPaymentEvent('PAYPAL_ON_APPROVE', 'APPROVED', data);
+                        await handleSubscriptionSuccess('monthly', data);
+                      }}
+                      onCancel={(data) => logPaymentEvent('PAYPAL_ON_CANCEL', 'CANCELLED', data)}
+                      onError={(err) => logPaymentEvent('PAYPAL_ON_ERROR', 'ERROR', { error: err.toString() })}
                     />
                   </div>
                 </div>
@@ -160,11 +191,22 @@ export default function PremiumPage() {
                   <div className="paypal-button-container">
                     <PayPalButtons 
                       style={{ layout: 'vertical', color: 'gold', shape: 'pill', label: 'subscribe' }}
-                      createSubscription={(data, actions) => actions.subscription.create({ 
-                        plan_id: ANNUAL_PLAN_ID,
-                        custom_id: currentUserId || undefined
-                      })}
-                      onApprove={async (data) => await handleSubscriptionSuccess('yearly', data)}
+                      onClick={() => logPaymentEvent('PAYPAL_BUTTON_CLICKED', 'SAVINGS_YEARLY')}
+                      createSubscription={(data, actions) => {
+                        return actions.subscription.create({ 
+                          plan_id: ANNUAL_PLAN_ID,
+                          custom_id: currentUserId || undefined
+                        }).then(id => {
+                          logPaymentEvent('SUBSCRIPTION_CREATED_CLIENT', 'APPROVAL_PENDING', { subscriptionID: id, plan: 'yearly' });
+                          return id;
+                        });
+                      }}
+                      onApprove={async (data) => {
+                        await logPaymentEvent('PAYPAL_ON_APPROVE', 'APPROVED', data);
+                        await handleSubscriptionSuccess('yearly', data);
+                      }}
+                      onCancel={(data) => logPaymentEvent('PAYPAL_ON_CANCEL', 'CANCELLED', data)}
+                      onError={(err) => logPaymentEvent('PAYPAL_ON_ERROR', 'ERROR', { error: err.toString() })}
                     />
                   </div>
                 </div>
