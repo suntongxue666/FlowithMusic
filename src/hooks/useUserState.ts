@@ -70,11 +70,9 @@ const initializeUserState = async (): Promise<void> => {
               })
 
               // 🚀 新增：在后台静默同步最新数据，解决手动改数据库不更新的问题
-              initializationPromise?.then(() => {
-                setTimeout(() => {
-                  syncUserWithServer(user!);
-                }, 1000); // 延迟1秒，不抢占初始化资源
-              });
+              setTimeout(() => {
+                syncUserWithServer(user!);
+              }, 1000); // 延迟1秒，不抢占初始化资源
             } else {
               console.warn('⚠️ useUserState: localStorage用户数据不完整，需要重新获取')
               user = null
