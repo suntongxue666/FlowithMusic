@@ -35,7 +35,7 @@ export default function GoogleAdSense({ forceHide = false, isGlobal = false }: {
     return () => {
       // 卸载时无需移除，因为脚本是动态注入的
     }
-  }, [isPremium])
+  }, [isPremium, forceHide, isAdForceHidden, fromParam])
 
   return null
 }

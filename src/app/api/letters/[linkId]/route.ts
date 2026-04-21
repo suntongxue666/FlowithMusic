@@ -143,6 +143,23 @@ export async function GET(
 
         if (!error && data) {
           console.log('✅ Found in Supabase:', linkId)
+          
+          // 🚀 核心修复：如果这封信没有关联的 user_id (可能是匿名发送的旧信)，
+          // 尝试通过 anonymous_id 查找对应的用户，验证是否已经是会员
+          if (!data.user && data.anonymous_id) {
+            console.log('🔍 Fallback: Searching for user by anonymous_id:', data.anonymous_id)
+            const { data: anonUser } = await supabaseServer
+              .from('users')
+              .select('id, display_name, avatar_url, is_premium')
+              .eq('anonymous_id', data.anonymous_id)
+              .maybeSingle()
+            
+            if (anonUser) {
+              console.log('✨ Found associated user via anonymous_id, is_premium:', anonUser.is_premium)
+              data.user = anonUser
+            }
+          }
+
           const formatted = maybeFormatCamel(data, format)
           return NextResponse.json(formatted)
         } else {
