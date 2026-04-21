@@ -273,7 +273,8 @@ function SendContent() {
         newLetter.user = {
           id: user.id,
           display_name: user.display_name,
-          avatar_url: user.avatar_url
+          avatar_url: user.avatar_url,
+          is_premium: user.is_premium
         } as any
       }
 
