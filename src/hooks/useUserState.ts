@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { userService } from '@/lib/userService'
-import { User } from '@/lib/supabase'
+import { supabase, User } from '@/lib/supabase'
 
 interface UserState {
   user: User | null
@@ -68,6 +68,13 @@ const initializeUserState = async (): Promise<void> => {
                 isAuthenticated: true,
                 isLoading: false
               })
+
+              // 🚀 新增：在后台静默同步最新数据，解决手动改数据库不更新的问题
+              initializationPromise.then(() => {
+                setTimeout(() => {
+                  syncUserWithServer(user!);
+                }, 1000); // 延迟1秒，不抢占初始化资源
+              });
             } else {
               console.warn('⚠️ useUserState: localStorage用户数据不完整，需要重新获取')
               user = null
@@ -133,6 +140,44 @@ const initializeUserState = async (): Promise<void> => {
   
   return initializationPromise
 }
+
+/**
+ * 🚀 后台同步函数：从服务端获取最新状态并更新
+ */
+const syncUserWithServer = async (currentUser: User) => {
+  if (!supabase) return;
+  
+  try {
+    console.log('🔄 useUserState: 后台同步开始...');
+    const { data: latestUser, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+      
+    if (latestUser && !error) {
+      // 检查关键字段是否有变化
+      const hasChanged = 
+        latestUser.is_premium !== currentUser.is_premium || 
+        latestUser.premium_until !== currentUser.premium_until ||
+        latestUser.coins !== currentUser.coins ||
+        latestUser.display_name !== currentUser.display_name;
+
+      if (hasChanged) {
+        console.log('✨ useUserState: 检测到服务端数据变化，正在更新...');
+        updateGlobalState({ user: latestUser });
+        
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user', JSON.stringify(latestUser));
+        }
+      } else {
+        console.log('✅ useUserState: 服务端数据一致，无需更新');
+      }
+    }
+  } catch (e) {
+    console.warn('⚠️ useUserState: 后台同步异常', e);
+  }
+};
 
 // 用户状态Hook
 export const useUserState = () => {

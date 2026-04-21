@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -75,7 +76,8 @@ async function findUser(resource: any) {
   // 1. Try finding by custom_id (new direct method)
   if (customId) {
     console.log(`🔍 Searching user by custom_id: ${customId}`)
-    const { data: user } = await supabase
+    const client = supabaseAdmin || supabase
+    const { data: user } = await client!
       .from('users')
       .select('*')
       .eq('id', customId)
@@ -87,7 +89,8 @@ async function findUser(resource: any) {
   // 2. Fallback to searching metadata for subscription ID (old method)
   if (subscriptionId) {
     console.log(`🔍 Searching user by last_subscription_id: ${subscriptionId}`)
-    const { data: users } = await supabase
+    const client = supabaseAdmin || supabase
+    const { data: users } = await client!
       .from('users')
       .select('*')
       .contains('metadata', { last_subscription_id: subscriptionId })
@@ -122,7 +125,8 @@ async function handleSubscriptionChange(resource: any, eventType: string) {
 
   const isActive = status === 'ACTIVE'
   
-  await supabase!
+  const client = supabaseAdmin || supabase
+  const { error } = await client!
     .from('users')
     .update({
       is_premium: isActive,
@@ -137,7 +141,11 @@ async function handleSubscriptionChange(resource: any, eventType: string) {
     })
     .eq('id', user.id)
 
-  console.log(`✅ User ${user.id} premium status updated to ${isActive} (${status})`)
+  if (error) {
+    console.error(`❌ Failed to update user premium status:`, error)
+  } else {
+    console.log(`✅ User ${user.id} premium status updated to ${isActive} (${status})`)
+  }
 }
 
 /**
@@ -161,7 +169,8 @@ async function handlePaymentCompleted(resource: any) {
   if (isAnnual) baseDate.setFullYear(baseDate.getFullYear() + 1)
   else baseDate.setMonth(baseDate.getMonth() + 1)
 
-  await supabase!
+  const client = supabaseAdmin || supabase
+  const { error } = await client!
     .from('users')
     .update({
       is_premium: true,
@@ -170,7 +179,11 @@ async function handlePaymentCompleted(resource: any) {
     })
     .eq('id', user.id)
 
-  console.log(`💰 Payment completed for subscription ${subscriptionId}. User ${user.id} extended to ${baseDate.toISOString()}`)
+  if (error) {
+    console.error(`❌ Failed to complete payment for subscription ${subscriptionId}:`, error)
+  } else {
+    console.log(`💰 Payment completed for subscription ${subscriptionId}. User ${user.id} extended to ${baseDate.toISOString()}`)
+  }
 }
 
 /**
@@ -180,7 +193,8 @@ async function handlePaymentReversed(resource: any) {
   const user = await findUser(resource)
   if (!user) return
 
-  await supabase!
+  const client = supabaseAdmin || supabase
+  const { error } = await client!
     .from('users')
     .update({
       is_premium: false,
@@ -188,7 +202,11 @@ async function handlePaymentReversed(resource: any) {
     })
     .eq('id', user.id)
 
-  console.log(`⚠️ Payment reversed for user ${user.id}. Premium revoked.`)
+  if (error) {
+    console.error(`❌ Failed to reverse payment for user ${user.id}:`, error)
+  } else {
+    console.log(`⚠️ Payment reversed for user ${user.id}. Premium revoked.`)
+  }
 }
 
 /**
