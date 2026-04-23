@@ -137,10 +137,23 @@ export default function Header({ currentPage }: HeaderProps) {
             )}
           </Link>
 
-          {/* Ko-fi Button - Desktop */}
-          <a href='https://ko-fi.com/U7U01GL6A8' target='_blank' rel='noopener noreferrer' style={{ display: 'flex', alignItems: 'center', marginLeft: '4px' }}>
-            <img height='32' style={{ border: '0px', height: '32px' }} src='https://storage.ko-fi.com/cdn/kofi3.png?v=6' alt='Buy Me a Coffee at ko-fi.com' />
-          </a>
+          {/* Premium Link - Desktop */}
+          <Link href="/premium" className={`premium-nav-link ${currentPage === 'premium' ? 'active' : ''}`} style={{ 
+            marginLeft: '12px', 
+            padding: '0 10px', 
+            backgroundColor: '#000', 
+            color: '#fff', 
+            borderRadius: '4px', 
+            fontSize: '12px', 
+            fontWeight: '700',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '24px',
+            textDecoration: 'none'
+          }}>
+            👑 Premium
+          </Link>
 
           {/* 登录状态显示 */}
           <div className="auth-section">
@@ -229,9 +242,22 @@ export default function Header({ currentPage }: HeaderProps) {
             )}
           </Link>
 
+          {/* Premium Link - Mobile */}
+          <Link href="/premium" className={currentPage === 'premium' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)} style={{ 
+            fontWeight: '700', 
+            color: '#B8860B',
+            display: 'flex',
+            alignItems: 'center',
+            height: '48px',
+            padding: '0 1.5rem',
+            borderBottom: '1px solid #eee'
+          }}>
+            👑 Premium
+          </Link>
+
           {/* 移动端登录状态 - 直接作为菜单项避免多余间距 */}
           {!isAuthenticated && !loading && (
-            <div className="mobile-sign-in-wrapper border-t border-gray-100 mt-2 pt-2">
+            <div className="mobile-sign-in-wrapper">
               <button className="mobile-sign-in-btn" onClick={() => { handleSignIn(); setIsMobileMenuOpen(false); }} disabled={loading}>
                 Sign in
               </button>
@@ -369,11 +395,13 @@ export default function Header({ currentPage }: HeaderProps) {
 
         .mobile-sign-in-btn {
           width: 100%;
-          padding: 12px;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          padding: 0 1.5rem;
           background-color: transparent;
           color: black;
-          border: 1px solid black;
-          border-radius: 4px;
+          border: none;
           font-size: 16px;
           font-weight: 500;
           cursor: pointer;
