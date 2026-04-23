@@ -35,13 +35,17 @@ export async function GET() {
     const uniqueBuyers = []
     const seenUsers = new Set()
     
-    for (const log of (logs || [])) {
+    for (const log of (logs || []) as any[]) {
       if (!seenUsers.has(log.user_id)) {
         seenUsers.add(log.user_id)
+        
+        // 处理 Supabase 可能返回数组或对象的情况
+        const userData = Array.isArray(log.users) ? log.users[0] : log.users
+        
         uniqueBuyers.push({
           id: log.user_id,
-          name: log.users?.display_name || 'Premium User',
-          avatar: log.users?.avatar_url,
+          name: userData?.display_name || 'Premium User',
+          avatar: userData?.avatar_url,
           time: log.created_at
         })
       }

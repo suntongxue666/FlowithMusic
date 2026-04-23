@@ -53,9 +53,12 @@ export async function GET(req: Request) {
 
     // 3. 为每个用户发送汇总邮件
     for (const userId in userGroups) {
-      const notifs = userGroups[userId]
-      const userEmail = notifs[0].users?.email
-      const userName = notifs[0].users?.display_name || 'Friend'
+      const notifs = userGroups[userId] as any[]
+      
+      // 处理 Supabase 可能返回数组或对象的情况
+      const userData = Array.isArray(notifs[0].users) ? notifs[0].users[0] : notifs[0].users
+      const userEmail = userData?.email
+      const userName = userData?.display_name || 'Friend'
 
       if (!userEmail) continue
 
