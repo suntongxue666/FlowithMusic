@@ -3245,19 +3245,23 @@ art Spotify Player Styles */
 
 /* H5端Recent Posts & Artist Letters margin优化 */
 @media (max-width: 768px) {
-  .recent-posts-carousel, .artist-letters {
+  .recent-posts-carousel, .artist-letters, .artist-section {
     margin: 1rem auto;
-    padding: 0 !important; /* Container handles padding via scroll-container */
+    padding: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box;
   }
 
   .mobile-scroll-container {
     padding: 0 1rem 2rem !important; /* 统一左对齐基准线 */
+    width: 100% !important;
+    box-sizing: border-box;
   }
 
   .mobile-card-item {
-    flex: 0 0 88%; /* 调宽比例到 88%，更接近 Explore 的宽屏感 */
+    flex: 0 0 88%; /* 统一比例 */
     scroll-snap-align: center;
-    max-width: 320px;
+    transition: transform 0.3s ease;
   }
 }
 
@@ -3432,6 +3436,7 @@ edia Inputs Styles */
     padding: 0.5rem 1rem 2rem !important;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    margin: 0 !important;
   }
 
   .mobile-scroll-container::-webkit-scrollbar {
