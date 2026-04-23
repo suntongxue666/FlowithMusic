@@ -45,6 +45,11 @@ export async function POST(req: Request) {
         await handlePaymentCompleted(resource)
         break
 
+      case 'PAYMENT.CAPTURE.COMPLETED':
+        // This fires for ONE-TIME checkout orders
+        await handleOneTimePayment(resource)
+        break
+
       case 'PAYMENT.SALE.REFUNDED':
       case 'PAYMENT.SALE.REVERSED':
         await handlePaymentReversed(resource)
@@ -215,6 +220,52 @@ async function handlePaymentCompleted(resource: any) {
     console.error(`❌ Failed to complete payment for subscription ${subscriptionId}:`, error)
   } else {
     console.log(`💰 Payment completed for subscription ${subscriptionId}. User ${user.id} extended to ${baseDate.toISOString()}`)
+  }
+}
+
+/**
+ * Handle one-time (Order) payments
+ */
+async function handleOneTimePayment(resource: any) {
+  // For capture.completed, custom_id is top-level in resource if passed during order create
+  const user = await findUser(resource)
+  
+  if (!user) {
+    console.error(`💰 User not found for one-time payment: ${resource.id}`)
+    return
+  }
+
+  // Determine if it was monthly or yearly based on amount
+  const amount = resource.amount?.value
+  
+  // Only process Premium amounts ($2.99 or $19.99)
+  // We ignore $0.99 here as it's for Flowing Emoji (handled client-side or elsewhere)
+  if (amount !== '2.99' && amount !== '19.99') {
+    console.log(`ℹ️ One-time payment ($${amount}) is not a Premium Pass. Skipping premium status update.`)
+    return
+  }
+
+  const isAnnual = amount === '19.99'
+  const currentExpiry = user.premium_until ? new Date(user.premium_until) : new Date()
+  const baseDate = currentExpiry > new Date() ? currentExpiry : new Date()
+  
+  if (isAnnual) baseDate.setFullYear(baseDate.getFullYear() + 1)
+  else baseDate.setMonth(baseDate.getMonth() + 1)
+
+  const client = supabaseAdmin || supabase
+  const { error } = await client!
+    .from('users')
+    .update({
+      is_premium: true,
+      premium_until: baseDate.toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', user.id)
+
+  if (error) {
+    console.error(`❌ Failed to complete one-time payment for user ${user.id}:`, error)
+  } else {
+    console.log(`✅ One-time Premium Pass ($${amount}) processed. User ${user.id} extended to ${baseDate.toISOString()}`)
   }
 }
 

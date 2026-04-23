@@ -7,6 +7,7 @@ import { useUserState } from '@/hooks/useUserState'
 import { userService } from '@/lib/userService'
 import { supabase } from '@/lib/supabase'
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js"
+import { useEffect } from 'react'
 
 const PAYPAL_CLIENT_ID = 'AQCCWaOGvX92tZI1uf4511x3WG1Hp2obxM4mTNgGX-pnUfObT2bnxfVMRHzSr2zTCycyx6jQtLLRdRx8';
 const MONTHLY_PLAN_ID = 'P-0E135132J93420229NG3WTWA';
@@ -17,6 +18,16 @@ export default function PremiumPage() {
   const { user } = useUserState()
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState<any>(null)
+
+  // Handle redirect success from PayPal One-time
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('status') === 'success_order') {
+      setStatus('success')
+    }
+  }, [])
   
   // Calculate current user ID (for PayPal custom_id)
   const currentUserId = user?.id || (typeof window !== 'undefined' ? userService.getAnonymousId() : null)
@@ -30,7 +41,7 @@ export default function PremiumPage() {
         body: JSON.stringify({
           user_id: user?.id,
           anonymous_id: anonymousId,
-          subscription_id: details?.subscriptionID || details?.id,
+          subscription_id: details?.subscriptionID || details?.id || details?.orderID,
           event_type: eventType,
           status,
           details
@@ -115,16 +126,50 @@ export default function PremiumPage() {
     }
   }
 
+  const handleSelectPlan = (plan: any) => {
+    setSelectedPlan(plan)
+    setShowPaymentModal(true)
+    logPaymentEvent('PLAN_SELECTED', plan.type, { plan: plan.id })
+  }
+
+  // Define plans
+  const oneTimeMonthly = {
+    id: 'onetime_monthly',
+    name: '30 Days Pass',
+    price: '2.99',
+    type: 'onetime',
+    description: 'FlowithMusic Premium - 30 Days Pass'
+  }
+
+  const oneTimeYearly = {
+    id: 'onetime_yearly',
+    name: '1 Year Pass',
+    price: '19.99',
+    type: 'onetime',
+    description: 'FlowithMusic Premium - 1 Year Pass'
+  }
+
+  const subMonthly = {
+    id: 'sub_monthly',
+    name: 'Subscription Monthly',
+    price: '2.99',
+    type: 'subscription',
+    planId: MONTHLY_PLAN_ID
+  }
+
+  const subYearly = {
+    id: 'sub_yearly',
+    name: 'Subscription Annual',
+    price: '19.99',
+    type: 'subscription',
+    planId: ANNUAL_PLAN_ID
+  }
+
   return (
-    <PayPalScriptProvider options={{ 
-      clientId: PAYPAL_CLIENT_ID,
-      vault: true,
-      intent: "subscription"
-    }}>
-      <main className="min-h-screen bg-white px-4">
-        <Header currentPage="premium" />
-        
-        <div className="premium-hero">
+    <main className="min-h-screen bg-white px-4">
+      <Header currentPage="premium" />
+      
+      <div className="premium-hero">
           <div className="container mx-auto px-4 py-20 flex flex-col items-center">
             <div className="badge">👑 PREMIUM</div>
             <h1 className="hero-title mb-6">Unlock Your Full Experience</h1>
@@ -139,75 +184,115 @@ export default function PremiumPage() {
                 <p>Your subscription is active. Redirecting you to your profile...</p>
               </div>
             ) : (
-              <div className="pricing-grid">
-                {/* Monthly Plan */}
-                <div className="pricing-card">
-                  <div className="card-header">
-                    <h3 className="plan-name">Monthly</h3>
-                    <div className="plan-price">$2.99 <span className="price-period">/ month</span></div>
+              <div className="flex flex-col items-center w-full max-w-5xl">
+                {/* 🟢 一次性买断 Section */}
+                <div className="w-full text-center mb-0">
+                  <h2 className="section-title text-green-600">⚡ One-time Pass (No Auto-Renewal)</h2>
+                  <p className="section-desc">Perfect if you want to pay with <strong>PayPal Balance</strong> or without a credit card.</p>
+                </div>
+
+                <div className="pricing-grid onetime-grid">
+                  {/* One-time Monthly */}
+                  <div className="pricing-card onetime-card">
+                    <div className="card-header">
+                      <h3 className="plan-name">30 Days Pass</h3>
+                      <div className="plan-price">$2.99 <span className="price-period">/ one-time</span></div>
+                    </div>
+                    <ul className="plan-features">
+                      {benefits.map((b, i) => (
+                        <li key={i}><span className="check">✓</span> {b.text}</li>
+                      ))}
+                    </ul>
+                    <div className="payment-button-container mt-auto">
+                      <button 
+                        onClick={() => handleSelectPlan(oneTimeMonthly)}
+                        className="pay-now-btn onetime-btn"
+                      >
+                        Buy with PayPal
+                      </button>
+                      <p className="payment-note text-xs text-center text-gray-400 mt-2">No auto-renewal</p>
+                    </div>
                   </div>
-                  <ul className="plan-features">
-                    {benefits.map((b, i) => (
-                      <li key={i}><span className="check">✓</span> {b.text}</li>
-                    ))}
-                  </ul>
-                  <div className="paypal-button-container">
-                    <PayPalButtons 
-                      style={{ layout: 'vertical', color: 'black', shape: 'pill', label: 'subscribe' }}
-                      onClick={() => logPaymentEvent('PAYPAL_BUTTON_CLICKED', 'SAVINGS_MONTHLY')}
-                      createSubscription={(data, actions) => {
-                        return actions.subscription.create({ 
-                          plan_id: MONTHLY_PLAN_ID,
-                          custom_id: currentUserId || undefined
-                        }).then(id => {
-                          logPaymentEvent('SUBSCRIPTION_CREATED_CLIENT', 'APPROVAL_PENDING', { subscriptionID: id, plan: 'monthly' });
-                          return id;
-                        });
-                      }}
-                      onApprove={async (data) => {
-                        await logPaymentEvent('PAYPAL_ON_APPROVE', 'APPROVED', data);
-                        await handleSubscriptionSuccess('monthly', data);
-                      }}
-                      onCancel={(data) => logPaymentEvent('PAYPAL_ON_CANCEL', 'CANCELLED', data)}
-                      onError={(err) => logPaymentEvent('PAYPAL_ON_ERROR', 'ERROR', { error: err.toString() })}
-                    />
+
+                  {/* One-time Annual */}
+                  <div className="pricing-card onetime-card yearly-onetime">
+                    <div className="save-tag">BEST VALUE</div>
+                    <div className="card-header">
+                      <h3 className="plan-name">1 Year Pass</h3>
+                      <div className="plan-price">$19.99 <span className="price-period">/ one-time</span></div>
+                    </div>
+                    <ul className="plan-features">
+                      {benefits.map((b, i) => (
+                        <li key={i}><span className="check">✓</span> {b.text}</li>
+                      ))}
+                      <li className="extra-feature">✨ Premium support for 1 year</li>
+                    </ul>
+                    <div className="payment-button-container mt-auto">
+                      <button 
+                        onClick={() => handleSelectPlan(oneTimeYearly)}
+                        className="pay-now-btn onetime-btn"
+                      >
+                        Buy with PayPal
+                      </button>
+                      <p className="payment-note text-center text-xs text-gray-400 mt-2">No auto-renewal</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Yearly Plan */}
-                <div className="pricing-card yearly-featured">
-                  <div className="popular-badge">MOST POPULAR</div>
-                  <div className="save-tag">SAVE 40%</div>
-                  <div className="card-header">
-                    <h3 className="plan-name">Annual</h3>
-                    <div className="plan-price">$19.99 <span className="price-period">/ year</span></div>
+                <div className="divider my-16">
+                  <span className="divider-text">OR CHOOSE AUTOMATIC RENEWAL</span>
+                </div>
+
+                {/* 🔄 订阅 Section */}
+                <div className="w-full text-center">
+                  <h2 className="section-title">🔄 Subscription (Auto-renewal)</h2>
+                  <p className="section-desc text-red-500 font-medium">⚠️ Requires a Credit Card or Debit Card linked to PayPal.</p>
+                </div>
+
+                <div className="pricing-grid">
+                  {/* Monthly Plan */}
+                  <div className="pricing-card">
+                    <div className="card-header">
+                      <h3 className="plan-name">Subscription Monthly</h3>
+                      <div className="plan-price">$2.99 <span className="price-period">/ month</span></div>
+                    </div>
+                    <ul className="plan-features">
+                      {benefits.map((b, i) => (
+                        <li key={i}><span className="check">✓</span> {b.text}</li>
+                      ))}
+                    </ul>
+                    <div className="payment-button-container mt-auto">
+                      <button 
+                        onClick={() => handleSelectPlan(subMonthly)}
+                        className="pay-now-btn sub-btn"
+                      >
+                        Subscribe
+                      </button>
+                    </div>
                   </div>
-                  <ul className="plan-features">
-                    {benefits.map((b, i) => (
-                      <li key={i}><span className="check">✓</span> {b.text}</li>
-                    ))}
-                    <li className="extra-feature">✨ Full year of premium support</li>
-                  </ul>
-                  <div className="paypal-button-container">
-                    <PayPalButtons 
-                      style={{ layout: 'vertical', color: 'gold', shape: 'pill', label: 'subscribe' }}
-                      onClick={() => logPaymentEvent('PAYPAL_BUTTON_CLICKED', 'SAVINGS_YEARLY')}
-                      createSubscription={(data, actions) => {
-                        return actions.subscription.create({ 
-                          plan_id: ANNUAL_PLAN_ID,
-                          custom_id: currentUserId || undefined
-                        }).then(id => {
-                          logPaymentEvent('SUBSCRIPTION_CREATED_CLIENT', 'APPROVAL_PENDING', { subscriptionID: id, plan: 'yearly' });
-                          return id;
-                        });
-                      }}
-                      onApprove={async (data) => {
-                        await logPaymentEvent('PAYPAL_ON_APPROVE', 'APPROVED', data);
-                        await handleSubscriptionSuccess('yearly', data);
-                      }}
-                      onCancel={(data) => logPaymentEvent('PAYPAL_ON_CANCEL', 'CANCELLED', data)}
-                      onError={(err) => logPaymentEvent('PAYPAL_ON_ERROR', 'ERROR', { error: err.toString() })}
-                    />
+
+                  {/* Yearly Plan */}
+                  <div className="pricing-card yearly-featured">
+                    <div className="popular-badge">MOST VALUE</div>
+                    <div className="save-tag">SAVE 40%</div>
+                    <div className="card-header">
+                      <h3 className="plan-name">Subscription Annual</h3>
+                      <div className="plan-price">$19.99 <span className="price-period">/ year</span></div>
+                    </div>
+                    <ul className="plan-features">
+                      {benefits.map((b, i) => (
+                        <li key={i}><span className="check">✓</span> {b.text}</li>
+                      ))}
+                      <li className="extra-feature">✨ Full year of premium support</li>
+                    </ul>
+                    <div className="payment-button-container mt-auto">
+                      <button 
+                        onClick={() => handleSelectPlan(subYearly)}
+                        className="pay-now-btn sub-btn highlight-btn"
+                      >
+                        Subscribe
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -220,6 +305,81 @@ export default function PremiumPage() {
             )}
           </div>
         </div>
+
+        {/* Payment Modal */}
+        {showPaymentModal && selectedPlan && (
+          <div className="payment-modal-overlay" onClick={() => setShowPaymentModal(false)}>
+            <div className="payment-modal-content" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Confirm Your Order</h3>
+                <button className="close-btn" onClick={() => setShowPaymentModal(false)}>×</button>
+              </div>
+              
+              <div className="order-summary">
+                <div className="order-item">
+                  <span className="item-name">{selectedPlan.name}</span>
+                  <span className="item-price">${selectedPlan.price}</span>
+                </div>
+                <div className="order-total">
+                  <span>Total Due</span>
+                  <span className="total-price">${selectedPlan.price}</span>
+                </div>
+              </div>
+
+              <div className="paypal-container-modal">
+                <PayPalScriptProvider options={{ 
+                  clientId: PAYPAL_CLIENT_ID, 
+                  currency: "USD",
+                  vault: selectedPlan.type === 'subscription' ? true : undefined,
+                  intent: selectedPlan.type === 'subscription' ? 'subscription' : 'capture'
+                }}>
+                  <PayPalButtons 
+                    style={{ layout: 'vertical', color: 'gold', shape: 'pill' }}
+                    createOrder={selectedPlan.type === 'onetime' ? (data, actions) => {
+                      return actions.order.create({
+                        intent: "CAPTURE",
+                        purchase_units: [{
+                          amount: { currency_code: "USD", value: selectedPlan.price },
+                          description: selectedPlan.description || selectedPlan.name,
+                          custom_id: currentUserId || undefined
+                        }],
+                        application_context: {
+                          shipping_preference: "NO_SHIPPING",
+                          user_action: "PAY_NOW"
+                        }
+                      } as any);
+                    } : undefined}
+                    createSubscription={selectedPlan.type === 'subscription' ? (data, actions) => {
+                      return actions.subscription.create({ 
+                        plan_id: selectedPlan.planId,
+                        custom_id: currentUserId || undefined
+                      });
+                    } : undefined}
+                    onApprove={async (data, actions) => {
+                      setShowPaymentModal(false)
+                      if (selectedPlan.type === 'onetime') {
+                        if (actions.order) {
+                          const details = await actions.order.capture();
+                          await handleSubscriptionSuccess(selectedPlan.id.includes('monthly') ? 'monthly' : 'yearly', { subscriptionID: details.id, isOrder: true });
+                        }
+                      } else {
+                        await handleSubscriptionSuccess(selectedPlan.id.includes('monthly') ? 'monthly' : 'yearly', data);
+                      }
+                    }}
+                    onCancel={() => setShowPaymentModal(false)}
+                    onError={(err) => {
+                      setShowPaymentModal(false)
+                      setErrorMessage(err.toString())
+                      setStatus('error')
+                    }}
+                  />
+                </PayPalScriptProvider>
+              </div>
+
+              <p className="secure-text">🔒 Secure payment via PayPal</p>
+            </div>
+          </div>
+        )}
 
         <style jsx>{`
           .premium-hero {
@@ -256,10 +416,57 @@ export default function PremiumPage() {
             color: #666;
             text-align: center;
             line-height: 1.5;
-            margin-bottom: 2.5rem;
+            margin-bottom: 3rem;
             max-width: 32rem;
             margin-left: auto;
             margin-right: auto;
+          }
+
+          .section-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #111;
+            margin-bottom: 8px;
+          }
+
+          .section-desc {
+            font-size: 15px;
+            color: #666;
+            margin-bottom: 24px;
+          }
+
+          .divider {
+            position: relative;
+            width: 100%;
+            height: 1px;
+            background: #eef0f3;
+            margin: 64px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+
+          .divider-text {
+            background: #fff;
+            padding: 0 16px;
+            color: #999;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+          }
+
+          .onetime-card {
+            background: rgba(34, 197, 94, 0.08) !important;
+            border: 2px solid rgba(34, 197, 94, 0.2) !important;
+          }
+
+          .onetime-card:hover {
+            border-color: rgba(34, 197, 94, 1) !important;
+            background: rgba(34, 197, 94, 0.12) !important;
+          }
+
+          .yearly-onetime {
+            border: 2px solid rgba(34, 197, 94, 0.4) !important;
           }
 
           .pricing-grid {
@@ -388,12 +595,149 @@ export default function PremiumPage() {
             color: #000 !important;
           }
 
+          .paypal-mock-button {
+            background: #000;
+            color: #fff;
+            border: none;
+            border-radius: 100px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+
+          .paypal-mock-button:hover {
+            background: #222;
+            transform: scale(1.02);
+          }
+
+          .paypal-mock-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+          }
+
           .paypal-button-container {
             width: 100%;
             min-height: 150px;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
+          }
+
+          .payment-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(8px);
+          }
+
+          .payment-modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 440px;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          }
+
+          .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+          }
+
+          .modal-header h3 {
+            font-size: 20px;
+            font-weight: 800;
+          }
+
+          .close-btn {
+            font-size: 28px;
+            color: #999;
+            cursor: pointer;
+            border: none;
+            background: none;
+          }
+
+          .order-summary {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+          }
+
+          .order-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-weight: 500;
+            color: #64748b;
+          }
+
+          .order-total {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 12px;
+            font-weight: 800;
+            font-size: 18px;
+            color: #000;
+          }
+
+          .paypal-container-modal {
+            min-height: 200px;
+          }
+
+          .pay-now-btn {
+            background: #000;
+            color: #fff;
+            border: none;
+            border-radius: 100px;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+          }
+
+          .pay-now-btn:hover {
+            transform: scale(1.02);
+            background: #222;
+          }
+
+          .onetime-btn {
+            background: #166534;
+          }
+          
+          .onetime-btn:hover {
+            background: #14532d;
+          }
+
+          .highlight-btn {
+             box-shadow: 0 4px 14px 0 rgba(0,0,0,0.3);
+          }
+
+          .secure-text {
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 20px;
           }
 
           .success-container {
@@ -425,6 +769,5 @@ export default function PremiumPage() {
           }
         `}</style>
       </main>
-    </PayPalScriptProvider>
-  )
+    )
 }
