@@ -29,14 +29,10 @@ export default function Header({ currentPage }: HeaderProps) {
       if (!queryId || !supabase) return
 
       try {
-        const { count, error } = await supabase
-          .from('notifications')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', queryId)
-          .eq('is_read', false)
-
-        if (!error && count !== null) {
-          setUnreadCount(count)
+        const res = await fetch(`/api/notifications?userId=${queryId}&countOnly=true`)
+        const data = await res.json()
+        if (data.count !== undefined) {
+          setUnreadCount(data.count)
         }
       } catch (err) {
         console.error('Failed to fetch unread notifications', err)
