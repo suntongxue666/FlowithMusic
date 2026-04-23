@@ -3411,6 +3411,36 @@ edia Inputs Styles */
     min-height: 270px;
   }
 
+  /* 整体滑动优化 - H5端热门卡片与艺术家卡片 */
+  .mobile-scroll-container {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 1.2rem;
+    padding: 0.5rem 1rem 2rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .mobile-scroll-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+  }
+
+  .mobile-card-item {
+    flex: 0 0 85%; /* 露出15%的下一张卡片，提示可滑动 */
+    scroll-snap-align: center;
+    max-width: 320px;
+    transition: transform 0.3s ease;
+  }
+
+  /* 修正H5标题对齐 */
+  .mobile-artist-section .artist-header {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    max-width: 100% !important;
+    padding: 0 1rem !important;
+  }
+
   .related-section-title {
     max-width: 360px;
     margin-left: auto !important;

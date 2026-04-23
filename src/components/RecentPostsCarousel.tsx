@@ -152,32 +152,11 @@ export default function RecentPostsCarousel({
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // H5端手势滑动处理
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null)
-    setTouchStart(e.targetTouches[0].clientX)
-  }
+  // PC端手势滑动处理 (不再需要，因为我们改为原生滑动)
+  const handleTouchStart = (e: React.TouchEvent) => {}
+  const handleTouchMove = (e: React.TouchEvent) => {}
+  const handleTouchEnd = () => {}
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX)
-  }
-
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return
-    
-    const distance = touchStart - touchEnd
-    const isLeftSwipe = distance > 50
-    const isRightSwipe = distance < -50
-
-    if (isLeftSwipe) {
-      // 左滑，显示下一个卡片
-      setCurrentCardIndex(prev => (prev + 1) % displayLetters.length)
-    }
-    if (isRightSwipe) {
-      // 右滑，显示上一个卡片
-      setCurrentCardIndex(prev => (prev - 1 + displayLetters.length) % displayLetters.length)
-    }
-  }
 
   // 单个卡片轮播 - 两阶段动画
   useEffect(() => {
@@ -262,34 +241,28 @@ export default function RecentPostsCarousel({
     )
   }
 
-  // H5端渲染单个卡片
+  // H5端渲染多个卡片整体滑动
   if (isMobile) {
-    const currentLetter = displayLetters[currentCardIndex]
-    const card = convertLetterToCard(currentLetter)
-    
     return (
       <section className="recent-posts-carousel mobile-carousel">
         <div className="carousel-header">
           <h2>Recent Posts</h2>
-          <div className="mobile-gesture-indicator">
-            ←👆→
-          </div>
         </div>
         
-        <div 
-          className="mobile-carousel-container"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div className="mobile-card-wrapper">
-            <MusicCard 
-              to={card.to}
-              message={card.message}
-              song={card.song}
-              linkId={card.linkId}
-            />
-          </div>
+        <div className="mobile-scroll-container">
+          {displayLetters.map((letter, idx) => {
+            const card = convertLetterToCard(letter)
+            return (
+              <div key={letter.id || `mobile-${idx}`} className="mobile-card-item">
+                <MusicCard 
+                  to={card.to}
+                  message={card.message}
+                  song={card.song}
+                  linkId={card.linkId}
+                />
+              </div>
+            )
+          })}
         </div>
       </section>
     )

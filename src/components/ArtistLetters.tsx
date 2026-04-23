@@ -112,44 +112,11 @@ export default function ArtistLetters() {
     }
   }, [isMobile, artistSections])
 
-  // H5端手势滑动处理
-  const handleTouchStart = (e: React.TouchEvent, artist: string) => {
-    setTouchEnd(null)
-    setTouchStart(e.targetTouches[0].clientX)
-    setCurrentTouchArtist(artist)
-  }
+  // H5端手势滑动处理 (不再需要，因为我们改为原生滑动)
+  const handleTouchStart = (e: React.TouchEvent, artist: string) => {}
+  const handleTouchMove = (e: React.TouchEvent) => {}
+  const handleTouchEnd = () => {}
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX)
-  }
-
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd || !currentTouchArtist) return
-    
-    const distance = touchStart - touchEnd
-    const isLeftSwipe = distance > 50
-    const isRightSwipe = distance < -50
-    
-    const section = artistSections.find(s => s.artist === currentTouchArtist)
-    if (!section) return
-
-    if (isLeftSwipe) {
-      // 左滑，显示下一个卡片
-      setMobileCardIndices(prev => ({
-        ...prev,
-        [currentTouchArtist]: (prev[currentTouchArtist] + 1) % section.letters.length
-      }))
-    }
-    if (isRightSwipe) {
-      // 右滑，显示上一个卡片
-      setMobileCardIndices(prev => ({
-        ...prev,
-        [currentTouchArtist]: (prev[currentTouchArtist] - 1 + section.letters.length) % section.letters.length
-      }))
-    }
-    
-    setCurrentTouchArtist(null)
-  }
 
   // 艺术家卡片轮播逻辑
   useEffect(() => {
@@ -254,44 +221,33 @@ export default function ArtistLetters() {
     return null // 如果没有符合条件的艺术家，不显示这个区域
   }
 
-  // H5端渲染
+  // H5端渲染多个卡片整体滑动
   if (isMobile) {
     return (
       <section className="artist-letters mobile-artist-letters">
-        {artistSections.map((section, sectionIndex) => {
-          const currentCardIndex = mobileCardIndices[section.artist] || 0
-          const currentLetter = section.letters[currentCardIndex]
-          if (!currentLetter) return null
-          
-          const card = convertLetterToCard(currentLetter)
-          
-          return (
-            <div key={section.artist} className="artist-section mobile-artist-section">
-              <div className="artist-header">
-                <h2>Posts with {section.artist}</h2>
-                <div className="mobile-gesture-indicator">
-                  ←👆→
-                </div>
-              </div>
-              
-              <div 
-                className="mobile-carousel-container"
-                onTouchStart={(e) => handleTouchStart(e, section.artist)}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                <div className="mobile-card-wrapper">
-                  <MusicCard 
-                    to={card.to}
-                    message={card.message}
-                    song={card.song}
-                    linkId={card.linkId}
-                  />
-                </div>
-              </div>
+        {artistSections.map((section, sectionIndex) => (
+          <div key={section.artist} className="artist-section mobile-artist-section">
+            <div className="artist-header">
+              <h2>Posts with {section.artist}</h2>
             </div>
-          )
-        })}
+            
+            <div className="mobile-scroll-container">
+              {section.letters.map((letter, idx) => {
+                const card = convertLetterToCard(letter)
+                return (
+                  <div key={letter.id || `artist-${idx}`} className="mobile-card-item">
+                    <MusicCard 
+                      to={card.to}
+                      message={card.message}
+                      song={card.song}
+                      linkId={card.linkId}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </section>
     )
   }
