@@ -3243,11 +3243,21 @@ art Spotify Player Styles */
   padding: 0 2rem;
 }
 
-/* H5端Recent Posts margin优化 */
+/* H5端Recent Posts & Artist Letters margin优化 */
 @media (max-width: 768px) {
-  .recent-posts-carousel {
+  .recent-posts-carousel, .artist-letters {
     margin: 1rem auto;
-    padding: 0 1rem !important;
+    padding: 0 !important; /* Container handles padding via scroll-container */
+  }
+
+  .mobile-scroll-container {
+    padding: 0 1rem 2rem !important; /* 统一左对齐基准线 */
+  }
+
+  .mobile-card-item {
+    flex: 0 0 88%; /* 调宽比例到 88%，更接近 Explore 的宽屏感 */
+    scroll-snap-align: center;
+    max-width: 320px;
   }
 }
 
@@ -3413,34 +3423,41 @@ edia Inputs Styles */
     min-height: 270px;
   }
 
-  /* 整体滑动优化 - H5端热门卡片与艺术家卡片 */
+  /* 整体滑动逻辑 */
   .mobile-scroll-container {
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     gap: 1.2rem;
-    padding: 0.5rem 1rem 2rem;
+    padding: 0.5rem 1rem 2rem !important;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
   }
 
   .mobile-scroll-container::-webkit-scrollbar {
-    display: none; /* Chrome, Safari */
+    display: none;
   }
 
   .mobile-card-item {
-    flex: 0 0 85%; /* 露出15%的下一张卡片，提示可滑动 */
+    flex: 0 0 88%; 
     scroll-snap-align: center;
     max-width: 320px;
-    transition: transform 0.3s ease;
   }
 
-  /* 修正H5标题对齐 */
+  /* 修正H5标题对齐 - 统一基准线 */
+  .mobile-carousel .carousel-header,
   .mobile-artist-section .artist-header {
     margin-left: 0 !important;
     margin-right: 0 !important;
     max-width: 100% !important;
     padding: 0 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .recent-posts-carousel.mobile-carousel .carousel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .related-section-title {
