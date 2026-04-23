@@ -3243,25 +3243,38 @@ art Spotify Player Styles */
   padding: 0 2rem;
 }
 
-/* H5端Recent Posts & Artist Letters margin优化 */
+/* H5端Recent Posts & Artist Letters 布局深度对齐 */
 @media (max-width: 768px) {
-  .recent-posts-carousel, .artist-letters, .artist-section {
-    margin: 1rem auto;
+  /* 强制所有顶层容器占满全屏，无边距 */
+  .recent-posts-carousel, 
+  .artist-letters, 
+  .artist-section,
+  .mobile-artist-section {
+    margin: 1.5rem 0 !important; /* 统一垂直间距 */
     padding: 0 !important;
-    width: 100% !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    overflow: hidden;
+    left: 0;
+    position: relative;
     box-sizing: border-box;
   }
 
+  /* 统一内部滚动容器，设置一致的左对齐基准（1rem） */
   .mobile-scroll-container {
-    padding: 0 1rem 2rem !important; /* 统一左对齐基准线 */
     width: 100% !important;
+    padding: 0 1rem 2rem !important; 
     box-sizing: border-box;
+    display: flex;
+    gap: 1.2rem;
   }
 
+  /* 统一卡片比例：屏幕宽度的 88% */
   .mobile-card-item {
-    flex: 0 0 88%; /* 统一比例 */
+    flex: 0 0 88% !important;
+    width: 88% !important;
+    max-width: 88vw !important; /* 强制一致宽度 */
     scroll-snap-align: center;
-    transition: transform 0.3s ease;
   }
 }
 
