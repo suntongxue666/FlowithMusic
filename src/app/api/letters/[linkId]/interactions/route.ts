@@ -135,8 +135,11 @@ export async function POST(
 
     // --- 新增：记录被互动用户的通知 ---
     try {
+      // Use Admin client to bypass RLS for notifications
+      const adminClient = supabaseAdmin || supabase
+      
       // 获取信件拥有者的 user_id 或 anonymous_id
-      const { data: letterData } = await supabase
+      const { data: letterData } = await adminClient!
         .from('letters')
         .select('user_id, anonymous_id')
         .eq('link_id', linkId)
@@ -156,7 +159,7 @@ export async function POST(
           letter_id: linkId,
           metadata: { emoji, label }
         }
-        await supabase.from('notifications').insert(notificationData)
+        await adminClient!.from('notifications').insert(notificationData)
         console.log('✅ 已为信件拥有者生成互动通知')
       }
     } catch (notifErr) {

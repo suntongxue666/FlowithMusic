@@ -8,6 +8,7 @@ import { userService } from '@/lib/userService'
 import { supabase } from '@/lib/supabase'
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js"
 import { useEffect } from 'react'
+import RecentBuyersMarquee from '@/components/RecentBuyersMarquee'
 
 const PAYPAL_CLIENT_ID = 'AQCCWaOGvX92tZI1uf4511x3WG1Hp2obxM4mTNgGX-pnUfObT2bnxfVMRHzSr2zTCycyx6jQtLLRdRx8';
 const MONTHLY_PLAN_ID = 'P-0E135132J93420229NG3WTWA';
@@ -204,13 +205,16 @@ export default function PremiumPage() {
                       ))}
                     </ul>
                     <div className="payment-button-container mt-auto">
+                      <div className="mb-2">
+                        <RecentBuyersMarquee />
+                      </div>
                       <button 
                         onClick={() => handleSelectPlan(oneTimeMonthly)}
                         className="pay-now-btn onetime-btn"
                       >
                         Buy with PayPal
                       </button>
-                      <p className="payment-note text-xs text-center text-gray-400 mt-2">No auto-renewal</p>
+                      <p className="payment-note text-xs text-center text-gray-400" style={{ marginTop: '16px' }}>No auto-renewal</p>
                     </div>
                   </div>
 
@@ -228,13 +232,16 @@ export default function PremiumPage() {
                       <li className="extra-feature">✨ Premium support for 1 year</li>
                     </ul>
                     <div className="payment-button-container mt-auto">
+                      <div className="mb-2">
+                        <RecentBuyersMarquee />
+                      </div>
                       <button 
                         onClick={() => handleSelectPlan(oneTimeYearly)}
                         className="pay-now-btn onetime-btn"
                       >
                         Buy with PayPal
                       </button>
-                      <p className="payment-note text-center text-xs text-gray-400 mt-2">No auto-renewal</p>
+                      <p className="payment-note text-center text-xs text-gray-400" style={{ marginTop: '16px' }}>No auto-renewal</p>
                     </div>
                   </div>
                 </div>

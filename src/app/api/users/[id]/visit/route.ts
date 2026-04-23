@@ -36,28 +36,24 @@ export async function POST(
     // Check if the exact same visit happened very recently to prevent spam (e.g. within 1 hour)
     const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
     
-    // Using supabase select to check if a recent visit from the same actor already exists
-    const { data: recentVisits, error: checkError } = await supabase
-      .from('notifications')
-      .select('id')
-      .eq('user_id', targetUserId)
-      .eq('actor_id', visitorId)
-      .eq('type', 'profile_visit')
-      .gt('created_at', oneHourAgo)
-      .limit(1);
-
-    if (recentVisits && recentVisits.length > 0) {
-      return NextResponse.json({ success: true, ignored: true, reason: 'rate_limited' })
+    // Use Admin client to bypass RLS for notifications
+    const adminClient = supabaseAdmin || supabase
+    
+    if (!adminClient) {
+      return NextResponse.json({ error: 'Database client not available' }, { status: 500 })
     }
 
-    const { error: insertError } = await supabase
+    const { error: insertError } = await adminClient
       .from('notifications')
       .insert(notificationData)
 
-    if (insertError) throw insertError
+    if (insertError) {
+      console.error('❌ Failed to insert notification:', insertError)
+      throw insertError
+    }
 
     // Also record in profile_visits table for permanent data
-    const { error: visitError } = await supabase
+    const { error: visitError } = await adminClient
       .from('profile_visits')
       .insert({
         target_user_id: targetUserId,
