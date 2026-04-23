@@ -224,10 +224,10 @@ export default function ArtistLetters() {
   // H5端渲染多个卡片整体滑动
   if (isMobile) {
     return (
-      <section className="artist-letters mobile-artist-letters">
+      <div className="mobile-artist-collections">
         {artistSections.map((section, sectionIndex) => (
-          <div key={section.artist} className="artist-section mobile-artist-section">
-            <div className="artist-header">
+          <section key={section.artist} className="recent-posts-carousel mobile-carousel">
+            <div className="carousel-header">
               <h2>Posts with {section.artist}</h2>
             </div>
             
@@ -246,9 +246,9 @@ export default function ArtistLetters() {
                 )
               })}
             </div>
-          </div>
+          </section>
         ))}
-      </section>
+      </div>
     )
   }
 
