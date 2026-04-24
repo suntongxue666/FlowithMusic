@@ -759,17 +759,35 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
                       })
                     }}
                     onApprove={async (data, actions) => {
-                      if (!actions.order) return Promise.reject("Order not found");
-                      return actions.order.capture().then(async (details) => {
-                        console.log('Transaction completed by ' + details?.payer?.name?.given_name);
-                        // Update database
-                        await letterService.updateLetterPaymentStatus(linkId, 'flowing_emoji')
+                      try {
+                        const captureRes = await fetch('/api/paypal/capture', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            orderID: data.orderID,
+                            linkId: linkId,
+                            productType: 'flowing_emoji'
+                          })
+                        });
+
+                        const captureData = await captureRes.json();
+                        
+                        if (!captureRes.ok) {
+                          throw new Error(captureData.error || 'Failed to capture payment');
+                        }
+
+                        console.log('Transaction completed successfully');
+                        
                         // Update local state
                         setLetter(prev => prev ? ({ ...prev, effect_type: 'flowing_emoji' }) : null)
                         setEffectMode('full')
                         setShowEffect(true)
                         setShowPaymentModal(false)
-                      });
+                      } catch (err: any) {
+                        console.error('Emoji capture failed:', err);
+                        alert('Payment capture failed: ' + (err.message || 'Unknown error'));
+                        setShowPaymentModal(false);
+                      }
                     }}
                   />
                 </PayPalScriptProvider>

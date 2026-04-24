@@ -363,13 +363,41 @@ export default function PremiumPage() {
                       });
                     } : undefined}
                     onApprove={async (data, actions) => {
-                      setShowPaymentModal(false)
                       if (selectedPlan.type === 'onetime') {
-                        if (actions.order) {
-                          const details = await actions.order.capture();
-                          await handleSubscriptionSuccess(selectedPlan.id.includes('monthly') ? 'monthly' : 'yearly', { subscriptionID: details.id, isOrder: true });
+                        try {
+                          // 使用我们的服务器端 Capture API 以保证可靠性
+                          const captureRes = await fetch('/api/paypal/capture', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              orderID: data.orderID,
+                              userId: user?.id,
+                              anonymousId: anonymousId,
+                              plan: selectedPlan.id,
+                              productType: 'premium'
+                            })
+                          });
+                          
+                          const captureData = await captureRes.json();
+                          
+                          if (!captureRes.ok) {
+                            throw new Error(captureData.error || 'Failed to capture payment');
+                          }
+
+                          setShowPaymentModal(false);
+                          await handleSubscriptionSuccess(selectedPlan.id.includes('monthly') ? 'monthly' : 'yearly', { 
+                            subscriptionID: data.orderID, 
+                            isOrder: true,
+                            details: captureData.details
+                          });
+                        } catch (err: any) {
+                          console.error('Capture failed:', err);
+                          setShowPaymentModal(false);
+                          setErrorMessage(err.message || 'Payment capture failed. Please contact support.');
+                          setStatus('error');
                         }
                       } else {
+                        setShowPaymentModal(false)
                         await handleSubscriptionSuccess(selectedPlan.id.includes('monthly') ? 'monthly' : 'yearly', data);
                       }
                     }}
