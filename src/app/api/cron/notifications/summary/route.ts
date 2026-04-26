@@ -97,6 +97,14 @@ export async function GET(req: Request) {
             </a>
           </div>
 
+          <div style="margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 40px;">
+            <a href="https://chat.whatsapp.com/Bn6OO7Zq62g4vDga7wey7l?mode=gi_t" target="_blank" rel="noopener noreferrer">
+              <img src="https://pub-76f2f1fc81ef48fbb698a2518f11013d.r2.dev/FlowithMusic-Group.jpg" 
+                   alt="Join FlowithMusic Community" 
+                   style="width: 100%; max-width: 500px; border-radius: 12px; display: block; margin: 0 auto;" />
+            </a>
+          </div>
+
           <p style="font-size: 12px; color: #999; margin-top: 40px; text-align: center;">
             You are receiving this because you have new notifications on FlowithMusic.<br/>
             © 2026 FlowithMusic. All rights reserved.

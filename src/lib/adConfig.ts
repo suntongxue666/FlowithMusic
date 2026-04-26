@@ -19,11 +19,18 @@ export const iLyricsAd: AdConfig = {
   altText: 'iLyrics App'
 };
 
+// 第三个广告 (WhatsApp Group)
+export const whatsappGroupAd: AdConfig = {
+  imageUrl: 'https://pub-76f2f1fc81ef48fbb698a2518f11013d.r2.dev/FlowithMusic-Group.jpg',
+  linkUrl: 'https://chat.whatsapp.com/Bn6OO7Zq62g4vDga7wey7l?mode=gi_t',
+  altText: 'Join WhatsApp Group'
+};
+
 // 默认广告配置
 export const defaultAdConfig: AdConfig = flowithAd;
 
 // 轮播广告列表
-export const adList: AdConfig[] = [flowithAd, iLyricsAd];
+export const adList: AdConfig[] = [flowithAd, iLyricsAd, whatsappGroupAd];
 
 // 配置文件导出
 export const adConfigs = {
