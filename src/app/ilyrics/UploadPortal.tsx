@@ -200,15 +200,7 @@ export default function UploadPortal() {
 
       <main className="ilyrics-content">
         <header className="header">
-          <a href="https://apps.apple.com/app/id6758751610" target="_blank" rel="noopener noreferrer" className="app-icon-link">
-            <img 
-              src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/af/f0/77/aff0770f-9c9a-03cb-3c91-c950b3545473/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.jpeg/180x180bb.png" 
-              alt="iLyrics Icon" 
-              className="app-icon"
-            />
-          </a>
           <h1>iLyrics Portal</h1>
-          <p>Sync local lyrics to your iOS device</p>
         </header>
 
         <div className="card">
@@ -238,6 +230,7 @@ export default function UploadPortal() {
 
           {step === 2 && (
             <div className="step-container">
+              <p className="subtitle-inline">Sync Local lyrics to your iOS device</p>
               <div 
                 className="drop-zone"
                 onClick={() => fileInputRef.current?.click()}
