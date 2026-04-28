@@ -1,10 +1,20 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import './ilyrics.css';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://oiggdnnehohoaycyiydn.supabase.co';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+interface UploadItem {
+  id: string;
+  file: File;
+  title: string;
+  artist: string;
+  status: 'pending' | 'uploading' | 'success' | 'error' | 'conflict';
+  error?: string;
+  progress: number;
+}
 
 // Simple hashing function for song_id
 async function generateSongId(title: string, artist: string) {
@@ -13,7 +23,7 @@ async function generateSongId(title: string, artist: string) {
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex.substring(0, 32); // Use first 32 chars for consistency
+  return hashHex.substring(0, 32);
 }
 
 export default function UploadPortal() {
@@ -22,14 +32,8 @@ export default function UploadPortal() {
   const [userId, setUserId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
   
-  const [songInfo, setSongInfo] = useState({
-    title: '',
-    artist: '',
-    lyrics: '',
-    type: 'lrc' as 'lrc' | 'ttml'
-  });
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Step 1: Verify Pairing Code
@@ -72,91 +76,117 @@ export default function UploadPortal() {
     }
   };
 
-  // Step 2: Handle File Upload & Parsing
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Filename parsing regex
+  const filenameRegex = /(.+)\s*[-_]\s*(.+)\.(lrc|ttml)/i;
 
-    const extension = file.name.split('.').pop()?.toLowerCase();
-    if (extension !== 'lrc' && extension !== 'ttml') {
-      setError('仅支持 .lrc 或 .ttml 文件');
-      return;
+  const parseFileMetadata = (file: File): { title: string, artist: string } => {
+    const match = file.name.match(filenameRegex);
+    if (match) {
+      // Assuming Format: Artist - Title or Title - Artist
+      // We'll put them in and let the user adjust if needed, 
+      // but usually the regex group 1 is artist and group 2 is title or vice versa.
+      return {
+        artist: match[1].trim(),
+        title: match[2].trim()
+      };
     }
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const content = event.target?.result as string;
-      parseLyricsFile(content, extension as 'lrc' | 'ttml');
-    };
-    reader.readAsText(file);
+    return { title: file.name.replace(/\.(lrc|ttml)$/i, ''), artist: '' };
   };
 
-  const parseLyricsFile = (content: string, type: 'lrc' | 'ttml') => {
-    let title = '';
-    let artist = '';
+  const handleFiles = (files: FileList | null) => {
+    if (!files) return;
+    
+    const newItems: UploadItem[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      if (extension !== 'lrc' && extension !== 'ttml') continue;
 
-    if (type === 'lrc') {
-      const tiMatch = content.match(/\[ti:(.*?)\]/);
-      const arMatch = content.match(/\[ar:(.*?)\]/);
-      title = tiMatch ? tiMatch[1].trim() : '';
-      artist = arMatch ? arMatch[1].trim() : '';
-    } else if (type === 'ttml') {
-      const titleMatch = content.match(/<title>(.*?)<\/title>/);
-      title = titleMatch ? titleMatch[1].trim() : '';
+      const { title, artist } = parseFileMetadata(file);
+      newItems.push({
+        id: Math.random().toString(36).substring(7),
+        file,
+        title,
+        artist,
+        status: 'pending',
+        progress: 0
+      });
     }
 
-    setSongInfo({
-      title,
-      artist,
-      lyrics: content,
-      type
-    });
-    setError('');
+    setUploadQueue(prev => [...prev, ...newItems]);
   };
 
-  // Step 3: Submit to Supabase
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!songInfo.title || !songInfo.artist) {
-      setError('请输入歌名和歌手');
-      return;
-    }
+  const updateItem = (id: string, updates: Partial<UploadItem>) => {
+    setUploadQueue(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
+  };
+
+  const processUpload = async () => {
+    const pendingItems = uploadQueue.filter(item => item.status === 'pending');
+    if (pendingItems.length === 0) return;
 
     setLoading(true);
-    setError('');
+    
+    // Concurrency limit: 3
+    const limit = 3;
+    const queue = [...pendingItems];
+    const active: Promise<void>[] = [];
 
-    try {
-      const song_id = await generateSongId(songInfo.title, songInfo.artist);
+    const uploadOne = async (item: UploadItem) => {
+      updateItem(item.id, { status: 'uploading' });
       
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/ilyrics_user_library`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          song_id,
-          title: songInfo.title,
-          artist: songInfo.artist,
-          lyrics: songInfo.lyrics,
-          type: songInfo.type
-        })
-      });
+      try {
+        const lyrics = await item.file.text();
+        const song_id = await generateSongId(item.title, item.artist);
+        const type = item.file.name.split('.').pop()?.toLowerCase() as 'lrc' | 'ttml';
 
-      if (response.ok) {
-        setStep(3);
-      } else {
-        const errData = await response.json();
-        setError(errData.message || '上传失败，请检查数据格式');
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/ilyrics_user_library`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            song_id,
+            title: item.title,
+            artist: item.artist,
+            lyrics,
+            type
+          })
+        });
+
+        if (response.ok) {
+          updateItem(item.id, { status: 'success', progress: 100 });
+        } else if (response.status === 409) {
+          updateItem(item.id, { status: 'conflict', error: '歌曲已在云端' });
+        } else {
+          const errData = await response.json();
+          updateItem(item.id, { status: 'error', error: errData.message || '上传失败' });
+        }
+      } catch (err) {
+        updateItem(item.id, { status: 'error', error: '网络错误' });
       }
-    } catch (err) {
-      setError('网络请求失败');
-    } finally {
-      setLoading(false);
+    };
+
+    while (queue.length > 0 || active.length > 0) {
+      while (active.length < limit && queue.length > 0) {
+        const item = queue.shift()!;
+        const p = uploadOne(item).then(() => {
+          active.splice(active.indexOf(p), 1);
+        });
+        active.push(p);
+      }
+      await Promise.race(active.length > 0 ? active : [Promise.resolve()]);
+      if (queue.length === 0 && active.length === 0) break;
     }
+
+    setLoading(false);
+  };
+
+  const removeItem = (id: string) => {
+    setUploadQueue(prev => prev.filter(item => item.id !== id));
   };
 
   return (
@@ -167,14 +197,14 @@ export default function UploadPortal() {
       <main className="ilyrics-content">
         <header className="header">
           <h1>iLyrics Portal</h1>
-          <p>同步你的本地歌词到 iOS 设备</p>
+          <p>批量同步本地歌词到 iOS 设备</p>
         </header>
 
         <div className="card">
           {step === 1 && (
             <div className="step-container">
               <div className="input-group">
-                <label>请输入配对码</label>
+                <label>请输入 6 位配对码</label>
                 <input 
                   type="text" 
                   className="pairing-input" 
@@ -184,7 +214,7 @@ export default function UploadPortal() {
                   onChange={(e) => setPairingCode(e.target.value.replace(/\D/g, ''))}
                 />
               </div>
-              {error && <p style={{ color: 'var(--accent-color)', textAlign: 'center' }}>{error}</p>}
+              {error && <p className="error-text">{error}</p>}
               <button 
                 className="btn-primary" 
                 onClick={handleVerify}
@@ -205,17 +235,7 @@ export default function UploadPortal() {
                 onDrop={(e) => {
                   e.preventDefault();
                   e.currentTarget.classList.remove('active');
-                  const file = e.dataTransfer.files[0];
-                  if (file) {
-                    const extension = file.name.split('.').pop()?.toLowerCase();
-                    if (extension === 'lrc' || extension === 'ttml') {
-                      const reader = new FileReader();
-                      reader.onload = (event) => parseLyricsFile(event.target?.result as string, extension as 'lrc' | 'ttml');
-                      reader.readAsText(file);
-                    } else {
-                      setError('仅支持 .lrc 或 .ttml 文件');
-                    }
-                  }
+                  handleFiles(e.dataTransfer.files);
                 }}
               >
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -223,71 +243,73 @@ export default function UploadPortal() {
                   <polyline points="17 8 12 3 7 8"></polyline>
                   <line x1="12" y1="3" x2="12" y2="15"></line>
                 </svg>
-                <p>{songInfo.lyrics ? '已选择歌词文件' : '点击或拖拽上传 LRC / TTML 文件'}</p>
+                <p>点击或拖拽上传多个 LRC / TTML 文件</p>
                 <input 
                   type="file" 
                   ref={fileInputRef} 
                   hidden 
+                  multiple
                   accept=".lrc,.ttml" 
-                  onChange={handleFileChange}
+                  onChange={(e) => handleFiles(e.target.files)}
                 />
               </div>
 
-              {songInfo.lyrics && (
-                <form className="lyrics-form" onSubmit={handleSubmit}>
-                  <div className="input-group">
-                    <label>歌名 (Title)</label>
-                    <input 
-                      type="text" 
-                      value={songInfo.title}
-                      onChange={(e) => setSongInfo({...songInfo, title: e.target.value})}
-                      placeholder="例如: Blinding Lights"
-                      required
-                    />
+              {uploadQueue.length > 0 && (
+                <div className="upload-list">
+                  <div className="list-header">
+                    <span>待处理列表 ({uploadQueue.length})</span>
+                    <button className="btn-text" onClick={() => setUploadQueue([])}>清空</button>
                   </div>
-                  <div className="input-group">
-                    <label>歌手 (Artist)</label>
-                    <input 
-                      type="text" 
-                      value={songInfo.artist}
-                      onChange={(e) => setSongInfo({...songInfo, artist: e.target.value})}
-                      placeholder="例如: The Weeknd"
-                      required
-                    />
+                  <div className="items-container">
+                    {uploadQueue.map(item => (
+                      <div key={item.id} className={`upload-item ${item.status}`}>
+                        <div className="item-info">
+                          <input 
+                            className="item-title" 
+                            value={item.title} 
+                            onChange={(e) => updateItem(item.id, { title: e.target.value })}
+                            placeholder="歌名"
+                            disabled={item.status !== 'pending'}
+                          />
+                          <input 
+                            className="item-artist" 
+                            value={item.artist} 
+                            onChange={(e) => updateItem(item.id, { artist: e.target.value })}
+                            placeholder="歌手"
+                            disabled={item.status !== 'pending'}
+                          />
+                        </div>
+                        <div className="item-status">
+                          {item.status === 'uploading' && <span className="spinner"></span>}
+                          {item.status === 'success' && <span className="icon-success">✓</span>}
+                          {item.status === 'conflict' && <span className="icon-warning">已存在</span>}
+                          {item.status === 'error' && <span className="icon-error">失败</span>}
+                          {item.status === 'pending' && (
+                            <button className="btn-remove" onClick={() => removeItem(item.id)}>×</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  {error && <p style={{ color: 'var(--accent-color)', textAlign: 'center' }}>{error}</p>}
+                  
                   <button 
                     className="btn-primary" 
-                    type="submit"
-                    disabled={loading}
+                    onClick={processUpload}
+                    disabled={loading || !uploadQueue.some(i => i.status === 'pending')}
+                    style={{ marginTop: '20px' }}
                   >
-                    {loading ? '正在同步...' : '确认并同步到 App'}
+                    {loading ? '同步中...' : '开始同步'}
                   </button>
-                </form>
+                </div>
               )}
             </div>
           )}
 
-          {step === 3 && (
-            <div className="success-state">
-              <div className="success-icon">✓</div>
-              <h2>同步成功！</h2>
-              <p style={{ color: 'var(--text-secondary)', margin: '16px 0' }}>
-                歌词已成功上传到云端。
-                <br />
-                请在 App 的 <b>Uploaded</b> 页面下拉刷新查看。
-              </p>
-              <button 
-                className="btn-primary" 
-                style={{ width: '100%' }}
-                onClick={() => {
-                  setStep(2);
-                  setSongInfo({ title: '', artist: '', lyrics: '', type: 'lrc' });
-                }}
-              >
-                继续上传
-              </button>
-            </div>
+          {step === 3 || (step === 2 && uploadQueue.length > 0 && uploadQueue.every(i => i.status !== 'pending' && i.status !== 'uploading')) && (
+             <div className="success-footer" style={{ marginTop: '20px', textAlign: 'center' }}>
+                <p style={{ color: 'var(--success-color)', fontWeight: '600' }}>同步任务已完成！</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>请在 App 的 Uploaded 页面下拉刷新查看</p>
+             </div>
           )}
         </div>
 
