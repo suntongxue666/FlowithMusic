@@ -126,11 +126,19 @@
 .drop-zone {
   border: 2px dashed rgba(255, 255, 255, 0.2);
   border-radius: 16px;
-  padding: 40px 20px;
+  padding: 24px 20px; /* Reduced vertical padding by 16px each side = 32px total height reduction */
   text-align: center;
   cursor: pointer;
   transition: all 0.3s;
   background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.drop-zone svg {
+  margin-bottom: 8px;
 }
 
 .drop-zone:hover, .drop-zone.active {

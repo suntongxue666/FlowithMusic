@@ -308,9 +308,9 @@ export default function UploadPortal() {
               )}
 
               <p className="disclaimer-inline">
-                仅供个人研究与学习使用，请勿上传未经授权的内容。
+                仅供个人使用，请勿上传未经授权的内容。
                 <br />
-                iLyrics 不会公开分享您的个人本地歌词。
+                iLyrics可能会共享你上传歌词供其他用户使用
               </p>
             </div>
           )}
