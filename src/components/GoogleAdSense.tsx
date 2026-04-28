@@ -19,11 +19,11 @@ export default function GoogleAdSense({ forceHide = false, isGlobal = false }: {
   
   useEffect(() => {
     // 逻辑：
-    // 1. 如果是 Layout 里的全局组件，在信件详情页或购买页不工作
-    if (isGlobal && (pathname.startsWith('/letter/') || pathname === '/premium')) return
+    // 1. 如果是 Layout 里的全局组件，在信件详情页、购买页或 iLyrics 门户不工作
+    if (isGlobal && (pathname.startsWith('/letter/') || pathname === '/premium' || pathname === '/ilyrics')) return
     
     // 2. 隐藏逻辑
-    if (isPremium || forceHide || isAdForceHidden || fromParam || pathname === '/premium') return
+    if (isPremium || forceHide || isAdForceHidden || fromParam || pathname === '/premium' || pathname === '/ilyrics') return
     
     // 只有在非会员的情况下才加载脚本
     const script = document.createElement('script')
