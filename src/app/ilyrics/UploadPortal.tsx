@@ -40,7 +40,7 @@ export default function UploadPortal() {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (pairingCode.length !== 6) {
-      setError('请输入6位配对码');
+      setError('Please enter a 6-digit code');
       return;
     }
 
@@ -64,13 +64,13 @@ export default function UploadPortal() {
           setUserId(profile.user_id);
           setStep(2);
         } else {
-          setError('配对码已过期，请在 App 中重新获取');
+          setError('Code expired. Please get a new one from the App.');
         }
       } else {
-        setError('配对码错误或不存在');
+        setError('Invalid pairing code.');
       }
     } catch (err) {
-      setError('连接服务器失败，请稍后重试');
+      setError('Connection failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -111,6 +111,10 @@ export default function UploadPortal() {
         status: 'pending',
         progress: 0
       });
+    }
+
+    if (newItems.length === 0 && files.length > 0) {
+      setError('Only .lrc or .ttml files are allowed');
     }
 
     setUploadQueue(prev => [...prev, ...newItems]);
@@ -160,13 +164,13 @@ export default function UploadPortal() {
         if (response.ok) {
           updateItem(item.id, { status: 'success', progress: 100 });
         } else if (response.status === 409) {
-          updateItem(item.id, { status: 'conflict', error: '歌曲已在云端' });
+          updateItem(item.id, { status: 'conflict', error: 'Exists' });
         } else {
           const errData = await response.json();
-          updateItem(item.id, { status: 'error', error: errData.message || '上传失败' });
+          updateItem(item.id, { status: 'error', error: errData.message || 'Failed' });
         }
       } catch (err) {
-        updateItem(item.id, { status: 'error', error: '网络错误' });
+        updateItem(item.id, { status: 'error', error: 'Network Error' });
       }
     };
 
@@ -196,15 +200,22 @@ export default function UploadPortal() {
 
       <main className="ilyrics-content">
         <header className="header">
+          <a href="https://apps.apple.com/app/id6758751610" target="_blank" rel="noopener noreferrer" className="app-icon-link">
+            <img 
+              src="https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/af/f0/77/aff0770f-9c9a-03cb-3c91-c950b3545473/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.jpeg/180x180bb.png" 
+              alt="iLyrics Icon" 
+              className="app-icon"
+            />
+          </a>
           <h1>iLyrics Portal</h1>
-          <p>批量同步本地歌词到 iOS 设备</p>
+          <p>Sync local lyrics to your iOS device</p>
         </header>
 
         <div className="card">
           {step === 1 && (
             <div className="step-container">
               <div className="input-group">
-                <label>请输入 6 位配对码</label>
+                <label>Pairing Code</label>
                 <input 
                   type="text" 
                   className="pairing-input" 
@@ -220,7 +231,7 @@ export default function UploadPortal() {
                 onClick={handleVerify}
                 disabled={loading || pairingCode.length !== 6}
               >
-                {loading ? '正在验证...' : '开始配对'}
+                {loading ? 'Verifying...' : 'Start Pairing'}
               </button>
             </div>
           )}
@@ -243,7 +254,7 @@ export default function UploadPortal() {
                   <polyline points="17 8 12 3 7 8"></polyline>
                   <line x1="12" y1="3" x2="12" y2="15"></line>
                 </svg>
-                <p>点击或拖拽上传多个 LRC / TTML 文件</p>
+                <p>Click or drag .lrc / .ttml files here</p>
                 <input 
                   type="file" 
                   ref={fileInputRef} 
@@ -257,8 +268,8 @@ export default function UploadPortal() {
               {uploadQueue.length > 0 && (
                 <div className="upload-list">
                   <div className="list-header">
-                    <span>待处理列表 ({uploadQueue.length})</span>
-                    <button className="btn-text" onClick={() => setUploadQueue([])}>清空</button>
+                    <span>Queue ({uploadQueue.length})</span>
+                    <button className="btn-text" onClick={() => setUploadQueue([])}>Clear All</button>
                   </div>
                   <div className="items-container">
                     {uploadQueue.map(item => (
@@ -268,22 +279,22 @@ export default function UploadPortal() {
                             className="item-title" 
                             value={item.title} 
                             onChange={(e) => updateItem(item.id, { title: e.target.value })}
-                            placeholder="歌名"
+                            placeholder="Song Title"
                             disabled={item.status !== 'pending'}
                           />
                           <input 
                             className="item-artist" 
                             value={item.artist} 
                             onChange={(e) => updateItem(item.id, { artist: e.target.value })}
-                            placeholder="歌手"
+                            placeholder="Artist"
                             disabled={item.status !== 'pending'}
                           />
                         </div>
                         <div className="item-status">
                           {item.status === 'uploading' && <span className="spinner"></span>}
                           {item.status === 'success' && <span className="icon-success">✓</span>}
-                          {item.status === 'conflict' && <span className="icon-warning">已存在</span>}
-                          {item.status === 'error' && <span className="icon-error">失败</span>}
+                          {item.status === 'conflict' && <span className="icon-warning">Exists</span>}
+                          {item.status === 'error' && <span className="icon-error">Error</span>}
                           {item.status === 'pending' && (
                             <button className="btn-remove" onClick={() => removeItem(item.id)}>×</button>
                           )}
@@ -298,27 +309,30 @@ export default function UploadPortal() {
                     disabled={loading || !uploadQueue.some(i => i.status === 'pending')}
                     style={{ marginTop: '20px' }}
                   >
-                    {loading ? '同步中...' : '开始同步'}
+                    {loading ? 'Syncing...' : 'Start Sync'}
                   </button>
                 </div>
               )}
+
+              <p className="disclaimer-inline">
+                仅供个人研究与学习使用，请勿上传未经授权的内容。
+                <br />
+                iLyrics 不会公开分享您的个人本地歌词。
+              </p>
             </div>
           )}
 
           {step === 3 || (step === 2 && uploadQueue.length > 0 && uploadQueue.every(i => i.status !== 'pending' && i.status !== 'uploading')) && (
              <div className="success-footer" style={{ marginTop: '20px', textAlign: 'center' }}>
-                <p style={{ color: 'var(--success-color)', fontWeight: '600' }}>同步任务已完成！</p>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>请在 App 的 Uploaded 页面下拉刷新查看</p>
+                <p style={{ color: 'var(--success-color)', fontWeight: '600' }}>Sync Completed!</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Please pull down to refresh the <b>Uploaded</b> page in your App.</p>
              </div>
           )}
         </div>
-
-        <p className="disclaimer">
-          仅供个人研究与学习使用，请勿上传未经授权的内容。
-          <br />
-          iLyrics 不会公开分享您的个人本地歌词。
-        </p>
       </main>
+    </div>
+  );
+}
     </div>
   );
 }
