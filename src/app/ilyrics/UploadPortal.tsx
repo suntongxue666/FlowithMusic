@@ -154,10 +154,11 @@ export default function UploadPortal() {
           body: JSON.stringify({
             user_id: userId,
             song_id,
-            title: item.title,
+            song: item.title,
             artist: item.artist,
             lyrics,
-            type
+            type,
+            source: 'pc_upload'
           })
         });
 
