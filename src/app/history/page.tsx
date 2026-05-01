@@ -539,21 +539,6 @@ function HistoryContent() {
                       return (
                         <div className="flex flex-col items-end gap-2">
                           <button
-                            onClick={() => setPreviewLetter(letter)}
-                            style={{
-                              padding: '6px 12px',
-                              fontSize: '12px',
-                              borderRadius: '6px',
-                              background: '#22c55e',
-                              color: '#fff',
-                              fontWeight: 500,
-                              border: 'none',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            👁 Flowing Emoji
-                          </button>
-                          <button
                             onClick={() => handleUnlock(letter)}
                             style={{
                               padding: '6px 12px',
@@ -567,7 +552,7 @@ function HistoryContent() {
                               boxShadow: '0 2px 8px rgba(255, 165, 0, 0.3)'
                             }}
                           >
-                            🔐 Unlock
+                            🔐 Unlock Flowing Emoji
                           </button>
                           <div className="flex items-center gap-2">
                             {isManageMode && (
@@ -635,21 +620,6 @@ function HistoryContent() {
                     if (hasEmojis && isUnlocked) {
                       return (
                         <div className="flex flex-col items-end gap-2">
-                          <button
-                            onClick={() => setPreviewLetter(letter)}
-                            style={{
-                              padding: '6px 12px',
-                              fontSize: '12px',
-                              borderRadius: '6px',
-                              background: '#22c55e',
-                              color: '#fff',
-                              fontWeight: 500,
-                              border: 'none',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            👁 Flowing Emoji
-                          </button>
                           <div className="flex items-center gap-2">
                             {isManageMode && (
                               <>

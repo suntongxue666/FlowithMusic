@@ -158,7 +158,7 @@ export default function UploadPortal() {
             artist: item.artist,
             lyrics,
             type,
-            source: 'pc_upload'
+            source: "pc_upload"
           })
         });
 
