@@ -51,12 +51,17 @@ export async function POST(req: Request) {
     const captureData = await captureResponse.json()
 
     // 3. Log initial attempt
+    const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+    const validUserId = (userId && isUUID(userId)) ? userId : null;
+
     await client.from('payment_logs').insert({
-      user_id: userId || anonymousId || null,
+      user_id: validUserId,
       subscription_id: orderID,
       event_type: 'ORDER_CAPTURE_RESULT',
       status: captureResponse.ok ? 'SUCCESS' : 'FAILED',
       details: {
+        raw_user_id: userId,
+        anonymous_id: anonymousId,
         orderID,
         productType,
         plan,

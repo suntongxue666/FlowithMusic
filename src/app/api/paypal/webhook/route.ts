@@ -84,13 +84,16 @@ async function logWebhookEvent(body: any) {
   const subscriptionId = resource.id || resource.billing_agreement_id
   const customId = resource.custom_id || resource.custom
 
+  const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
   try {
     await client.from('payment_logs').insert({
-      user_id: customId || null,
+      user_id: (customId && isUUID(customId)) ? customId : null,
       subscription_id: subscriptionId || null,
       event_type: `WEBHOOK_${eventType}`,
       status: resource.status || null,
       details: {
+        raw_custom_id: customId,
         webhook_id: body.id,
         create_time: body.create_time,
         resource: resource
@@ -111,7 +114,9 @@ async function findUser(resource: any) {
   const customId = resource.custom_id || resource.custom
   
   // 1. Try finding by custom_id (new direct method)
-  if (customId) {
+  const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
+  if (customId && isUUID(customId)) {
     console.log(`🔍 Searching user by custom_id: ${customId}`)
     const client = supabaseAdmin || supabase
     const { data: user } = await client!
