@@ -78,7 +78,10 @@ export default function PremiumPage() {
         if (existingAnon) {
           targetUserId = existingAnon.id;
         } else {
-          targetUserId = crypto.randomUUID();
+          // Fallback for crypto.randomUUID()
+          targetUserId = typeof crypto !== 'undefined' && crypto.randomUUID 
+            ? crypto.randomUUID() 
+            : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         }
       }
 
@@ -334,13 +337,17 @@ export default function PremiumPage() {
               </div>
 
               <div className="paypal-container-modal">
-                <PayPalScriptProvider options={{ 
-                  clientId: PAYPAL_CLIENT_ID, 
-                  currency: "USD",
-                  vault: selectedPlan.type === 'subscription' ? true : undefined,
-                  intent: selectedPlan.type === 'subscription' ? 'subscription' : 'capture'
-                }}>
+                <PayPalScriptProvider 
+                  key={selectedPlan.type}
+                  options={{ 
+                    clientId: PAYPAL_CLIENT_ID, 
+                    currency: "USD",
+                    vault: selectedPlan.type === 'subscription' ? true : undefined,
+                    intent: selectedPlan.type === 'subscription' ? 'subscription' : 'capture'
+                  }}
+                >
                   <PayPalButtons 
+                    key={selectedPlan.id}
                     style={{ layout: 'vertical', color: 'gold', shape: 'pill' }}
                     createOrder={selectedPlan.type === 'onetime' ? (data, actions) => {
                       return actions.order.create({
