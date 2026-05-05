@@ -2,12 +2,17 @@ import { createClient } from '@supabase/supabase-js'
 
 // 确保在客户端运行时获取环境变量
 const getSupabaseConfig = () => {
-  // 直接使用硬编码的值，确保配置正确
-  const supabaseUrl = 'https://oiggdnnehohoaycyiydn.supabase.co'
+  // 原始 Supabase 地址
+  const originalUrl = 'https://oiggdnnehohoaycyiydn.supabase.co'
   const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZ2dkbm5laG9ob2F5Y3lpeWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MjQ2NjksImV4cCI6MjA2OTAwMDY2OX0.lGA8b4PwJJog7YT8DXtBgiDJ7oXMzDXy7RXf43COrIU'
+
+  // 🔴 优先级：环境变量代理地址 > 原始地址
+  // 例如：https://supabase-cache-flowithmusic.你的名字.workers.dev
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_PROXY_URL || originalUrl
 
   console.log('🔧 Supabase配置检查:', {
     url: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'MISSING',
+    isProxy: supabaseUrl !== originalUrl,
     key: supabaseAnonKey ? supabaseAnonKey.substring(0, 20) + '...' : 'MISSING',
     hasUrl: !!supabaseUrl,
     hasKey: !!supabaseAnonKey
@@ -19,10 +24,7 @@ const getSupabaseConfig = () => {
 const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig()
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Supabase environment variables are not configured properly:', {
-    NEXT_PUBLIC_SUPABASE_URL: !!supabaseUrl,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: !!supabaseAnonKey
-  })
+  console.error('❌ Supabase environment variables are not configured properly')
 }
 
 // 创建Supabase客户端，增强配置
