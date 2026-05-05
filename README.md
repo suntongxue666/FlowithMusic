@@ -45,6 +45,20 @@ The project currently manages user identity through a dual-layer system:
 2. **Authenticated Mode**: Syncs local history to Supabase once logged in.
 3. **Premium Logic**: Managed via `is_premium` / `is_admin` flags in the `users` table.
 
+## 🛠 Scalability & Optimization (Edge Caching)
+
+### **2026-05-06: Implement Cloudflare Workers Read-through Cache (Phase 1)**
+To address high traffic demand and prevent Supabase from hitting free-tier limits, we implemented a read-through caching layer for the `letters` table.
+- **Provider**: Cloudflare Workers + Cloudflare KV.
+- **Mechanism**: All `GET` requests to the `letters` table are intercepted by a worker proxy. Data is cached in KV for 1 hour.
+- **Result**: Significantly reduced Supabase CPU load and decreased global response latency.
+
+### **Phase 2: R2 Staticization (Planned)**
+Conditions for implementation:
+- Daily active users (DAU) consistently exceed 10,000.
+- Requirement for absolute decoupling from the database for popular public letters.
+- Goal: Zero-egress cost and perpetual availability via static HTML files stored in Cloudflare R2.
+
 ---
 
 ## 🧹 Maintenance & Technical Debt
@@ -103,6 +117,20 @@ Many `debug-*` and `test-*` routes in `/src/app` are legacy diagnostic tools and
 1. **匿名模式**: 通过持久化局部 ID 跟踪游客。
 2. **鉴权模式**: 登录后将本地历史记录同步至 Supabase。
 3. **会员逻辑**: 通过 `users` 表中的 `is_premium` / `is_admin` 字段进行权限控制。
+
+## 🛠 扩展性与架构优化 (边缘缓存)
+
+### **2026-05-06: 实施 Cloudflare Workers 读取缓存 (第一阶段)**
+为了应对高并发流量并防止 Supabase 触发免费额度限制，我们上线了针对 `letters` 表的读取缓存层。
+- **技术实现**: Cloudflare Workers + Cloudflare KV。
+- **核心逻辑**: 拦截所有针对信件详情的 `GET` 请求，并将数据缓存至 KV 中，有效期 1 小时。
+- **成效**: 显著降低了 Supabase 的负载，提升了全球访问速度。
+
+### **第二阶段：R2 静态化 (计划中)**
+启动实施的条件：
+- 日活跃用户 (DAU) 稳定超过 10,000。
+- 需要将热门信件彻底脱离数据库运行，保证在数据库宕机时仍可访问。
+- 目标：通过 Cloudflare R2 存储静态 HTML 文件，实现零流量费和永久存储。
 
 ## 🧹 维护与清理
 (详情请参考 `ARCH_CLEANUP_PLAN.md` 了解优化路线图)
