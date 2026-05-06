@@ -1,5 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,13 +9,21 @@ export async function POST(request: NextRequest) {
     const { targetUserId, senderName, recipientType, artistName, linkId } = await request.json()
 
     if (!targetUserId || !linkId) {
-      console.error('❌ [Notification API] Missing required fields:', { targetUserId, linkId })
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // 使用 Admin 权限绕过 RLS
-    const { supabaseServer } = await import('@/lib/supabase-server')
-    if (!supabaseServer) throw new Error('Supabase admin client not found')
+    // 🚀 核心改动：直接在这里使用管理员 Key 创建客户端，确保绝对权限
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY 
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('❌ [Notification API] Missing Service Role Key config')
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    })
 
     let title = 'You received a new music letter!'
     let message = `${senderName || 'Someone'} sent you a music letter.`
@@ -27,9 +36,9 @@ export async function POST(request: NextRequest) {
       message = `Someone who also loves ${artistName} wanted to share a song with you.`
     }
 
-    console.log(`📡 [Notification API] Sending ${recipientType} notification to user: ${targetUserId}`)
+    console.log(`📡 [Notification API] Final check - target: ${targetUserId}, type: ${recipientType}`)
 
-    const { error } = await supabaseServer
+    const { data, error } = await adminClient
       .from('notifications')
       .insert({
         user_id: targetUserId,
@@ -39,13 +48,14 @@ export async function POST(request: NextRequest) {
         link_id: linkId,
         is_read: false
       })
+      .select()
 
     if (error) {
-      console.error('❌ [Notification API] DB Insert Error:', error)
-      throw error
+      console.error('❌ [Notification API] DB Error:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    console.log('✅ [Notification API] Notification sent successfully')
+    console.log('✅ [Notification API] Success:', data)
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('💥 [Notification API] Fatal Error:', error)
