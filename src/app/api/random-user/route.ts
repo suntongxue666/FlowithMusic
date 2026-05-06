@@ -21,11 +21,11 @@ export async function GET(request: NextRequest) {
       // 过滤条件：有邮箱（代表已登录），且不是当前请求者（如果有的话）
       .not('email', 'is', null)
 
-    if (countError || count === 0) {
+    if (countError || count === null || count === 0) {
       throw new Error('No users found for matching')
     }
 
-    const randomIndex = Math.floor(Math.random() * count)
+    const randomIndex = Math.floor(Math.random() * (count as number))
 
     const { data, error } = await supabase
       .from('users')
