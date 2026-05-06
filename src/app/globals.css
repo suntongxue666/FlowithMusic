@@ -3817,11 +3817,11 @@ edia Inputs Styles */
 }
 
 /* Chinese Handwriting Font */
-@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&display=swap');
 
 .chinese-handwriting {
-  font-family: 'Ma Shan Zheng', cursive !important;
-  font-size: 1.25em !important;
-  line-height: 1.6 !important;
-  letter-spacing: 0.05em !important;
+  font-family: 'Zhi Mang Xing', cursive !important;
+  font-size: 1.45em !important;
+  line-height: 1.4 !important;
+  letter-spacing: 0.02em !important;
 }
