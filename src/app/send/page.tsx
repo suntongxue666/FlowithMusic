@@ -449,36 +449,44 @@ function SendContent() {
             </div>
 
             {/* 同好推荐列表 */}
-            {recipientType === 'soulmate' && selectedTrack && (
+            {recipientType === 'soulmate' && (
               <div className="soulmate-suggestions">
-                <p className="suggestion-title">Who also like "{selectedTrack.artists[0]?.name}"</p>
-                <div className="soulmate-list">
-                  {isLoadingSoulmates ? (
-                    <div className="loading-dots">Searching soulmates...</div>
-                  ) : soulmateUsers.length > 0 ? (
-                    soulmateUsers.map(soulmate => (
-                      <div 
-                        key={soulmate.id} 
-                        className={`soulmate-item ${selectedTargetUserId === soulmate.id ? 'selected' : ''}`}
-                        onClick={() => {
-                          setRecipient(soulmate.firstName)
-                          setSelectedTargetUserId(soulmate.id)
-                        }}
-                      >
-                        {soulmate.avatarUrl ? (
-                          <img src={soulmate.avatarUrl} alt={soulmate.firstName} className="soulmate-avatar" />
-                        ) : (
-                          <div className="soulmate-avatar-placeholder">{soulmate.firstName[0]}</div>
-                        )}
-                        <span className="soulmate-name">{soulmate.firstName}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="no-suggestions">
-                      No fans found for this artist yet. System will pick a random music lover for you.
+                {!selectedTrack ? (
+                  <div className="no-suggestions" style={{ padding: '10px', color: '#666' }}>
+                    🎵 Please select a song below first to find users who share your taste.
+                  </div>
+                ) : (
+                  <>
+                    <p className="suggestion-title">Who also like "{selectedTrack.artists[0]?.name}"</p>
+                    <div className="soulmate-list">
+                      {isLoadingSoulmates ? (
+                        <div className="loading-dots">Searching soulmates...</div>
+                      ) : soulmateUsers.length > 0 ? (
+                        soulmateUsers.map(soulmate => (
+                          <div 
+                            key={soulmate.id} 
+                            className={`soulmate-item ${selectedTargetUserId === soulmate.id ? 'selected' : ''}`}
+                            onClick={() => {
+                              setRecipient(soulmate.firstName)
+                              setSelectedTargetUserId(soulmate.id)
+                            }}
+                          >
+                            {soulmate.avatarUrl ? (
+                              <img src={soulmate.avatarUrl} alt={soulmate.firstName} className="soulmate-avatar" />
+                            ) : (
+                              <div className="soulmate-avatar-placeholder">{soulmate.firstName[0]}</div>
+                            )}
+                            <span className="soulmate-name">{soulmate.firstName}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="no-suggestions">
+                          No fans found for this artist yet. System will pick a random music lover for you.
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
             )}
           </div>
