@@ -175,10 +175,7 @@ function SendContent() {
 
   const handleTrackSelect = (track: SpotifyTrack) => {
     setSelectedTrack(track)
-    // 如果是同好模式，切换歌曲后重新加载同好
-    if (recipientType === 'soulmate') {
-      fetchSoulmates(track.artists[0]?.name)
-    }
+    // 优化：不再根据新选择的歌曲重新刷新同好列表，仅保留历史推荐逻辑
   }
 
   // 获取同好用户
@@ -186,7 +183,12 @@ function SendContent() {
     if (!artist) return
     setIsLoadingSoulmates(true)
     try {
-      const excludeParam = user?.id ? `&excludeUserId=${user.id}` : ''
+      const { userService } = await import('@/lib/userService')
+      const userId = user?.id || userService.getCurrentUser()?.id
+      const anonId = userService.getAnonymousId()
+      
+      // 确保排除当前登录用户和匿名ID
+      const excludeParam = userId ? `&excludeUserId=${userId}` : (anonId ? `&excludeUserId=${anonId}` : '')
       const res = await fetch(`/api/artist-fans?artist=${encodeURIComponent(artist)}${excludeParam}`)
       if (res.ok) {
         const data = await res.json()
@@ -471,8 +473,8 @@ function SendContent() {
                 placeholder={
                   recipientType === 'random' 
                     ? "System will pick someone..." 
-                    : recipientType === 'soulmate' && selectedTrack
-                    ? `Select an user who also liked ${selectedTrack.artists[0]?.name}`
+                    : recipientType === 'soulmate'
+                    ? "Select an user Based on your past letters"
                     : "Enter recipient's name"
                 }
                 className={`form-input ${recipientType === 'random' ? 'disabled-input' : ''}`}
@@ -493,9 +495,7 @@ function SendContent() {
                 ) : (
                   <>
                     <p className="suggestion-title">
-                      {selectedTrack 
-                        ? `Who also like "${selectedTrack.artists[0]?.name}"` 
-                        : `Based on your past letters: Who also like "${historicalArtist}"`}
+                      Who also like "{selectedTrack ? selectedTrack.artists[0]?.name : historicalArtist}"
                     </p>
                     <div className="soulmate-list">
                       {isLoadingSoulmates ? (
