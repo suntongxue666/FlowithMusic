@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { letterService } from '@/lib/letterService'
-import { supabase } from '@/lib/supabase'
+import { supabase, cachedSupabase } from '@/lib/supabase'
 import type { Letter } from '@/lib/supabase'
 import { Suspense } from 'react'
 import LetterPageClient from './LetterPageClient'
@@ -13,28 +13,22 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { linkId } = await params
 
-  console.log('=== 元数据生成开始 ===', new Date().toISOString())
+  console.log('=== 元数据生成开始 (使用缓存代理) ===', new Date().toISOString())
 
   try {
-    // 直接使用supabase获取letter数据 - 绕过letterService的复杂逻辑
+    // 🔴 使用 cachedSupabase 获取数据 - 享受 Cloudflare 缓存保护
     let letter: Letter | null = null
 
     try {
-      console.log('=== 元数据生成开始 ===')
-      console.log('Environment check:', {
-        isServer: typeof window === 'undefined',
-        hasSupabase: !!supabase
-      })
-
-      if (supabase) {
-        console.log('Direct supabase fetch for metadata, linkId:', linkId)
+      if (cachedSupabase) {
+        console.log('Proxy fetch for metadata, linkId:', linkId)
 
         // 尝试多种查询方式
         let queryResult = null
 
         // 方式1: 标准查询
         try {
-          const { data, error } = await supabase
+          const { data, error } = await cachedSupabase
             .from('letters')
             .select('song_title, song_artist, song_album_cover, created_at, is_public, message, category')
             .eq('link_id', linkId)
@@ -52,7 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         // 方式2: 如果标准查询失败，尝试不加single()
         if (!queryResult) {
           try {
-            const { data, error } = await supabase
+            const { data, error } = await cachedSupabase
               .from('letters')
               .select('song_title, song_artist, song_album_cover, created_at, is_public, message, category')
               .eq('link_id', linkId)

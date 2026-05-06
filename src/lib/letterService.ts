@@ -1,4 +1,4 @@
-import { supabase, Letter, User } from './supabase'
+import { supabase, cachedSupabase, Letter, User } from './supabase'
 import { userService } from './userService'
 
 export interface CreateLetterData {
@@ -219,8 +219,8 @@ export class LetterService {
   async getLetter(linkId: string): Promise<Letter | null> {
     if (!supabase) return null
 
-    // 1. 尝试从数据库获取
-    const { data, error } = await supabase
+    // 1. 尝试从数据库获取 (走缓存)
+    const { data, error } = await cachedSupabase
       .from('letters')
       .select('*, user:users(id, display_name, avatar_url, is_premium)')
       .eq('link_id', linkId)
@@ -254,7 +254,7 @@ export class LetterService {
   async getUserLetters(userId?: string, anonymousId?: string): Promise<Letter[]> {
     if (!supabase) return []
 
-    let query = supabase
+    let query = cachedSupabase
       .from('letters')
       .select('*')
       .order('created_at', { ascending: false })
@@ -288,7 +288,7 @@ export class LetterService {
     today.setHours(0, 0, 0, 0)
     const todayIso = today.toISOString()
 
-    let query = supabase
+    let query = cachedSupabase
       .from('letters')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', todayIso)
@@ -319,7 +319,7 @@ export class LetterService {
   async getRecentLetters(limit = 10): Promise<Letter[]> {
     if (!supabase) return []
 
-    const { data, error } = await supabase
+    const { data, error } = await cachedSupabase
       .from('letters')
       .select('*')
       .eq('is_public', true)
@@ -341,8 +341,8 @@ export class LetterService {
   async getPopularArtists(limit = 20): Promise<{ artist: string; count: number }[]> {
     if (!supabase) return []
 
-    // 1. 获取所有公开信件的歌手名（这里只取必要的字段以提高性能）
-    const { data, error } = await supabase
+    // 1. 获取所有公开信件的歌手名
+    const { data, error } = await cachedSupabase
       .from('letters')
       .select('song_artist')
       .eq('is_public', true)
@@ -381,7 +381,7 @@ export class LetterService {
     const safeQuery = (query || '').trim()
     if (!safeQuery) return []
 
-    let dbQuery = supabase
+    let dbQuery = cachedSupabase
       .from('letters')
       .select('*')
       
@@ -410,7 +410,7 @@ export class LetterService {
 
     try {
       // 检查 user_id 或者 anonymous_id
-      const { data, error } = await supabase
+      const { data, error } = await cachedSupabase
         .from('users')
         .select('*')
         .or(`id.eq.${queryId},anonymous_id.eq.${queryId}`)
@@ -443,7 +443,7 @@ export class LetterService {
   ): Promise<Letter[]> {
     if (!supabase) return []
 
-    let query = supabase
+    let query = cachedSupabase
       .from('letters')
       .select('*')
 
@@ -478,7 +478,7 @@ export class LetterService {
   async getLettersBySong(songTitle: string, limit = 6, excludeId?: string): Promise<Letter[]> {
     if (!supabase) return []
 
-    let query = supabase
+    let query = cachedSupabase
       .from('letters')
       .select('*')
       .eq('is_public', true)
@@ -506,7 +506,7 @@ export class LetterService {
   async getLettersByCategory(category: string, limit = 6, excludeId?: string): Promise<Letter[]> {
     if (!supabase) return []
 
-    let query = supabase
+    let query = cachedSupabase
       .from('letters')
       .select('*')
       .eq('is_public', true)

@@ -2,32 +2,30 @@ import { createClient } from '@supabase/supabase-js'
 
 // 确保在客户端运行时获取环境变量
 const getSupabaseConfig = () => {
-  // 原始 Supabase 地址
-  const originalUrl = 'https://oiggdnnehohoaycyiydn.supabase.co'
+  // 原始 Supabase 地址 (直连)
+  const supabaseUrl = 'https://oiggdnnehohoaycyiydn.supabase.co'
   const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZ2dkbm5laG9ob2F5Y3lpeWRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0MjQ2NjksImV4cCI6MjA2OTAwMDY2OX0.lGA8b4PwJJog7YT8DXtBgiDJ7oXMzDXy7RXf43COrIU'
 
-  // 🔴 优先级：环境变量代理地址 > 原始地址
-  // 例如：https://supabase-cache-flowithmusic.你的名字.workers.dev
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_PROXY_URL || originalUrl
+  // 这里的代理 URL 我们只在特定读取场景手动使用，不作为全局默认
+  const proxyUrl = process.env.NEXT_PUBLIC_SUPABASE_PROXY_URL
 
   console.log('🔧 Supabase配置检查:', {
-    url: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'MISSING',
-    isProxy: supabaseUrl !== originalUrl,
-    key: supabaseAnonKey ? supabaseAnonKey.substring(0, 20) + '...' : 'MISSING',
-    hasUrl: !!supabaseUrl,
+    url: supabaseUrl.substring(0, 30) + '...',
+    hasProxy: !!proxyUrl,
     hasKey: !!supabaseAnonKey
   })
 
-  return { supabaseUrl, supabaseAnonKey }
+  return { supabaseUrl, supabaseAnonKey, proxyUrl }
 }
 
-const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig()
+const { supabaseUrl, supabaseAnonKey, proxyUrl: envProxyUrl } = getSupabaseConfig()
+export { envProxyUrl as proxyUrl }; // 导出代理 URL 供特殊场景使用
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ Supabase environment variables are not configured properly')
 }
 
-// 创建Supabase客户端，增强配置
+// 1. 标准客户端 (直连 Supabase) - 用于写信、登录等
 export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
@@ -36,6 +34,16 @@ export const supabase = supabaseUrl && supabaseAnonKey
     },
   })
   : null
+
+// 2. 缓存客户端 (走 Cloudflare Worker) - 用于高频读取
+// 只有当配置了代理且有 AnonKey 时才创建
+export const cachedSupabase = envProxyUrl && supabaseAnonKey
+  ? createClient(envProxyUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false, // 缓存查询不需要持久化 Session
+    },
+  })
+  : supabase // 如果没配置代理，则回退到标准客户端
 
 // 验证连接的辅助函数
 export const testSupabaseConnection = async () => {
