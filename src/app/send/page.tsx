@@ -226,13 +226,9 @@ function SendContent() {
       setRecipient('Matching...')
       fetchRandomUser()
     } else if (recipientType === 'soulmate') {
-      // 同好模式：清除名字，等待从下方列表选择
-      setRecipient('')
-      setSelectedTargetUserId(null)
-      if (selectedTrack) {
-        fetchSoulmates(selectedTrack.artists[0]?.name)
-      } else if (historicalArtist) {
-        // 如果没有当前歌曲，但有历史偏好，根据历史偏好推荐
+      // 优化：切换到同好模式时，如果不改变歌曲，不要轻易清空已经选好的收件人
+      // 仅当目前没有收件人时，才尝试根据历史推荐
+      if (!recipient && historicalArtist) {
         fetchSoulmates(historicalArtist)
       }
     } else if (recipientType === 'direct') {
@@ -240,7 +236,7 @@ function SendContent() {
       setRecipient('')
       setSelectedTargetUserId(null)
     }
-  }, [recipientType, selectedTrack, historicalArtist])
+  }, [recipientType, historicalArtist]) // 关键：移除了对 selectedTrack 的监听，防止选歌时重置收件人
 
   const handleGoogleLogin = async () => {
     try {
