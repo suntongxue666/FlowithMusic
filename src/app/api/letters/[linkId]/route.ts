@@ -130,15 +130,20 @@ export async function GET(
           .from('letters')
           .select(`
             *,
-            user:users(
+            user:users!user_id(
               id,
               display_name,
               avatar_url,
               is_premium
+            ),
+            target_user:users!target_user_id(
+              id,
+              display_name,
+              avatar_url
             )
           `)
           .eq('link_id', linkId)
-          .eq('is_public', true) // 确保只获取公开的Letters
+          .eq('is_public', true)
           .single()
 
         if (!error && data) {

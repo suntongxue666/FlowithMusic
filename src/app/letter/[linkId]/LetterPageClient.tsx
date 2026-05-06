@@ -526,7 +526,7 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
         <div className="letter-content">
           <div className="letter-header">
             <h2 className="handwritten-greeting">
-              Hello, {letter.recipient_name || (letter.recipient_type === 'random' ? 'A Random Soul' : 'Someone')}
+              Hello, {(letter as any).target_user?.display_name || letter.recipient_name || (letter.recipient_type === 'random' ? 'A Random Soul' : 'Someone')}
             </h2>
             <p className="letter-subtitle" style={{ fontSize: '12px' }}>
               A handwritten letter just for you — with a handpicked song and private words.

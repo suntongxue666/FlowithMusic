@@ -169,12 +169,19 @@ function SendContent() {
 
   // 切换收件人类型
   useEffect(() => {
-    if (recipientType === 'soulmate' && selectedTrack) {
-      fetchSoulmates(selectedTrack.artists[0]?.name)
+    if (recipientType === 'soulmate') {
+      // 切换到同好时，清除之前的名字和目标ID，强制用户重新选择
+      setRecipient('')
+      setSelectedTargetUserId(null)
+      if (selectedTrack) {
+        fetchSoulmates(selectedTrack.artists[0]?.name)
+      }
     } else if (recipientType === 'random') {
       setRecipient('A Random Soul')
+      setSelectedTargetUserId(null)
     } else if (recipientType === 'direct') {
       if (recipient === 'A Random Soul') setRecipient('')
+      setSelectedTargetUserId(null)
     }
   }, [recipientType, selectedTrack])
 
@@ -443,6 +450,12 @@ function SendContent() {
                           setRecipient(soulmate.firstName)
                           setSelectedTargetUserId(soulmate.id)
                         }}
+                        style={{
+                          border: selectedTargetUserId === soulmate.id ? '2px solid #000' : '2px solid transparent',
+                          borderRadius: '12px',
+                          padding: '5px',
+                          transition: 'all 0.2s ease'
+                        }}
                       >
                         {soulmate.avatarUrl ? (
                           <img src={soulmate.avatarUrl} alt={soulmate.firstName} className="soulmate-avatar" />
@@ -453,7 +466,9 @@ function SendContent() {
                       </div>
                     ))
                   ) : (
-                    <p className="no-suggestions">No fans found for this artist yet. Try a specific name!</p>
+                    <div className="no-suggestions" style={{ fontSize: '12px', color: '#999', padding: '10px 0' }}>
+                      No fans found for this artist yet. System will pick a random music lover for you.
+                    </div>
                   )}
                 </div>
               </div>
