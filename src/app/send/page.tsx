@@ -374,20 +374,33 @@ function SendContent() {
 
       // 如果有目标用户（随机或同好），发送站内通知
       if (finalTargetUserId) {
+        console.log('📡 [Notification] Triggering notification for:', {
+          targetUserId: finalTargetUserId,
+          type: recipientType,
+          linkId: newLetter.link_id
+        });
+        
         try {
-          await fetch('/api/notifications/send', {
+          const notifyRes = await fetch('/api/notifications/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               targetUserId: finalTargetUserId,
-              senderName: user?.display_name || 'Anonymous',
+              senderName: user?.display_name || 'Someone',
               recipientType: recipientType,
               artistName: selectedTrack?.artists[0]?.name || 'Unknown Artist',
               linkId: newLetter.link_id
             })
           });
+          
+          if (notifyRes.ok) {
+            console.log('✅ [Notification] API call successful');
+          } else {
+            const errorData = await notifyRes.json();
+            console.error('❌ [Notification] API call failed:', errorData);
+          }
         } catch (e) {
-          console.error('Failed to send notification:', e);
+          console.error('💥 [Notification] Network/Fatal error:', e);
         }
       }
 

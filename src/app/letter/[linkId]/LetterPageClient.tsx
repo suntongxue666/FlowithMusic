@@ -241,6 +241,28 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
     if (letter) fetchTargetUser()
   }, [letter, targetUser])
 
+  // 🚀 新增补丁：如果发件人信息丢失，尝试通过 userId 补查发件人资料
+  const [senderUser, setSenderUser] = useState<any>(null)
+  useEffect(() => {
+    const fetchSenderInfo = async () => {
+      const userId = letter?.user_id || (letter as any)?.userId
+      if (userId && !letter?.user && !senderUser) {
+        console.log('🔍 [Sender Fix] Missing sender info, fetching publicly...', userId)
+        try {
+          const res = await fetch(`/api/user-public?id=${userId}`)
+          if (res.ok) {
+            const data = await res.json()
+            console.log('✅ [Sender Fix] Retrieved sender info:', data.display_name)
+            setSenderUser(data)
+          }
+        } catch (e) {
+          console.error('Failed to fetch sender info:', e)
+        }
+      }
+    }
+    if (letter) fetchSenderInfo()
+  }, [letter, senderUser])
+
   // 检测文本是否包含中文字符
   const hasChinese = (text: string) => {
     return /[\u4e00-\u9fff]/.test(text)
@@ -632,7 +654,7 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
             )}
 
             {/* 发送者信息 - 单独一行显示 */}
-            <LetterSender user={letter.user} letter={letter} />
+            <LetterSender user={letter.user || senderUser} letter={letter} />
 
             {/* 已解锁显示复制链接 (模拟逻辑，实际可能是分享功能增强) */}
             {letter.effect_type && (
