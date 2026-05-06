@@ -140,7 +140,7 @@ function SendContent() {
       if (!userInitialized) return
       
       try {
-        const { default: letterService } = await import('@/lib/letterService')
+        const { letterService } = await import('@/lib/letterService')
         const { userService } = await import('@/lib/userService')
         
         const userId = user?.id || userService.getCurrentUser()?.id

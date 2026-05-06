@@ -6,7 +6,7 @@ import { useAdContext } from '@/contexts/AdContext'
 import { useSearchParams, usePathname } from 'next/navigation'
 
 export default function GoogleAdSense({ forceHide = false, isGlobal = false }: { forceHide?: boolean, isGlobal?: boolean }) {
-  const { user } = useUserState()
+  const { user, isLoading } = useUserState()
   const { isAdForceHidden } = useAdContext()
   const searchParams = useSearchParams()
   const pathname = usePathname()
@@ -18,7 +18,9 @@ export default function GoogleAdSense({ forceHide = false, isGlobal = false }: {
   const isPremium = user?.is_premium && !isAdmin
   
   useEffect(() => {
-    // 逻辑：
+    // 0. 等待用户状态加载完毕，不要在初始空状态时误伤（防止一闪而过的非会员状态注入脚本）
+    if (isLoading) return
+
     // 1. 如果是 Layout 里的全局组件，在信件详情页、购买页或 iLyrics 门户不工作
     if (isGlobal && (pathname.startsWith('/letter/') || pathname === '/premium' || pathname === '/ilyrics')) return
     
