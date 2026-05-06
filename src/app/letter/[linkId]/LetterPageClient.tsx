@@ -287,8 +287,8 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
                 emojis: apiLetter.animation_config?.emojis
               })
 
-              // 验证Letter数据完整性
-              if (apiLetter && apiLetter.link_id && apiLetter.recipient_name && apiLetter.message) {
+              // 验证Letter数据完整性 - 允许收件人为空 (特别是随机投递模式)
+              if (apiLetter && apiLetter.link_id && (apiLetter.message || apiLetter.song_title)) {
                 foundLetter = apiLetter
 
                 // 检查 URL 参数是否为 emoji=flowing，如果是则从 localStorage 获取 animation_config
@@ -341,7 +341,7 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
           console.log('🔍 Trying letterService for linkId:', linkId)
           try {
             const databaseLetter = await letterService.getLetter(linkId)
-            if (databaseLetter && databaseLetter.recipient_name && databaseLetter.message) {
+            if (databaseLetter && (databaseLetter.message || databaseLetter.song_title)) {
               console.log('✅ Found complete letter in database')
               foundLetter = databaseLetter
               setLetter(databaseLetter)
@@ -372,7 +372,7 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
           console.log('🔍 Checking localStorage as final fallback')
           const localLetters = JSON.parse(localStorage.getItem('letters') || '[]')
           const localLetter = localLetters.find((l: any) => l.link_id === linkId)
-          if (localLetter && localLetter.recipient_name && localLetter.message) {
+          if (localLetter && (localLetter.message || localLetter.song_title)) {
             console.log('✅ Found complete letter in localStorage')
             foundLetter = localLetter
             setLetter(localLetter)
@@ -525,7 +525,9 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
       <div className="letter-container">
         <div className="letter-content">
           <div className="letter-header">
-            <h2 className="handwritten-greeting">Hello, {letter.recipient_name}</h2>
+            <h2 className="handwritten-greeting">
+              Hello, {letter.recipient_name || (letter.recipient_type === 'random' ? 'A Random Soul' : 'Someone')}
+            </h2>
             <p className="letter-subtitle" style={{ fontSize: '12px' }}>
               A handwritten letter just for you — with a handpicked song and private words.
             </p>
