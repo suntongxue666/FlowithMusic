@@ -457,12 +457,6 @@ function SendContent() {
                           setRecipient(soulmate.firstName)
                           setSelectedTargetUserId(soulmate.id)
                         }}
-                        style={{
-                          border: selectedTargetUserId === soulmate.id ? '2px solid #000' : '2px solid transparent',
-                          borderRadius: '12px',
-                          padding: '5px',
-                          transition: 'all 0.2s ease'
-                        }}
                       >
                         {soulmate.avatarUrl ? (
                           <img src={soulmate.avatarUrl} alt={soulmate.firstName} className="soulmate-avatar" />
@@ -473,7 +467,7 @@ function SendContent() {
                       </div>
                     ))
                   ) : (
-                    <div className="no-suggestions" style={{ fontSize: '12px', color: '#999', padding: '10px 0' }}>
+                    <div className="no-suggestions">
                       No fans found for this artist yet. System will pick a random music lover for you.
                     </div>
                   )}
