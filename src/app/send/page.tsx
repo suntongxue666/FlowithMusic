@@ -102,17 +102,6 @@ function SendContent() {
       try {
         await userService.initializeUser()
         setUserInitialized(true)
-        
-        // 获取历史发信偏好
-        const { default: letterService } = await import('@/lib/letterService')
-        const letters = await letterService.getUserLetters(
-          userService.getCurrentUser()?.id,
-          userService.getAnonymousId()
-        )
-        if (letters && letters.length > 0) {
-          const lastArtist = letters[0].song_artist
-          if (lastArtist) setHistoricalArtist(lastArtist)
-        }
       } catch (error) {
         console.error('Failed to initialize user:', error)
       }
@@ -144,6 +133,37 @@ function SendContent() {
     }
     initUser()
   }, [searchParams])
+
+  // 新增：独立且可靠的历史记录获取逻辑
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!userInitialized) return
+      
+      try {
+        const { default: letterService } = await import('@/lib/letterService')
+        const { userService } = await import('@/lib/userService')
+        
+        const userId = user?.id || userService.getCurrentUser()?.id
+        const anonId = userService.getAnonymousId()
+        
+        console.log('⏳ [History] Fetching past letters for:', { userId, anonId })
+        const letters = await letterService.getUserLetters(userId, anonId)
+        
+        if (letters && letters.length > 0) {
+          const lastArtist = letters[0].song_artist
+          console.log(`✅ [History] Found ${letters.length} letters. Last artist: "${lastArtist}"`)
+          if (lastArtist) {
+            setHistoricalArtist(lastArtist)
+          }
+        } else {
+          console.log('ℹ️ [History] No previous letters found.')
+        }
+      } catch (e) {
+        console.error('❌ [History] Failed to fetch historical letters:', e)
+      }
+    }
+    fetchHistory()
+  }, [userInitialized, user])
 
   // 登录后自动提交
   useEffect(() => {
