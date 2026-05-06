@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
       actor_id: senderId || 'anonymous',
       actor_name: senderName || 'Someone',
       actor_avatar: senderAvatar || null,
-      type: 'interaction', // 使用数据库已知的稳定类型
-      letter_id: linkId,    // 对应数据库中的 letter_id 字段
+      type: 'soulmate_letter', // 升级为专门的同好信件通知类型
+      letter_id: linkId,
       metadata: metadata,
       is_read: false
     }

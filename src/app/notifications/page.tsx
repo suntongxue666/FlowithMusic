@@ -189,6 +189,10 @@ export default function NotificationsPage() {
                           <span className="text-gray-600">visited your profile.</span>
                         ) : notif.type === 'letter_visit' ? (
                           <span className="text-gray-600">visited your letter with "{notif.metadata?.song_title}".</span>
+                        ) : notif.type === 'soulmate_letter' ? (
+                          <span className="text-gray-600">
+                            sent you a letter (Fellow fan of <span className="font-bold text-gray-800">{notif.metadata?.artistName}</span>!)
+                          </span>
                         ) : (
                           <span className="text-gray-600">
                             reacted with <span className="text-lg">{notif.metadata?.emoji}</span> to your letter.
