@@ -45,6 +45,7 @@ function SendContent() {
   const [soulmateUsers, setSoulmateUsers] = useState<any[]>([])
   const [selectedTargetUserId, setSelectedTargetUserId] = useState<string | null>(null)
   const [isLoadingSoulmates, setIsLoadingSoulmates] = useState(false)
+  const [historicalArtist, setHistoricalArtist] = useState<string | null>(null)
 
   // 新增：公开/私密状态
   const [isPublic, setIsPublic] = useState(true)
@@ -101,6 +102,17 @@ function SendContent() {
       try {
         await userService.initializeUser()
         setUserInitialized(true)
+        
+        // 获取历史发信偏好
+        const { default: letterService } = await import('@/lib/letterService')
+        const letters = await letterService.getUserLetters(
+          userService.getCurrentUser()?.id,
+          userService.getAnonymousId()
+        )
+        if (letters && letters.length > 0) {
+          const lastArtist = letters[0].song_artist
+          if (lastArtist) setHistoricalArtist(lastArtist)
+        }
       } catch (error) {
         console.error('Failed to initialize user:', error)
       }
@@ -197,13 +209,16 @@ function SendContent() {
       setSelectedTargetUserId(null)
       if (selectedTrack) {
         fetchSoulmates(selectedTrack.artists[0]?.name)
+      } else if (historicalArtist) {
+        // 如果没有当前歌曲，但有历史偏好，根据历史偏好推荐
+        fetchSoulmates(historicalArtist)
       }
     } else if (recipientType === 'direct') {
       // 个人模式：清除名字
       setRecipient('')
       setSelectedTargetUserId(null)
     }
-  }, [recipientType, selectedTrack])
+  }, [recipientType, selectedTrack, historicalArtist])
 
   const handleGoogleLogin = async () => {
     try {
@@ -451,13 +466,17 @@ function SendContent() {
             {/* 同好推荐列表 */}
             {recipientType === 'soulmate' && (
               <div className="soulmate-suggestions">
-                {!selectedTrack ? (
+                {!selectedTrack && !historicalArtist ? (
                   <div className="no-suggestions" style={{ padding: '10px', color: '#666' }}>
                     🎵 Please select a song below first to find users who share your taste.
                   </div>
                 ) : (
                   <>
-                    <p className="suggestion-title">Who also like "{selectedTrack.artists[0]?.name}"</p>
+                    <p className="suggestion-title">
+                      {selectedTrack 
+                        ? `Who also like "${selectedTrack.artists[0]?.name}"` 
+                        : `Based on your past letters: Who also like "${historicalArtist}"`}
+                    </p>
                     <div className="soulmate-list">
                       {isLoadingSoulmates ? (
                         <div className="loading-dots">Searching soulmates...</div>
