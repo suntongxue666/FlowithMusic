@@ -491,7 +491,7 @@ function SendContent() {
                 ) : (
                   <>
                     <p className="suggestion-title">
-                      Who also like "{selectedTrack ? selectedTrack.artists[0]?.name : historicalArtist}"
+                      Who also like your favorite "{historicalArtist || (selectedTrack ? selectedTrack.artists[0]?.name : 'this artist')}"
                     </p>
                     <div className="soulmate-list">
                       {isLoadingSoulmates ? (
