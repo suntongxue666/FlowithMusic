@@ -191,6 +191,7 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
   const emojiParam = searchParams.get('emoji') // 检查URL参数 ?emoji=flowing
 
   const [letter, setLetter] = useState<Letter | null>(null)
+  const [targetUser, setTargetUser] = useState<any>(null)
   
   // 移除之前的全局 setAdForceHidden 逻辑，改为在渲染层直接控制组件
   const [forceRefresh, setForceRefresh] = useState(Date.now())
@@ -200,8 +201,26 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [relatedBySong, setRelatedBySong] = useState<Letter[]>([])
   const [relatedByCategory, setRelatedByCategory] = useState<Letter[]>([])
-  const [artistFans, setArtistFans] = useState<Array<{ id: string; firstName: string; avatarUrl: string | null }>>([]
-  )
+  const [artistFans, setArtistFans] = useState<Array<{ id: string; firstName: string; avatarUrl: string | null }>>([])
+
+  // 补丁：如果有 target_user_id 但没有完整的用户信息，尝试补查
+  useEffect(() => {
+    const fetchTargetUser = async () => {
+      const targetId = letter?.target_user_id || (letter as any)?.target_user?.id
+      if (targetId && !targetUser && !(letter as any)?.target_user?.display_name) {
+        try {
+          const res = await fetch(`/api/user-public?id=${targetId}`)
+          if (res.ok) {
+            const data = await res.json()
+            setTargetUser(data)
+          }
+        } catch (e) {
+          console.error('Failed to fetch target user info:', e)
+        }
+      }
+    }
+    if (letter) fetchTargetUser()
+  }, [letter, targetUser])
 
   // 检测文本是否包含中文字符
   const hasChinese = (text: string) => {
@@ -526,7 +545,7 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
         <div className="letter-content">
           <div className="letter-header">
             <h2 className="handwritten-greeting">
-              Hello, {(letter as any).target_user?.display_name || letter.recipient_name || (letter.recipient_type === 'random' ? 'A Random Soul' : 'Someone')}
+              Hello, {targetUser?.display_name || (letter as any).target_user?.display_name || letter.recipient_name || (letter.recipient_type === 'random' ? 'A Random Soul' : 'Someone')}
             </h2>
             <p className="letter-subtitle" style={{ fontSize: '12px' }}>
               A handwritten letter just for you — with a handpicked song and private words.

@@ -167,20 +167,39 @@ function SendContent() {
     }
   }
 
+  // 获取随机用户并立即显示
+  const fetchRandomUser = async () => {
+    try {
+      const res = await fetch('/api/random-user');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.userId) {
+          setRecipient(data.displayName || 'A Random Soul');
+          setSelectedTargetUserId(data.userId);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch random user:', e);
+      setRecipient('A Random Soul');
+    }
+  }
+
   // 切换收件人类型
   useEffect(() => {
-    if (recipientType === 'soulmate') {
-      // 切换到同好时，清除之前的名字和目标ID，强制用户重新选择
+    if (recipientType === 'random') {
+      // 随机模式：立即匹配并显示
+      setRecipient('Matching...')
+      fetchRandomUser()
+    } else if (recipientType === 'soulmate') {
+      // 同好模式：清除名字，等待从下方列表选择
       setRecipient('')
       setSelectedTargetUserId(null)
       if (selectedTrack) {
         fetchSoulmates(selectedTrack.artists[0]?.name)
       }
-    } else if (recipientType === 'random') {
-      setRecipient('A Random Soul')
-      setSelectedTargetUserId(null)
     } else if (recipientType === 'direct') {
-      if (recipient === 'A Random Soul') setRecipient('')
+      // 个人模式：清除名字
+      setRecipient('')
       setSelectedTargetUserId(null)
     }
   }, [recipientType, selectedTrack])
@@ -289,21 +308,7 @@ function SendContent() {
     }
 
     setIsSubmitting(true)
-
-    let finalTargetUserId = selectedTargetUserId;
-
-    // 如果是随机匹配模式，去后端抓一个随机活跃用户
-    if (recipientType === 'random') {
-      try {
-        const res = await fetch('/api/random-user');
-        if (res.ok) {
-          const data = await res.json();
-          finalTargetUserId = data.userId;
-        }
-      } catch (e) {
-        console.error('Failed to fetch random user:', e);
-      }
-    }
+    const finalTargetUserId = selectedTargetUserId;
 
     try {
       const newLetter = await (letterService as any).createLetter({
