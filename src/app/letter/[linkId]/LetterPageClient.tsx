@@ -202,6 +202,17 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
   const [relatedBySong, setRelatedBySong] = useState<Letter[]>([])
   const [relatedByCategory, setRelatedByCategory] = useState<Letter[]>([])
   const [artistFans, setArtistFans] = useState<Array<{ id: string; firstName: string; avatarUrl: string | null }>>([])
+  const [currentUserPremium, setCurrentUserPremium] = useState(false)
+
+  // 获取当前用户的会员状态，用于免广告
+  useEffect(() => {
+    const checkPremium = async () => {
+      const { userService } = await import('@/lib/userService')
+      const isPremium = await userService.isPremium()
+      setCurrentUserPremium(isPremium)
+    }
+    checkPremium()
+  }, [])
 
   // 补丁：如果有 target_user_id 但没有完整的用户信息，尝试补查
   useEffect(() => {
@@ -537,7 +548,7 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
       <Header />
       {/* ⚠️ 重要逻辑：仅在数据读完且发件人不是会员的情况下加载广告 */}
       <Suspense fallback={null}>
-        {!loading && letter && <GoogleAdSense forceHide={letter?.user?.is_premium} />}
+        {!loading && letter && <GoogleAdSense forceHide={letter?.user?.is_premium || currentUserPremium} />}
       </Suspense>
       {/* 浏览追踪组件 */}
       <ViewTracker letterId={linkId} />

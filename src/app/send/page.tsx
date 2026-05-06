@@ -257,7 +257,9 @@ function SendContent() {
       }
     }
 
-    if (!userAuth) {
+    // 实时检查登录状态
+    const isActuallyAuthenticated = userService.isAuthenticated()
+    if (!isActuallyAuthenticated) {
       setShowLoginModal(true)
       setIsSubmitting(false)
       return
