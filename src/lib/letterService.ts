@@ -221,43 +221,53 @@ export class LetterService {
    * 用于 LetterPage 展示
    */
   async getLetter(linkId: string): Promise<Letter | null> {
-    if (!supabase) return null
-
-    // 1. 优先尝试从缓存代理获取
-    if (cachedSupabase) {
+    console.log(`[LetterService] Fetching letter: ${linkId}`)
+    
+    // 1. 尝试直连 Supabase (绕过 Cloudflare 限制)
+    if (supabase) {
       try {
+        const { data, error } = await supabase
+          .from('letters')
+          .select('*, user:users(id, display_name, avatar_url, is_premium)')
+          .eq('link_id', linkId)
+          .single()
+        
+        if (data && !error) {
+          console.log(`[LetterService] ✅ Found via Direct Supabase`)
+          // 增加浏览次数 (异步)
+          this.incrementViewCount(linkId).catch(err => console.warn('Failed to increment view count:', err))
+          return data as Letter
+        }
+        if (error) console.warn(`[LetterService] ⚠️ Direct fetch error:`, error.message)
+      } catch (e) {
+        console.error(`[LetterService] 💥 Direct fetch crashed:`, e)
+      }
+    }
+
+    // 2. 尝试走缓存代理 (作为备份)
+    if (cachedSupabase && cachedSupabase !== supabase) {
+      try {
+        console.log(`[LetterService] 🔄 Trying Cache Proxy...`)
         const { data, error } = await cachedSupabase
           .from('letters')
           .select('*, user:users(id, display_name, avatar_url, is_premium)')
           .eq('link_id', linkId)
           .single()
         
-        if (data && !error) return data as Letter
-        console.log('Cache proxy miss or error, trying direct connection...')
+        if (data && !error) {
+          console.log(`[LetterService] ✅ Found via Cache Proxy`)
+          // 增加浏览次数 (异步)
+          this.incrementViewCount(linkId).catch(err => console.warn('Failed to increment view count:', err))
+          return data as Letter
+        }
+        if (error) console.warn(`[LetterService] ⚠️ Cache Proxy error:`, error.message)
       } catch (e) {
-        console.error('Cache proxy failed:', e)
+        console.error(`[LetterService] 💥 Cache Proxy crashed:`, e)
       }
     }
 
-    // 2. 如果代理失败或未配置，直连数据库
-    if (!supabase) return null
-    const { data, error } = await supabase
-      .from('letters')
-      .select('*, user:users(id, display_name, avatar_url, is_premium)')
-      .eq('link_id', linkId)
-      .single()
-
-    if (error) {
-      console.error('Direct database fetch failed:', error)
-      return null
-    }
-
-    // 2. 增加浏览次数 (不阻塞返回)
-    this.incrementViewCount(linkId).catch(err =>
-      console.warn('Failed to increment view count:', err)
-    )
-
-    return data
+    console.error(`[LetterService] ❌ Letter not found anywhere: ${linkId}`)
+    return null
   }
 
   /**
