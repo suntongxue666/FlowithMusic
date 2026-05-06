@@ -208,8 +208,16 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
   useEffect(() => {
     const checkPremium = async () => {
       const { userService } = await import('@/lib/userService')
-      const isPremium = await userService.isPremium()
-      setCurrentUserPremium(isPremium)
+      // 兼容性修复：直接通过获取用户来检查会员状态
+      const user = userService.getCurrentUser()
+      if (user) {
+        setCurrentUserPremium(user.is_premium || false)
+      } else {
+        // 如果内存中没有，尝试初始化并获取
+        await userService.initializeUser()
+        const updatedUser = userService.getCurrentUser()
+        setCurrentUserPremium(updatedUser?.is_premium || false)
+      }
     }
     checkPremium()
   }, [])

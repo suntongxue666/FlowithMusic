@@ -1,84 +1,72 @@
-import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+
+import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-// GET /api/artist-fans?artist=Disclosure&excludeUserId=xxx
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const artist = searchParams.get('artist')
-    const excludeUserId = searchParams.get('excludeUserId') || ''
+    const artist = request.nextUrl.searchParams.get('artist')
+    const excludeUserId = request.nextUrl.searchParams.get('excludeUserId')
 
-    if (!artist) {
-      return NextResponse.json({ fans: [] })
+    const { supabaseServer } = await import('@/lib/supabase-server')
+    if (!supabaseServer) throw new Error('Supabase server not initialized')
+
+    let fans: any[] = []
+
+    if (artist) {
+      console.log(`🔍 Searching fans for artist: ${artist}`)
+      // 1. 尝试通过歌手名模糊匹配发过信的用户
+      const { data: artistLetters, error } = await supabaseServer
+        .from('letters')
+        .select('user:users(id, display_name, avatar_url)')
+        .ilike('song_artist', `%${artist}%`)
+        .not('user_id', 'is', null)
+        .limit(20)
+
+      if (artistLetters && !error) {
+        // 去重
+        const userMap = new Map()
+        artistLetters.forEach((item: any) => {
+          if (item.user && item.user.id !== excludeUserId) {
+            userMap.set(item.user.id, {
+              id: item.user.id,
+              firstName: item.user.display_name || 'A Music Fan',
+              avatarUrl: item.user.avatar_url
+            })
+          }
+        })
+        fans = Array.from(userMap.values())
+      }
     }
 
-    if (!supabase) {
-      return NextResponse.json({ fans: [] })
-    }
-
-    // 查找发送过该艺术家歌曲的已登录用户 - 使用模糊匹配以处理多位歌手的情况
-    const { data: letters, error } = await supabase
-      .from('letters')
-      .select('user_id')
-      .ilike('song_artist', `%${artist}%`)
-      .not('user_id', 'is', null)
-      .limit(100)
-
-    let userIds: string[] = []
-    
-    if (letters && letters.length > 0) {
-      // 去重 user_id
-      userIds = Array.from(new Set(letters.map((l: any) => l.user_id).filter(Boolean)))
-    }
-
-    // 🔴 兜底方案：如果没找到该歌手的同好，随机取几个活跃用户
-    if (userIds.length === 0) {
-      console.log('No fans found for artist, using random active users as fallback')
-      const { data: activeUsers } = await supabase
+    // 2. 如果没搜到同好，或者搜到的太少，补一些活跃用户
+    if (fans.length < 5) {
+      console.log('💡 Not enough fans found, adding active users...')
+      const { data: activeUsers } = await supabaseServer
         .from('users')
-        .select('id')
+        .select('id, display_name, avatar_url')
         .not('email', 'is', null)
         .limit(10)
       
       if (activeUsers) {
-        userIds = activeUsers.map(u => u.id)
+        activeUsers.forEach(user => {
+          if (fans.length < 10 && !fans.find(f => f.id === user.id) && user.id !== excludeUserId) {
+            fans.push({
+              id: user.id,
+              firstName: user.display_name || 'A Music Lover',
+              avatarUrl: user.avatar_url
+            })
+          }
+        })
       }
     }
 
-    if (userIds.length === 0) {
-      return NextResponse.json({ fans: [] })
-    }
-
-    // 过滤掉当前Letter的发送者
-    const filteredIds = excludeUserId
-      ? userIds.filter(id => id !== excludeUserId)
-      : userIds
-
-    if (filteredIds.length === 0) {
-      return NextResponse.json({ fans: [] })
-    }
-
-    // 获取用户信息
-    const { data: users, error: userError } = await supabase
-      .from('users')
-      .select('id, display_name, avatar_url')
-      .in('id', filteredIds.slice(0, 20)) // 最多20人
-
-    if (userError || !users) {
-      return NextResponse.json({ fans: [] })
-    }
-
-    const fans = users.map((u: any) => ({
-      id: u.id,
-      firstName: (u.display_name || 'User').trim().split(/\s+/)[0],
-      avatarUrl: u.avatar_url || null,
-    }))
+    // 打乱顺序增加随机性
+    fans.sort(() => Math.random() - 0.5)
 
     return NextResponse.json({ fans })
-  } catch (error) {
-    console.error('Error fetching artist fans:', error)
-    return NextResponse.json({ fans: [] })
+  } catch (error: any) {
+    console.error('Artist fans fetch error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
