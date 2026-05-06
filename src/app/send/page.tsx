@@ -158,10 +158,11 @@ function SendContent() {
       const res = await fetch(`/api/artist-fans?artist=${encodeURIComponent(artist)}${excludeParam}`)
       if (res.ok) {
         const data = await res.json()
+        console.log(`🎵 [Soulmate] Found ${data.fans?.length || 0} fans for ${artist}`)
         setSoulmateUsers(data.fans || [])
       }
     } catch (e) {
-      console.error('Failed to fetch soulmates', e)
+      console.error('❌ [Soulmate] Fetch failed:', e)
     } finally {
       setIsLoadingSoulmates(false)
     }
