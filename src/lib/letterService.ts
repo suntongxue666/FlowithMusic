@@ -254,9 +254,9 @@ export class LetterService {
    * 用于 HistoryPage 的 "Synced" 部分
    */
   async getUserLetters(userId?: string, anonymousId?: string): Promise<Letter[]> {
-    if (!cachedSupabase) return []
+    if (!supabase) return []
 
-    let query = cachedSupabase
+    let query = supabase
       .from('letters')
       .select('*')
       .order('created_at', { ascending: false })
@@ -284,13 +284,13 @@ export class LetterService {
    * 获取用户今天发送的 Letter 数量
    */
   async getTodayCount(userId?: string, anonymousId?: string): Promise<number> {
-    if (!cachedSupabase) return 0
+    if (!supabase) return 0
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const todayIso = today.toISOString()
 
-    let query = cachedSupabase
+    let query = supabase
       .from('letters')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', todayIso)
@@ -319,9 +319,9 @@ export class LetterService {
    * 用于首页轮播
    */
   async getRecentLetters(limit = 10): Promise<Letter[]> {
-    if (!cachedSupabase) return []
+    if (!supabase) return []
 
-    const { data, error } = await cachedSupabase
+    const { data, error } = await supabase
       .from('letters')
       .select('*')
       .eq('is_public', true)
@@ -341,10 +341,10 @@ export class LetterService {
    * 用于首页 Tag 推荐和 \\\"Posts with Artist\\\" 入口
    */
   async getPopularArtists(limit = 20): Promise<{ artist: string; count: number }[]> {
-    if (!cachedSupabase) return []
+    if (!supabase) return []
 
     // 1. 获取所有公开信件的歌手名
-    const { data, error } = await cachedSupabase
+    const { data, error } = await supabase
       .from('letters')
       .select('song_artist')
       .eq('is_public', true)
@@ -378,12 +378,12 @@ export class LetterService {
    * 用于 Explore 页面搜索
    */
   async searchLetters(query: string, limit = 18, offset = 0, includePrivate = false): Promise<Letter[]> {
-    if (!cachedSupabase) return []
+    if (!supabase) return []
 
     const safeQuery = (query || '').trim()
     if (!safeQuery) return []
 
-    let dbQuery = cachedSupabase
+    let dbQuery = supabase
       .from('letters')
       .select('*')
       
@@ -408,11 +408,11 @@ export class LetterService {
    * 按ID获取公开用户信息，包括通过ID或匿名ID
    */
   async getUserById(queryId: string): Promise<User | null> {
-    if (!cachedSupabase) return null
+    if (!supabase) return null
 
     try {
       // 检查 user_id 或者 anonymous_id
-      const { data, error } = await cachedSupabase
+      const { data, error } = await supabase
         .from('users')
         .select('*')
         .or(`id.eq.${queryId},anonymous_id.eq.${queryId}`)
@@ -443,9 +443,9 @@ export class LetterService {
     sortBy: 'created_at' | 'view_count' = 'created_at',
     filters?: { artist?: string; category?: string; includePrivate?: boolean }
   ): Promise<Letter[]> {
-    if (!cachedSupabase) return []
+    if (!supabase) return []
 
-    let query = cachedSupabase
+    let query = supabase
       .from('letters')
       .select('*')
 
@@ -478,9 +478,9 @@ export class LetterService {
    * 获取相同歌曲的 Letters
    */
   async getLettersBySong(songTitle: string, limit = 6, excludeId?: string): Promise<Letter[]> {
-    if (!cachedSupabase) return []
+    if (!supabase) return []
 
-    let query = cachedSupabase
+    let query = supabase
       .from('letters')
       .select('*')
       .eq('is_public', true)
@@ -506,9 +506,9 @@ export class LetterService {
    * 获取相同分类的 Letters
    */
   async getLettersByCategory(category: string, limit = 6, excludeId?: string): Promise<Letter[]> {
-    if (!cachedSupabase) return []
+    if (!supabase) return []
 
-    let query = cachedSupabase
+    let query = supabase
       .from('letters')
       .select('*')
       .eq('is_public', true)
