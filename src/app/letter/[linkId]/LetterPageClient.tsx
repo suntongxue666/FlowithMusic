@@ -635,7 +635,10 @@ export default function LetterPageClient({ linkId }: LetterPageClientProps) {
             {letter.message ? (
               <div
                 className={`message-content handwritten large-text ${hasChinese(letter.message) ? 'chinese-handwriting' : ''}`}
-                style={hasEmoji((letter.recipient_name || '') + (letter.message || '')) ? { fontSize: 'calc(2.4rem - 2px)' } : {}}
+                style={{
+                  ...(hasEmoji((letter.recipient_name || '') + (letter.message || '')) ? { fontSize: 'calc(2.4rem - 2px)' } : {}),
+                  ...(hasChinese(letter.message) ? { fontFamily: "'Zhi Mang Xing', cursive", fontSize: '2.2rem', lineHeight: '1.4' } : {})
+                }}
               >
                 {letter.message}
               </div>
