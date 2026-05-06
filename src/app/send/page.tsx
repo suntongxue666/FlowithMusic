@@ -361,26 +361,34 @@ function SendContent() {
     const finalTargetUserId = selectedTargetUserId;
 
     try {
-      const newLetter = await (letterService as any).createLetter({
-        to: recipient.trim(),
-        message: message.trim(),
-        category: category,
-        recipient_type: recipientType,
-        target_user_id: finalTargetUserId,
-        song: {
-          id: selectedTrack!.id,
-          title: selectedTrack!.name,
-          artist: selectedTrack!.artists[0]?.name || 'Unknown Artist',
-          albumCover: selectedTrack!.album.images[0]?.url || '',
-          previewUrl: selectedTrack!.preview_url || undefined,
-          spotifyUrl: selectedTrack!.external_urls.spotify,
-          duration_ms: selectedTrack!.duration_ms
+      const { userService } = await import('@/lib/userService')
+      const currentAuthUser = userService.getCurrentUser()
+      const currentAnonId = userService.getAnonymousId()
+
+      const newLetter = await (letterService as any).createLetter(
+        {
+          to: recipient.trim(),
+          message: message.trim(),
+          category: category,
+          recipient_type: recipientType,
+          target_user_id: finalTargetUserId,
+          song: {
+            id: selectedTrack!.id,
+            title: selectedTrack!.name,
+            artist: selectedTrack!.artists[0]?.name || 'Unknown Artist',
+            albumCover: selectedTrack!.album.images[0]?.url || '',
+            previewUrl: selectedTrack!.preview_url || undefined,
+            spotifyUrl: selectedTrack!.external_urls.spotify,
+            duration_ms: selectedTrack!.duration_ms
+          },
+          animation_config: flowingEmojiEnabled && selectedEmojis.length > 0 ? {
+            emojis: selectedEmojis
+          } : undefined,
+          is_public: isPublic
         },
-        animation_config: flowingEmojiEnabled && selectedEmojis.length > 0 ? {
-          emojis: selectedEmojis
-        } : undefined,
-        is_public: isPublic
-      });
+        currentAuthUser, // 显式传递当前用户对象
+        currentAnonId    // 显式传递匿名ID
+      );
 
       if (!newLetter || !newLetter.link_id) {
         throw new Error('Letter creation failed')
