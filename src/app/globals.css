@@ -1,7 +1,14 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Caveat:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Caveat:wght@400;500;600;700&family=Zhi+Mang+Xing&display=swap');
 
 /* 中文字体样式 */
+.chinese-handwriting {
+  font-family: 'Zhi Mang Xing', cursive !important;
+  font-size: 1.45em !important;
+  line-height: 1.4 !important;
+  letter-spacing: 0.02em !important;
+}
+
 .chinese-text {
   font-family: 'STXingkai', 'KaiTi', '楷体', serif;
 }
@@ -3816,12 +3823,4 @@ edia Inputs Styles */
   width: 100%;
 }
 
-/* Chinese Handwriting Font */
-@import url('https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&display=swap');
 
-.chinese-handwriting {
-  font-family: 'Zhi Mang Xing', cursive !important;
-  font-size: 1.45em !important;
-  line-height: 1.4 !important;
-  letter-spacing: 0.02em !important;
-}
