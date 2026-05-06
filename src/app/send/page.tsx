@@ -45,7 +45,9 @@ function SendContent() {
   const [soulmateUsers, setSoulmateUsers] = useState<any[]>([])
   const [selectedTargetUserId, setSelectedTargetUserId] = useState<string | null>(null)
   const [isLoadingSoulmates, setIsLoadingSoulmates] = useState(false)
-  const [historicalArtist, setHistoricalArtist] = useState<string | null>(null)
+  const [historicalArtists, setHistoricalArtists] = useState<string[]>([])
+  const [currentArtistIndex, setCurrentArtistIndex] = useState(0)
+  const historicalArtist = historicalArtists[currentArtistIndex] || null;
 
   // 新增：公开/私密状态
   const [isPublic, setIsPublic] = useState(true)
@@ -150,10 +152,11 @@ function SendContent() {
         const letters = await letterService.getUserLetters(userId || undefined, anonId || undefined)
         
         if (letters && letters.length > 0) {
-          const lastArtist = letters[0].song_artist
-          console.log(`✅ [History] Found ${letters.length} letters. Last artist: "${lastArtist}"`)
-          if (lastArtist) {
-            setHistoricalArtist(lastArtist)
+          // 提取所有唯一歌手
+          const uniqueArtists = Array.from(new Set(letters.map((l: any) => l.song_artist).filter(Boolean))) as string[]
+          console.log(`✅ [History] Found ${letters.length} letters with ${uniqueArtists.length} unique artists.`)
+          if (uniqueArtists.length > 0) {
+            setHistoricalArtists(uniqueArtists)
           }
         } else {
           console.log('ℹ️ [History] No previous letters found.')
@@ -164,6 +167,17 @@ function SendContent() {
     }
     fetchHistory()
   }, [userInitialized, user])
+
+  // 切换历史歌手列表
+  const handleRotateArtist = () => {
+    if (historicalArtists.length <= 1) return
+    const nextIndex = (currentArtistIndex + 1) % historicalArtists.length
+    setCurrentArtistIndex(nextIndex)
+    const nextArtist = historicalArtists[nextIndex]
+    if (nextArtist) {
+      fetchSoulmates(nextArtist)
+    }
+  }
 
   // 登录后自动提交
   useEffect(() => {
@@ -503,8 +517,22 @@ function SendContent() {
                   </div>
                 ) : (
                   <>
-                    <p className="suggestion-title">
-                      Who also like your favorite "{historicalArtist || (selectedTrack ? selectedTrack.artists[0]?.name : 'this artist')}"
+                    <p className="suggestion-title flex items-center justify-between">
+                      <span>Who also like your favorite "{historicalArtist || (selectedTrack ? selectedTrack.artists[0]?.name : 'this artist')}"</span>
+                      {historicalArtists.length > 1 && (
+                        <button 
+                          onClick={handleRotateArtist}
+                          className="refresh-soulmate-btn"
+                          title="Change artist"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 2v6h-6"></path>
+                            <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+                            <path d="M3 22v-6h6"></path>
+                            <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+                          </svg>
+                        </button>
+                      )}
                     </p>
                     <div className="soulmate-list">
                       {isLoadingSoulmates ? (
