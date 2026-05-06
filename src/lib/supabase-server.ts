@@ -10,9 +10,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
   })
 }
 
-// 创建服务端Supabase客户端
-export const supabaseServer = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey, {
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey
+
+// 创建服务端Supabase客户端 (使用 Service Role Key 以绕过 RLS 获取用户信息)
+export const supabaseServer = supabaseUrl && supabaseServiceKey
+  ? createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,

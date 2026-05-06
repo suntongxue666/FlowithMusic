@@ -228,7 +228,7 @@ export class LetterService {
       try {
         const { data, error } = await supabase
           .from('letters')
-          .select('*, user:users(id, display_name, avatar_url, is_premium)')
+          .select('*')
           .eq('link_id', linkId)
           .single()
         
@@ -250,7 +250,7 @@ export class LetterService {
         console.log(`[LetterService] 🔄 Trying Cache Proxy...`)
         const { data, error } = await cachedSupabase
           .from('letters')
-          .select('*, user:users(id, display_name, avatar_url, is_premium)')
+          .select('*')
           .eq('link_id', linkId)
           .single()
         
