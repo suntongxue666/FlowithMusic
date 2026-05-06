@@ -147,7 +147,7 @@ function SendContent() {
         const anonId = userService.getAnonymousId()
         
         console.log('⏳ [History] Fetching past letters for:', { userId, anonId })
-        const letters = await letterService.getUserLetters(userId, anonId)
+        const letters = await letterService.getUserLetters(userId || undefined, anonId || undefined)
         
         if (letters && letters.length > 0) {
           const lastArtist = letters[0].song_artist
