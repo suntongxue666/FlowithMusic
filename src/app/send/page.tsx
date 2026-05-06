@@ -408,7 +408,9 @@ function SendContent() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               targetUserId: finalTargetUserId,
+              senderId: user?.id,
               senderName: user?.display_name || 'Someone',
+              senderAvatar: user?.avatar_url,
               recipientType: recipientType,
               artistName: selectedTrack?.artists[0]?.name || 'Unknown Artist',
               linkId: newLetter.link_id
