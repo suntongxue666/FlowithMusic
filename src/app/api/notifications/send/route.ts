@@ -1,23 +1,20 @@
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase configuration')
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
     const { targetUserId, senderName, recipientType, artistName, linkId } = await request.json()
 
     if (!targetUserId || !linkId) {
+      console.error('❌ [Notification API] Missing required fields:', { targetUserId, linkId })
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
+
+    // 使用 Admin 权限绕过 RLS
+    const { supabaseServer } = await import('@/lib/supabase-server')
+    if (!supabaseServer) throw new Error('Supabase admin client not found')
 
     let title = 'You received a new music letter!'
     let message = `${senderName || 'Someone'} sent you a music letter.`
@@ -30,7 +27,9 @@ export async function POST(request: NextRequest) {
       message = `Someone who also loves ${artistName} wanted to share a song with you.`
     }
 
-    const { error } = await supabase
+    console.log(`📡 [Notification API] Sending ${recipientType} notification to user: ${targetUserId}`)
+
+    const { error } = await supabaseServer
       .from('notifications')
       .insert({
         user_id: targetUserId,
@@ -41,11 +40,15 @@ export async function POST(request: NextRequest) {
         is_read: false
       })
 
-    if (error) throw error
+    if (error) {
+      console.error('❌ [Notification API] DB Insert Error:', error)
+      throw error
+    }
 
+    console.log('✅ [Notification API] Notification sent successfully')
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('Send notification error:', error)
+    console.error('💥 [Notification API] Fatal Error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
