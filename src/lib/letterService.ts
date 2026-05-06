@@ -18,6 +18,8 @@ export interface CreateLetterData {
   }
   category?: string
   is_public?: boolean
+  recipient_type?: 'direct' | 'random' | 'soulmate'
+  target_user_id?: string
 }
 
 
@@ -91,7 +93,9 @@ export class LetterService {
       song_spotify_url: data.song.spotifyUrl,
       song_duration_ms: data.song.duration_ms,
       is_public: data.is_public ?? true,
-      category: data.category
+      category: data.category,
+      recipient_type: data.recipient_type || 'direct',
+      target_user_id: data.target_user_id || null
     }
 
     // 仅当有有效的动画配置(emoji数组非空)时才添加字段

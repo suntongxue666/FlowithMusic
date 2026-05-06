@@ -39,6 +39,12 @@ function SendContent() {
   const [showMessageHint, setShowMessageHint] = useState(false)
   const [isDuplicateError, setIsDuplicateError] = useState(false)
   const [showPremiumModal, setShowPremiumModal] = useState(false)
+  
+  // 新增：收件人类型
+  const [recipientType, setRecipientType] = useState<'direct' | 'random' | 'soulmate'>('direct')
+  const [soulmateUsers, setSoulmateUsers] = useState<any[]>([])
+  const [selectedTargetUserId, setSelectedTargetUserId] = useState<string | null>(null)
+  const [isLoadingSoulmates, setIsLoadingSoulmates] = useState(false)
 
   // 新增：公开/私密状态
   const [isPublic, setIsPublic] = useState(true)
@@ -137,7 +143,40 @@ function SendContent() {
 
   const handleTrackSelect = (track: SpotifyTrack) => {
     setSelectedTrack(track)
+    // 如果是同好模式，切换歌曲后重新加载同好
+    if (recipientType === 'soulmate') {
+      fetchSoulmates(track.artists[0]?.name)
+    }
   }
+
+  // 获取同好用户
+  const fetchSoulmates = async (artist: string) => {
+    if (!artist) return
+    setIsLoadingSoulmates(true)
+    try {
+      const excludeParam = user?.id ? `&excludeUserId=${user.id}` : ''
+      const res = await fetch(`/api/artist-fans?artist=${encodeURIComponent(artist)}${excludeParam}`)
+      if (res.ok) {
+        const data = await res.json()
+        setSoulmateUsers(data.fans || [])
+      }
+    } catch (e) {
+      console.error('Failed to fetch soulmates', e)
+    } finally {
+      setIsLoadingSoulmates(false)
+    }
+  }
+
+  // 切换收件人类型
+  useEffect(() => {
+    if (recipientType === 'soulmate' && selectedTrack) {
+      fetchSoulmates(selectedTrack.artists[0]?.name)
+    } else if (recipientType === 'random') {
+      setRecipient('A Random Soul')
+    } else if (recipientType === 'direct') {
+      if (recipient === 'A Random Soul') setRecipient('')
+    }
+  }, [recipientType, selectedTrack])
 
   const handleGoogleLogin = async () => {
     try {
@@ -244,11 +283,28 @@ function SendContent() {
 
     setIsSubmitting(true)
 
+    let finalTargetUserId = selectedTargetUserId;
+
+    // 如果是随机匹配模式，去后端抓一个随机活跃用户
+    if (recipientType === 'random') {
+      try {
+        const res = await fetch('/api/random-user');
+        if (res.ok) {
+          const data = await res.json();
+          finalTargetUserId = data.userId;
+        }
+      } catch (e) {
+        console.error('Failed to fetch random user:', e);
+      }
+    }
+
     try {
-      const newLetter = await letterService.createLetter({
+      const newLetter = await (letterService as any).createLetter({
         to: recipient.trim(),
         message: message.trim(),
         category: category,
+        recipient_type: recipientType,
+        target_user_id: finalTargetUserId,
         song: {
           id: selectedTrack!.id,
           title: selectedTrack!.name,
@@ -266,6 +322,25 @@ function SendContent() {
 
       if (!newLetter || !newLetter.link_id) {
         throw new Error('Letter creation failed')
+      }
+
+      // 如果有目标用户（随机或同好），发送站内通知
+      if (finalTargetUserId) {
+        try {
+          await fetch('/api/notifications/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              targetUserId: finalTargetUserId,
+              senderName: user?.display_name || 'Anonymous',
+              recipientType: recipientType,
+              artistName: selectedTrack?.artists[0]?.name || 'Unknown Artist',
+              linkId: newLetter.link_id
+            })
+          });
+        } catch (e) {
+          console.error('Failed to send notification:', e);
+        }
       }
 
       // Add user info if logged in so local storage and UI show it properly
@@ -323,23 +398,66 @@ function SendContent() {
       <div className="send-container">
         <div className="send-form">
           <div className="form-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-              <label htmlFor="recipient" style={{ marginBottom: 0 }}>To</label>
-              <span style={{ fontSize: '14px', color: '#666' }}>
-                Who view No ads with <Link href="/premium" style={{ textDecoration: 'underline', color: '#000', fontWeight: 500 }}>👑 Premium</Link>
-              </span>
+            <div style={{ fontSize: '14px', color: '#666', marginBottom: '1rem' }}>
+              Who view No ads with <Link href="/premium" style={{ textDecoration: 'underline', color: '#000', fontWeight: 500 }}>👑 Premium</Link>
             </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+              <label htmlFor="recipient" style={{ marginBottom: 0 }}>To</label>
+              <select 
+                className="recipient-type-select"
+                value={recipientType}
+                onChange={(e) => setRecipientType(e.target.value as any)}
+              >
+                <option value="direct">Personal</option>
+                <option value="random">Random Soul</option>
+                <option value="soulmate">Music Soulmate</option>
+              </select>
+            </div>
+            
             <div className="input-with-hint">
               <input
                 type="text"
                 id="recipient"
-                placeholder="Enter recipient's name"
-                className="form-input"
+                placeholder={recipientType === 'random' ? "System will pick someone..." : "Enter recipient's name"}
+                className={`form-input ${recipientType === 'random' ? 'disabled-input' : ''}`}
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
+                disabled={recipientType === 'random'}
               />
               {showRecipientHint && <div className="chinese-hint">抱歉暂不支持中文</div>}
             </div>
+
+            {/* 同好推荐列表 */}
+            {recipientType === 'soulmate' && selectedTrack && (
+              <div className="soulmate-suggestions">
+                <p className="suggestion-title">Who also like "{selectedTrack.artists[0]?.name}"</p>
+                <div className="soulmate-list">
+                  {isLoadingSoulmates ? (
+                    <div className="loading-dots">Searching soulmates...</div>
+                  ) : soulmateUsers.length > 0 ? (
+                    soulmateUsers.map(soulmate => (
+                      <div 
+                        key={soulmate.id} 
+                        className={`soulmate-item ${selectedTargetUserId === soulmate.id ? 'selected' : ''}`}
+                        onClick={() => {
+                          setRecipient(soulmate.firstName)
+                          setSelectedTargetUserId(soulmate.id)
+                        }}
+                      >
+                        {soulmate.avatarUrl ? (
+                          <img src={soulmate.avatarUrl} alt={soulmate.firstName} className="soulmate-avatar" />
+                        ) : (
+                          <div className="soulmate-avatar-placeholder">{soulmate.firstName[0]}</div>
+                        )}
+                        <span className="soulmate-name">{soulmate.firstName}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="no-suggestions">No fans found for this artist yet. Try a specific name!</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="form-section">
@@ -497,6 +615,102 @@ function SendContent() {
           display: flex; align-items: center; justify-content: center;
           z-index: 1000;
           backdrop-filter: blur(4px);
+        }
+        
+        /* 收件人类型选择器 */
+        .recipient-type-select {
+          padding: 4px 12px;
+          border-radius: 8px;
+          border: 1px solid #e0e0e0;
+          font-size: 13px;
+          color: #333;
+          background: #f8f9fa;
+          cursor: pointer;
+          outline: none;
+        }
+
+        .disabled-input {
+          background-color: #f1f5f9 !important;
+          color: #64748b !important;
+          cursor: not-allowed;
+          border-color: #e2e8f0 !important;
+        }
+
+        /* 同好推荐位 */
+        .soulmate-suggestions {
+          margin-top: 12px;
+          padding: 12px;
+          background: #fdf2f8;
+          border-radius: 12px;
+          border: 1px dashed #f9a8d4;
+        }
+        .suggestion-title {
+          font-size: 12px;
+          color: #be185d;
+          margin-bottom: 8px;
+          font-weight: 600;
+        }
+        .soulmate-list {
+          display: flex;
+          gap: 12px;
+          overflow-x: auto;
+          padding-bottom: 4px;
+        }
+        .soulmate-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+          min-width: 50px;
+          transition: transform 0.2s;
+        }
+        .soulmate-item:hover {
+          transform: translateY(-2px);
+        }
+        .soulmate-item.selected .soulmate-avatar,
+        .soulmate-item.selected .soulmate-avatar-placeholder {
+          border: 2px solid #be185d;
+          transform: scale(1.1);
+        }
+        .soulmate-item.selected .soulmate-name {
+          color: #be185d;
+          font-weight: 600;
+        }
+        .soulmate-avatar, .soulmate-avatar-placeholder {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 2px solid white;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .soulmate-avatar-placeholder {
+          background: #f472b6;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 14px;
+        }
+        .soulmate-name {
+          font-size: 11px;
+          color: #444;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 50px;
+        }
+        .loading-dots {
+          font-size: 12px;
+          color: #888;
+          font-style: italic;
+        }
+        .no-suggestions {
+          font-size: 12px;
+          color: #999;
+          margin: 0;
         }
         .modal-content {
           background: white; padding: 2.5rem 2rem; border-radius: 24px;
