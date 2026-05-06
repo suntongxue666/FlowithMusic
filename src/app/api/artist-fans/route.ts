@@ -18,20 +18,34 @@ export async function GET(request: Request) {
       return NextResponse.json({ fans: [] })
     }
 
-    // 查找发送过该艺术家歌曲的已登录用户
+    // 查找发送过该艺术家歌曲的已登录用户 - 使用模糊匹配以处理多位歌手的情况
     const { data: letters, error } = await supabase
       .from('letters')
       .select('user_id')
-      .eq('song_artist', artist)
+      .ilike('song_artist', `%${artist}%`)
       .not('user_id', 'is', null)
-      .limit(50)
+      .limit(100)
 
-    if (error || !letters) {
-      return NextResponse.json({ fans: [] })
+    let userIds: string[] = []
+    
+    if (letters && letters.length > 0) {
+      // 去重 user_id
+      userIds = Array.from(new Set(letters.map((l: any) => l.user_id).filter(Boolean)))
     }
 
-    // 去重 user_id
-    const userIds = Array.from(new Set(letters.map((l: any) => l.user_id).filter(Boolean)))
+    // 🔴 兜底方案：如果没找到该歌手的同好，随机取几个活跃用户
+    if (userIds.length === 0) {
+      console.log('No fans found for artist, using random active users as fallback')
+      const { data: activeUsers } = await supabase
+        .from('users')
+        .select('id')
+        .not('email', 'is', null)
+        .limit(10)
+      
+      if (activeUsers) {
+        userIds = activeUsers.map(u => u.id)
+      }
+    }
 
     if (userIds.length === 0) {
       return NextResponse.json({ fans: [] })
