@@ -432,7 +432,13 @@ function SendContent() {
               <input
                 type="text"
                 id="recipient"
-                placeholder={recipientType === 'random' ? "System will pick someone..." : "Enter recipient's name"}
+                placeholder={
+                  recipientType === 'random' 
+                    ? "System will pick someone..." 
+                    : recipientType === 'soulmate' && selectedTrack
+                    ? `Select an user who also liked ${selectedTrack.artists[0]?.name}`
+                    : "Enter recipient's name"
+                }
                 className={`form-input ${recipientType === 'random' ? 'disabled-input' : ''}`}
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
