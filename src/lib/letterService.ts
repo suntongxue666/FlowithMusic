@@ -223,17 +223,32 @@ export class LetterService {
   async getLetter(linkId: string): Promise<Letter | null> {
     if (!supabase) return null
 
-    // 1. 尝试从数据库获取 (走缓存)
-    if (!cachedSupabase) return null
+    // 1. 优先尝试从缓存代理获取
+    if (cachedSupabase) {
+      try {
+        const { data, error } = await cachedSupabase
+          .from('letters')
+          .select('*, user:users(id, display_name, avatar_url, is_premium)')
+          .eq('link_id', linkId)
+          .single()
+        
+        if (data && !error) return data as Letter
+        console.log('Cache proxy miss or error, trying direct connection...')
+      } catch (e) {
+        console.error('Cache proxy failed:', e)
+      }
+    }
 
-    const { data, error } = await cachedSupabase
+    // 2. 如果代理失败或未配置，直连数据库
+    if (!supabase) return null
+    const { data, error } = await supabase
       .from('letters')
       .select('*, user:users(id, display_name, avatar_url, is_premium)')
       .eq('link_id', linkId)
       .single()
 
     if (error) {
-      console.warn('⚠️ LetterService: Letter not found in DB or error:', error.message)
+      console.error('Direct database fetch failed:', error)
       return null
     }
 

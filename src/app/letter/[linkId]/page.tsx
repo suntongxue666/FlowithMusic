@@ -16,69 +16,35 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   console.log('=== 元数据生成开始 (使用缓存代理) ===', new Date().toISOString())
 
   try {
-    // 🔴 使用 cachedSupabase 获取数据 - 享受 Cloudflare 缓存保护
+    // 🔴 使用 1. cachedSupabase 获取数据 - 享受 Cloudflare 缓存保护
     let letter: Letter | null = null
 
     try {
       if (cachedSupabase) {
         console.log('Proxy fetch for metadata, linkId:', linkId)
-
-        // 尝试多种查询方式
-        let queryResult = null
-
-        // 方式1: 标准查询
-        try {
-          const { data, error } = await cachedSupabase
-            .from('letters')
-            .select('song_title, song_artist, song_album_cover, created_at, is_public, message, category')
-            .eq('link_id', linkId)
-            .single()
-
-          if (data && !error) {
-            queryResult = { data, error, method: 'standard' }
-          } else {
-            console.log('Standard query failed, trying alternative...')
-          }
-        } catch (err) {
-          console.log('Standard query error:', err)
+        const { data, error } = await cachedSupabase
+          .from('letters')
+          .select('song_title, song_artist, song_album_cover, created_at, is_public, message, category')
+          .eq('link_id', linkId)
+          .single()
+        
+        if (data && !error) {
+          letter = data as Letter
         }
-
-        // 方式2: 如果标准查询失败，尝试不加single()
-        if (!queryResult) {
-          try {
-            const { data, error } = await cachedSupabase
-              .from('letters')
-              .select('song_title, song_artist, song_album_cover, created_at, is_public, message, category')
-              .eq('link_id', linkId)
-              .limit(1)
-
-            if (data && data.length > 0 && !error) {
-              queryResult = { data: data[0], error, method: 'array_first' }
-            }
-          } catch (err) {
-            console.log('Array query error:', err)
-          }
+      }
+      
+      // 🔵 降级方案：2. 如果缓存没拿到，直连数据库
+      if (!letter && supabase) {
+        console.log('Fallback to direct DB for metadata, linkId:', linkId)
+        const { data, error } = await supabase
+          .from('letters')
+          .select('song_title, song_artist, song_album_cover, created_at, is_public, message, category')
+          .eq('link_id', linkId)
+          .single()
+        
+        if (data && !error) {
+          letter = data as Letter
         }
-
-        console.log('Final query result:', queryResult)
-
-        if (queryResult && queryResult.data && !queryResult.error) {
-          // 处理可能返回数组的情况
-          const letterData = Array.isArray(queryResult.data) ? queryResult.data[0] : queryResult.data
-          letter = letterData as Letter
-          console.log('Successfully fetched letter from supabase for metadata:', {
-            song_title: letter?.song_title,
-            song_artist: letter?.song_artist,
-            is_public: letter?.is_public,
-            linkId: linkId,
-            method: queryResult.method,
-            isArray: Array.isArray(queryResult.data)
-          })
-        } else {
-          console.error('All query methods failed')
-        }
-      } else {
-        console.error('Supabase client not available for metadata')
       }
     } catch (error) {
       console.error('Failed to fetch letter for metadata:', error)
