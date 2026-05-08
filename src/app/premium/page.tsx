@@ -17,6 +17,10 @@ const ANNUAL_PLAN_ID = 'P-0PU3781769776022HNG3WTWI';
 export default function PremiumPage() {
   const router = useRouter()
   const { user } = useUserState()
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState<any>(null)
   const [creemLoading, setCreemLoading] = useState<string | null>(null)
 
   const handleCreemPayment = async (planType: 'monthly' | 'yearly') => {
