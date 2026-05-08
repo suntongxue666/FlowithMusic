@@ -46,7 +46,7 @@ export default function PremiumPage() {
         const errorMsg = data.error || `Error ${response.status}: Failed to create checkout session`;
         console.error('🔴 [Creem Frontend Error] Status:', response.status);
         console.error('🔴 [Creem Frontend Error] Body:', data);
-        alert(`Payment Error: ${errorMsg}`);
+        alert(`Payment Error: ${errorMsg}\n\nDetails: ${JSON.stringify(data.details || data, null, 2)}`);
         throw new Error(errorMsg)
       }
     } catch (err: any) {

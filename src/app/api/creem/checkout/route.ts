@@ -58,15 +58,17 @@ export async function POST(request: NextRequest) {
       }, { status: response.status })
     }
 
-    if (!data.url) {
-      console.warn('⚠️ [Creem Checkout] No URL found in 200 OK response:', data)
+    const checkoutUrl = data.url || data.checkout_url || data.checkoutUrl || data.payment_url;
+
+    if (!checkoutUrl) {
+      console.warn('⚠️ [Creem Checkout] No common URL fields found in 200 OK response:', data)
       return NextResponse.json({ 
-        error: 'Creem returned success but no URL was found',
+        error: 'Creem success but URL field not found. See details.',
         details: data 
       }, { status: 200 })
     }
 
-    return NextResponse.json({ url: data.url })
+    return NextResponse.json({ url: checkoutUrl })
   } catch (error: any) {
     console.error('💥 [Creem Checkout] Fatal Error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
