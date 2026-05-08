@@ -14,29 +14,16 @@ export async function POST(request: NextRequest) {
       ? process.env.CREEM_MONTHLY_PRODUCT_ID 
       : process.env.CREEM_YEARLY_PRODUCT_ID
 
-    console.log('🔍 [Creem Debug] API Key exists:', !!apiKey)
-    console.log('🔍 [Creem Debug] Product ID:', creemProductId)
-    console.log('🔍 [Creem Debug] Plan ID:', planId)
-
     if (!apiKey || !creemProductId) {
-      console.error('❌ [Creem Checkout] Configuration missing')
-      return NextResponse.json({ 
-        error: 'Server configuration error: Missing API Key or Product ID',
-        debug: { hasApiKey: !!apiKey, productId: creemProductId }
-      }, { status: 500 })
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
 
     const payload = {
       product_id: creemProductId,
       success_url: `${returnUrl}?status=success_creem`,
-      metadata: {
-        userId: userId,
-        plan: planId
-      },
+      metadata: { userId, plan: planId },
       customer: userEmail ? { email: userEmail } : undefined
     }
-
-    console.log('📡 [Creem Debug] Sending payload:', JSON.stringify(payload, null, 2))
 
     const response = await fetch('https://api.creem.io/v1/checkouts', {
       method: 'POST',
@@ -48,12 +35,10 @@ export async function POST(request: NextRequest) {
     })
 
     const data = await response.json()
-    console.log('📥 [Creem Debug] Response Status:', response.status)
-    console.log('📥 [Creem Debug] Response Body:', JSON.stringify(data, null, 2))
 
     if (!response.ok) {
       return NextResponse.json({ 
-        error: data.message || data.error || `Creem API error (${response.status})`,
+        error: data.message || data.error || 'Creem API error',
         details: data 
       }, { status: response.status })
     }
@@ -61,11 +46,7 @@ export async function POST(request: NextRequest) {
     const checkoutUrl = data.url || data.checkout_url || data.checkoutUrl || data.payment_url;
 
     if (!checkoutUrl) {
-      console.warn('⚠️ [Creem Checkout] No common URL fields found in 200 OK response:', data)
-      return NextResponse.json({ 
-        error: 'Creem success but URL field not found. See details.',
-        details: data 
-      }, { status: 200 })
+      return NextResponse.json({ error: 'Checkout URL not found' }, { status: 500 })
     }
 
     return NextResponse.json({ url: checkoutUrl })

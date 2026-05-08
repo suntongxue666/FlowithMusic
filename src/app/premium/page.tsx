@@ -43,10 +43,7 @@ export default function PremiumPage() {
       if (data.url) {
         window.location.href = data.url
       } else {
-        const errorMsg = data.error || `Error ${response.status}: Failed to create checkout session`;
-        console.error('🔴 [Creem Frontend Error] Status:', response.status);
-        console.error('🔴 [Creem Frontend Error] Body:', data);
-        alert(`Payment Error: ${errorMsg}\n\nDetails: ${JSON.stringify(data.details || data, null, 2)}`);
+        const errorMsg = data.error || 'Failed to create checkout session';
         throw new Error(errorMsg)
       }
     } catch (err: any) {
