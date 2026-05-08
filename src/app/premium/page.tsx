@@ -43,7 +43,9 @@ export default function PremiumPage() {
       if (data.url) {
         window.location.href = data.url
       } else {
-        throw new Error(data.error || 'Failed to create checkout session')
+        const errorMsg = data.error || 'Failed to create checkout session';
+        console.error('Creem API Full Error:', data.details || data);
+        throw new Error(errorMsg)
       }
     } catch (err: any) {
       console.error('Creem payment error:', err)
@@ -255,7 +257,7 @@ export default function PremiumPage() {
                       <button 
                         onClick={() => handleCreemPayment('monthly')}
                         disabled={creemLoading === 'monthly'}
-                        className="pay-now-btn creem-btn mb-4"
+                        className="pay-now-btn creem-btn"
                       >
                         {creemLoading === 'monthly' ? 'Loading...' : 'Pay with Creem'}
                       </button>
@@ -290,7 +292,7 @@ export default function PremiumPage() {
                       <button 
                         onClick={() => handleCreemPayment('yearly')}
                         disabled={creemLoading === 'yearly'}
-                        className="pay-now-btn creem-btn mb-4"
+                        className="pay-now-btn creem-btn"
                       >
                         {creemLoading === 'yearly' ? 'Loading...' : 'Pay with Creem'}
                       </button>
@@ -798,8 +800,11 @@ export default function PremiumPage() {
             color: #000;
           }
 
-          .paypal-container-modal {
-            min-height: 200px;
+          .payment-button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: auto;
           }
 
           .pay-now-btn {

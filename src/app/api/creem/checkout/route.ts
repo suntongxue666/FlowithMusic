@@ -42,7 +42,10 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       console.error('❌ [Creem Checkout] API Error:', data)
-      return NextResponse.json({ error: data.message || 'Creem API error' }, { status: response.status })
+      return NextResponse.json({ 
+        error: data.message || data.error || 'Creem API error',
+        details: data 
+      }, { status: response.status })
     }
 
     return NextResponse.json({ url: data.url })
