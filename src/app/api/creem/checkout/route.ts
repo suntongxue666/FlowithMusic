@@ -14,12 +14,29 @@ export async function POST(request: NextRequest) {
       ? process.env.CREEM_MONTHLY_PRODUCT_ID 
       : process.env.CREEM_YEARLY_PRODUCT_ID
 
+    console.log('🔍 [Creem Debug] API Key exists:', !!apiKey)
+    console.log('🔍 [Creem Debug] Product ID:', creemProductId)
+    console.log('🔍 [Creem Debug] Plan ID:', planId)
+
     if (!apiKey || !creemProductId) {
       console.error('❌ [Creem Checkout] Configuration missing')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Server configuration error: Missing API Key or Product ID',
+        debug: { hasApiKey: !!apiKey, productId: creemProductId }
+      }, { status: 500 })
     }
 
-    console.log(`📡 [Creem Checkout] Creating session for user: ${userId}, plan: ${planId}`)
+    const payload = {
+      product_id: creemProductId,
+      success_url: `${returnUrl}?status=success_creem`,
+      metadata: {
+        userId: userId,
+        plan: planId
+      },
+      customer: userEmail ? { email: userEmail } : undefined
+    }
+
+    console.log('📡 [Creem Debug] Sending payload:', JSON.stringify(payload, null, 2))
 
     const response = await fetch('https://api.creem.io/v1/checkouts', {
       method: 'POST',
@@ -27,23 +44,16 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         'x-api-key': apiKey
       },
-      body: JSON.stringify({
-        product_id: creemProductId,
-        success_url: `${returnUrl}?status=success_creem`,
-        metadata: {
-          userId: userId,
-          plan: planId
-        },
-        customer: userEmail ? { email: userEmail } : undefined
-      })
+      body: JSON.stringify(payload)
     })
 
     const data = await response.json()
+    console.log('📥 [Creem Debug] Response Status:', response.status)
+    console.log('📥 [Creem Debug] Response Body:', JSON.stringify(data, null, 2))
 
     if (!response.ok) {
-      console.error('❌ [Creem Checkout] API Error:', data)
       return NextResponse.json({ 
-        error: data.message || data.error || 'Creem API error',
+        error: data.message || data.error || `Creem API error (${response.status})`,
         details: data 
       }, { status: response.status })
     }
