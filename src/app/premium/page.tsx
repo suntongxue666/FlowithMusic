@@ -254,13 +254,14 @@ export default function PremiumPage() {
                       </div>
                       <button 
                         onClick={() => handleCreemPayment('monthly')}
-                        disabled={creemLoading !== null}
-                        className="pay-now-btn creem-btn mb-3"
+                        disabled={creemLoading === 'monthly'}
+                        className="pay-now-btn creem-btn mb-4"
                       >
-                        {creemLoading === 'monthly' ? 'Loading...' : 'Pay with Alipay / WeChat'}
+                        {creemLoading === 'monthly' ? 'Loading...' : 'Pay with Creem'}
                       </button>
                       <button 
                         onClick={() => handleSelectPlan(oneTimeMonthly)}
+                        disabled={creemLoading !== null}
                         className="pay-now-btn onetime-btn"
                       >
                         Buy with PayPal
@@ -288,13 +289,14 @@ export default function PremiumPage() {
                       </div>
                       <button 
                         onClick={() => handleCreemPayment('yearly')}
-                        disabled={creemLoading !== null}
-                        className="pay-now-btn creem-btn mb-3"
+                        disabled={creemLoading === 'yearly'}
+                        className="pay-now-btn creem-btn mb-4"
                       >
-                        {creemLoading === 'yearly' ? 'Loading...' : 'Pay with Alipay / WeChat'}
+                        {creemLoading === 'yearly' ? 'Loading...' : 'Pay with Creem'}
                       </button>
                       <button 
                         onClick={() => handleSelectPlan(oneTimeYearly)}
+                        disabled={creemLoading !== null}
                         className="pay-now-btn onetime-btn"
                       >
                         Buy with PayPal

@@ -30,7 +30,6 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         product_id: creemProductId,
         success_url: `${returnUrl}?status=success_creem`,
-        cancel_url: returnUrl,
         metadata: {
           userId: userId,
           plan: planId
