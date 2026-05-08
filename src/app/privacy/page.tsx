@@ -8,40 +8,29 @@ export default function PrivacyPage() {
       <div className="legal-container">
         <div className="legal-content">
           <h1>Privacy Policy</h1>
-          <p className="last-updated">Last updated: January 25, 2025</p>
+          <p className="last-updated">Last updated: May 8, 2026</p>
           
           <section>
             <h2>1. Information We Collect</h2>
             <h3>Personal Information</h3>
             <p>
-              When you create an account using Google OAuth, we collect:
+              When you create an account using Google OAuth, we collect your email address, display name, and profile picture.
             </p>
-            <ul>
-              <li>Your Google account email address</li>
-              <li>Your display name</li>
-              <li>Your profile picture (if available)</li>
-            </ul>
             
-            <h3>Usage Information</h3>
+            <h3>Payment Information</h3>
             <p>
-              We automatically collect certain information when you use our service:
+              We offer paid features through third-party payment processors (Creem and PayPal). When you make a purchase, we do not store your full credit card details or bank account information on our servers. This data is collected and processed directly by our payment providers. We only receive information related to the transaction status (e.g., payment success, transaction ID) to activate your Premium features.
             </p>
-            <ul>
-              <li>Device information (browser type, operating system)</li>
-              <li>Usage patterns and preferences</li>
-              <li>IP address and location data</li>
-              <li>Cookies and similar tracking technologies</li>
-            </ul>
 
-            <h3>Content Information</h3>
+            <h3>Music Preferences and Soulmate Data</h3>
             <p>
-              We store the content you create on our platform:
+              To provide the "Music Soulmate" feature, we collect data about your favorite artists and song preferences. This information is used to match you with other users who share similar musical interests. You may choose to hide or limit the visibility of this information in your account settings.
             </p>
-            <ul>
-              <li>Messages you write</li>
-              <li>Song selections and preferences</li>
-              <li>Letters you create and share</li>
-            </ul>
+
+            <h3>Usage and Content Information</h3>
+            <p>
+              We automatically collect device information, usage patterns, and the content you create (such as Letters and messages) to provide and improve our service.
+            </p>
           </section>
 
           <section>
@@ -50,120 +39,44 @@ export default function PrivacyPage() {
               We use the collected information to:
             </p>
             <ul>
-              <li>Provide and maintain our service</li>
-              <li>Personalize your experience</li>
-              <li>Improve our service and develop new features</li>
-              <li>Communicate with you about updates and support</li>
-              <li>Ensure security and prevent fraud</li>
-              <li>Comply with legal obligations</li>
+              <li>Provide and maintain our service, including Premium subscriptions</li>
+              <li>Match you with potential "Music Soulmates"</li>
+              <li>Improve user experience and develop new musical features</li>
+              <li>Communicate updates and provide customer support</li>
+              <li>Ensure security and prevent fraudulent transactions</li>
             </ul>
           </section>
 
           <section>
             <h2>3. Information Sharing</h2>
             <p>
-              We do not sell, trade, or rent your personal information to third parties. We may share your information in the following circumstances:
+              We do not sell your personal information. We may share data with trusted service providers (like payment processors) to facilitate the service, or when required by law.
             </p>
-            <ul>
-              <li><strong>With your consent:</strong> When you explicitly agree to share information</li>
-              <li><strong>Service providers:</strong> With trusted third-party services that help us operate our platform</li>
-              <li><strong>Legal requirements:</strong> When required by law or to protect our rights</li>
-              <li><strong>Business transfers:</strong> In connection with a merger, acquisition, or sale of assets</li>
-            </ul>
           </section>
 
           <section>
             <h2>4. Third-Party Services</h2>
-            <h3>Spotify Integration</h3>
             <p>
-              Our service integrates with Spotify to provide music streaming. When you use Spotify features, you are subject to Spotify's privacy policy and terms of service.
-            </p>
-            
-            <h3>Google OAuth</h3>
-            <p>
-              We use Google OAuth for authentication. Your use of Google services is governed by Google's privacy policy.
-            </p>
-
-            <h3>Analytics</h3>
-            <p>
-              We use Google Analytics to understand how users interact with our service. This helps us improve user experience and service performance.
+              Our service integrates with Spotify, Google, PayPal, and Creem. Each of these services has its own privacy policy which governs their use of your data.
             </p>
           </section>
 
           <section>
             <h2>5. Data Security</h2>
             <p>
-              We implement appropriate security measures to protect your personal information:
-            </p>
-            <ul>
-              <li>Encryption of data in transit and at rest</li>
-              <li>Regular security assessments</li>
-              <li>Access controls and authentication</li>
-              <li>Secure hosting infrastructure</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2>6. Data Retention</h2>
-            <p>
-              We retain your information for as long as necessary to provide our services and comply with legal obligations. You can request deletion of your account and associated data at any time.
+              We implement industry-standard security measures, including encryption and access controls, to protect your information.
             </p>
           </section>
 
           <section>
-            <h2>7. Your Rights</h2>
+            <h2>6. Your Rights</h2>
             <p>
-              Depending on your location, you may have the following rights:
-            </p>
-            <ul>
-              <li>Access to your personal information</li>
-              <li>Correction of inaccurate information</li>
-              <li>Deletion of your personal information</li>
-              <li>Portability of your data</li>
-              <li>Objection to processing</li>
-              <li>Withdrawal of consent</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2>8. Cookies and Tracking</h2>
-            <p>
-              We use cookies and similar technologies to:
-            </p>
-            <ul>
-              <li>Remember your preferences</li>
-              <li>Analyze usage patterns</li>
-              <li>Improve service performance</li>
-              <li>Provide personalized content</li>
-            </ul>
-            <p>
-              You can control cookie settings through your browser preferences.
+              You have the right to access, correct, or delete your personal information. You can manage your account data through your settings or contact us for assistance.
             </p>
           </section>
 
           <section>
-            <h2>9. Children's Privacy</h2>
-            <p>
-              Our service is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13.
-            </p>
-          </section>
-
-          <section>
-            <h2>10. International Data Transfers</h2>
-            <p>
-              Your information may be transferred to and processed in countries other than your own. We ensure appropriate safeguards are in place for such transfers.
-            </p>
-          </section>
-
-          <section>
-            <h2>11. Changes to Privacy Policy</h2>
-            <p>
-              We may update this privacy policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the "last updated" date.
-            </p>
-          </section>
-
-          <section>
-            <h2>12. Contact Us</h2>
+            <h2>7. Contact Us</h2>
             <p>
               If you have any questions about this Privacy Policy, please contact us at:
               <br />
