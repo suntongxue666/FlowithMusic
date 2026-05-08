@@ -58,6 +58,14 @@ export async function POST(request: NextRequest) {
       }, { status: response.status })
     }
 
+    if (!data.url) {
+      console.warn('⚠️ [Creem Checkout] No URL found in 200 OK response:', data)
+      return NextResponse.json({ 
+        error: 'Creem returned success but no URL was found',
+        details: data 
+      }, { status: 200 })
+    }
+
     return NextResponse.json({ url: data.url })
   } catch (error: any) {
     console.error('💥 [Creem Checkout] Fatal Error:', error)
