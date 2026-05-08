@@ -16,11 +16,47 @@ const ANNUAL_PLAN_ID = 'P-0PU3781769776022HNG3WTWI';
 
 export default function PremiumPage() {
   const router = useRouter()
-  const { user } = useUserState()
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
-  const [errorMessage, setErrorMessage] = useState('')
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<any>(null)
+  const [creemLoading, setCreemLoading] = useState<string | null>(null)
+
+  const handleCreemPayment = async (planType: 'monthly' | 'yearly') => {
+    try {
+      setCreemLoading(planType)
+      const queryId = user?.id || (typeof window !== 'undefined' ? userService.getAnonymousId() : null)
+      
+      const response = await fetch('/api/creem/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planId: planType,
+          userId: queryId,
+          userEmail: user?.email,
+          returnUrl: window.location.origin + window.location.pathname
+        })
+      })
+
+      const data = await response.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        throw new Error(data.error || 'Failed to create checkout session')
+      }
+    } catch (err: any) {
+      console.error('Creem payment error:', err)
+      alert(err.message || 'Payment initiation failed')
+    } finally {
+      setCreemLoading(null)
+    }
+  }
+
+  // Handle redirect success from Creem
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('status') === 'success_creem') {
+      setStatus('success')
+      // 清除 URL 参数
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
 
   // Handle redirect success from PayPal One-time
   useEffect(() => {
@@ -212,6 +248,13 @@ export default function PremiumPage() {
                         <RecentBuyersMarquee />
                       </div>
                       <button 
+                        onClick={() => handleCreemPayment('monthly')}
+                        disabled={creemLoading !== null}
+                        className="pay-now-btn creem-btn mb-3"
+                      >
+                        {creemLoading === 'monthly' ? 'Loading...' : 'Pay with Alipay / WeChat'}
+                      </button>
+                      <button 
                         onClick={() => handleSelectPlan(oneTimeMonthly)}
                         className="pay-now-btn onetime-btn"
                       >
@@ -220,7 +263,7 @@ export default function PremiumPage() {
                       <p className="payment-note text-xs text-center text-gray-400" style={{ marginTop: '16px' }}>No auto-renewal</p>
                     </div>
                   </div>
-
+ 
                   {/* One-time Annual */}
                   <div className="pricing-card onetime-card yearly-onetime">
                     <div className="save-tag">BEST VALUE</div>
@@ -238,6 +281,13 @@ export default function PremiumPage() {
                       <div className="mb-2">
                         <RecentBuyersMarquee />
                       </div>
+                      <button 
+                        onClick={() => handleCreemPayment('yearly')}
+                        disabled={creemLoading !== null}
+                        className="pay-now-btn creem-btn mb-3"
+                      >
+                        {creemLoading === 'yearly' ? 'Loading...' : 'Pay with Alipay / WeChat'}
+                      </button>
                       <button 
                         onClick={() => handleSelectPlan(oneTimeYearly)}
                         className="pay-now-btn onetime-btn"
@@ -769,6 +819,24 @@ export default function PremiumPage() {
           
           .onetime-btn:hover {
             background: #14532d;
+          }
+
+          .creem-btn {
+            background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+          }
+
+          .creem-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #6d28d9 0%, #1d4ed8 100%);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+          }
+
+          .creem-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            background: #94a3b8;
           }
 
           .highlight-btn {
