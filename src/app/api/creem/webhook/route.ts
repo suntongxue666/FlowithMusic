@@ -73,6 +73,27 @@ export async function POST(request: NextRequest) {
         throw error
       }
 
+      // 6. 记录日志到 payment_logs
+      try {
+        const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+        const validUserId = (userId && isUUID(userId)) ? userId : null;
+
+        await supabase.from('payment_logs').insert({
+          user_id: validUserId,
+          subscription_id: payload.data?.id || 'unknown',
+          event_type: 'CREEM_PAYMENT_SUCCESS',
+          status: 'SUCCESS',
+          details: {
+            raw_user_id: userId,
+            plan: plan,
+            customer: customer,
+            payload: payload
+          }
+        })
+      } catch (logError) {
+        console.error('⚠️ [Creem Webhook] Logging failed:', logError)
+      }
+
       console.log('✅ [Creem Webhook] User upgraded successfully')
     }
 

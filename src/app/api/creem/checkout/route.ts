@@ -1,9 +1,11 @@
-
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: NextRequest) {
   try {
     const { planId, userId, userEmail, returnUrl } = await request.json()
+    
+    const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
     if (!planId) {
       return NextResponse.json({ error: 'Missing planId' }, { status: 400 })
@@ -47,6 +49,34 @@ export async function POST(request: NextRequest) {
 
     if (!checkoutUrl) {
       return NextResponse.json({ error: 'Checkout URL not found' }, { status: 500 })
+    }
+
+    // 🚀 Log Creem Checkout Initialization to Supabase
+    try {
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+      
+      const validUserId = (userId && isUUID(userId)) ? userId : null;
+      
+      await supabaseAdmin.from('payment_logs').insert({
+        user_id: validUserId,
+        subscription_id: data.id || 'unknown',
+        event_type: 'CREEM_CHECKOUT_INIT',
+        status: 'SUCCESS',
+        details: {
+          raw_user_id: userId,
+          user_email: userEmail,
+          plan_id: planId,
+          product_id: creemProductId,
+          checkout_id: data.id,
+          creem_response: data
+        }
+      })
+    } catch (logError) {
+      console.error('⚠️ Failed to log Creem checkout to Supabase:', logError)
+      // We don't block the user if logging fails
     }
 
     return NextResponse.json({ url: checkoutUrl })
