@@ -39,6 +39,9 @@ export default function PremiumPage() {
         })
       })
 
+      // 🚀 Log the selection event for Creem to track conversion
+      logPaymentEvent('PLAN_SELECTED', 'creem_' + planType, { plan: planType })
+
       const data = await response.json()
       if (data.url) {
         window.location.href = data.url
@@ -262,7 +265,6 @@ export default function PremiumPage() {
                       </button>
                       <button 
                         onClick={() => handleSelectPlan(oneTimeMonthly)}
-                        disabled={creemLoading !== null}
                         className="pay-now-btn onetime-btn"
                       >
                         Buy with PayPal
@@ -297,7 +299,6 @@ export default function PremiumPage() {
                       </button>
                       <button 
                         onClick={() => handleSelectPlan(oneTimeYearly)}
-                        disabled={creemLoading !== null}
                         className="pay-now-btn onetime-btn"
                       >
                         Buy with PayPal
@@ -376,11 +377,17 @@ export default function PremiumPage() {
 
         {/* Payment Modal */}
         {showPaymentModal && selectedPlan && (
-          <div className="payment-modal-overlay" onClick={() => setShowPaymentModal(false)}>
+          <div className="payment-modal-overlay" onClick={() => {
+            setShowPaymentModal(false);
+            logPaymentEvent('MODAL_CLOSED_OVERLAY', selectedPlan.id);
+          }}>
             <div className="payment-modal-content" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
                 <h3>Confirm Your Order</h3>
-                <button className="close-btn" onClick={() => setShowPaymentModal(false)}>×</button>
+                <button className="close-btn" onClick={() => {
+                  setShowPaymentModal(false);
+                  logPaymentEvent('MODAL_CLOSED_X', selectedPlan.id);
+                }}>×</button>
               </div>
               
               <div className="order-summary">
@@ -408,6 +415,7 @@ export default function PremiumPage() {
                     key={selectedPlan.id}
                     style={{ layout: 'vertical', color: 'gold', shape: 'pill' }}
                     createOrder={selectedPlan.type === 'onetime' ? (data, actions) => {
+                      logPaymentEvent('PAYPAL_BUTTON_CLICKED', 'onetime', { plan: selectedPlan.id });
                       return actions.order.create({
                         intent: "CAPTURE",
                         purchase_units: [{
@@ -422,15 +430,16 @@ export default function PremiumPage() {
                       } as any);
                     } : undefined}
                     createSubscription={selectedPlan.type === 'subscription' ? (data, actions) => {
+                      logPaymentEvent('PAYPAL_BUTTON_CLICKED', 'subscription', { plan: selectedPlan.id });
                       return actions.subscription.create({ 
                         plan_id: selectedPlan.planId,
                         custom_id: currentUserId || undefined
                       });
                     } : undefined}
                     onApprove={async (data, actions) => {
+                      logPaymentEvent('PAYPAL_APPROVED', selectedPlan.type, { data });
                       if (selectedPlan.type === 'onetime') {
                         try {
-                          // 使用我们的服务器端 Capture API 以保证可靠性
                           const captureRes = await fetch('/api/paypal/capture', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -446,9 +455,11 @@ export default function PremiumPage() {
                           const captureData = await captureRes.json();
                           
                           if (!captureRes.ok) {
+                            logPaymentEvent('CAPTURE_FAILED', 'onetime', { error: captureData });
                             throw new Error(captureData.error || 'Failed to capture payment');
                           }
 
+                          logPaymentEvent('CAPTURE_SUCCESS', 'onetime', { captureData });
                           setShowPaymentModal(false);
                           await handleSubscriptionSuccess(selectedPlan.id.includes('monthly') ? 'monthly' : 'yearly', { 
                             subscriptionID: data.orderID, 
@@ -458,7 +469,7 @@ export default function PremiumPage() {
                         } catch (err: any) {
                           console.error('Capture failed:', err);
                           setShowPaymentModal(false);
-                          setErrorMessage(err.message || 'Payment capture failed. Please contact support.');
+                          setErrorMessage(err.message || 'Payment capture failed.');
                           setStatus('error');
                         }
                       } else {
@@ -466,8 +477,12 @@ export default function PremiumPage() {
                         await handleSubscriptionSuccess(selectedPlan.id.includes('monthly') ? 'monthly' : 'yearly', data);
                       }
                     }}
-                    onCancel={() => setShowPaymentModal(false)}
+                    onCancel={() => {
+                      logPaymentEvent('PAYPAL_CANCELLED', selectedPlan.type);
+                      setShowPaymentModal(false);
+                    }}
                     onError={(err) => {
+                      logPaymentEvent('PAYPAL_ERROR', selectedPlan.type, { error: err.toString() });
                       setShowPaymentModal(false)
                       setErrorMessage(err.toString())
                       setStatus('error')
